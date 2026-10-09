@@ -1,0 +1,49 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
+import 'package:ottos_core/ottos_core.dart';
+
+import 'destinations.dart';
+import 'ops_texts.dart';
+import 'router.dart';
+
+class OpsApp extends StatelessWidget {
+  const OpsApp({super.key, required this.config});
+
+  final AppConfig config;
+
+  @override
+  Widget build(BuildContext context) {
+    return OttosScope(config: config, accessPolicy: Destinations.canUsePanel, child: const _OpsRouterApp());
+  }
+}
+
+class _OpsRouterApp extends StatefulWidget {
+  const _OpsRouterApp();
+
+  @override
+  State<_OpsRouterApp> createState() => _OpsRouterAppState();
+}
+
+class _OpsRouterAppState extends State<_OpsRouterApp> {
+  late final GoRouter _router = buildRouter(context.read<AuthBloc>());
+
+  @override
+  void dispose() {
+    _router.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp.router(
+      title: OpsTexts.appTitle,
+      debugShowCheckedModeBanner: false,
+      theme: OttosTheme.light(),
+      locale: OttosLocalization.locale,
+      supportedLocales: OttosLocalization.supportedLocales,
+      localizationsDelegates: OttosLocalization.delegates,
+      routerConfig: _router,
+    );
+  }
+}

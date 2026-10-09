@@ -1,0 +1,8 @@
+# Local development: `flutter run -d chrome` serves the app on :5050 and
+# forwards /api to the backend, so the browser sees a single origin (no CORS).
+server:
+  host: localhost
+  port: 5050
+  proxy:
+    - target: http://localhost:8080/
+      prefix: /api/

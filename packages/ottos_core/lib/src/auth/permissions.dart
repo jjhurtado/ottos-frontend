@@ -1,0 +1,22 @@
+/// Permission codes defined by the backend (`permissions` table).
+abstract final class Permissions {
+  static const usersRead = 'users:read';
+  static const usersWrite = 'users:write';
+  static const rolesRead = 'roles:read';
+  static const rolesWrite = 'roles:write';
+  static const ratesRead = 'rates:read';
+  static const ratesWrite = 'rates:write';
+  static const customersRead = 'customers:read';
+  static const customersWrite = 'customers:write';
+  static const remittancesCreate = 'remittances:create';
+  static const remittancesRead = 'remittances:read';
+  static const remittancesReadAssigned = 'remittances:read-assigned';
+  static const remittancesReadFinancials = 'remittances:read-financials';
+  static const remittancesAssign = 'remittances:assign';
+  static const remittancesPostpone = 'remittances:postpone';
+  static const remittancesDeliver = 'remittances:deliver';
+  static const cashRead = 'cash:read';
+  static const cashWrite = 'cash:write';
+  static const cashReadOwn = 'cash:read-own';
+  static const cashAdjust = 'cash:adjust';
+}

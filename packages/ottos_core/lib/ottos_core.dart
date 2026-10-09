@@ -1,0 +1,33 @@
+/// Shared code for the Ottos apps: configuration, API client, authentication,
+/// models, repositories, theme and common widgets.
+library;
+
+export 'src/api/api_client.dart';
+export 'src/app/ottos_scope.dart';
+export 'src/api/api_exception.dart';
+export 'src/auth/auth_repository.dart';
+export 'src/auth/bloc/auth_bloc.dart';
+export 'src/auth/current_user.dart';
+export 'src/auth/login/login_cubit.dart';
+export 'src/auth/login/login_page.dart';
+export 'src/auth/permissions.dart';
+export 'src/auth/token_storage.dart';
+export 'src/cash/cash_repository.dart';
+export 'src/config/app_config.dart';
+export 'src/l10n/core_texts.dart';
+export 'src/models/cash.dart';
+export 'src/models/event.dart';
+export 'src/models/page_result.dart';
+export 'src/models/remittance.dart';
+export 'src/models/workflow.dart';
+export 'src/remittances/remittance_repository.dart';
+export 'src/theme/ottos_colors.dart';
+export 'src/theme/ottos_theme.dart';
+export 'src/utils/formatters.dart';
+export 'src/utils/go_router_refresh_stream.dart';
+export 'src/widgets/async_view.dart';
+export 'src/widgets/info_row.dart';
+export 'src/widgets/ottos_logo.dart';
+export 'src/widgets/remittance_status_chip.dart';
+export 'src/widgets/splash_page.dart';
+export 'src/app/ottos_localization.dart';

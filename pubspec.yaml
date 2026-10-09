@@ -1,0 +1,28 @@
+name: ottos_workspace
+publish_to: none
+
+environment:
+  sdk: ^3.13.5
+
+workspace:
+  - packages/ottos_core
+  - apps/ottos_ops
+  - apps/ottos_courier
+
+dev_dependencies:
+  melos: ^8.9.0
+
+melos:
+  scripts:
+    analyze:
+      run: melos exec -- flutter analyze
+      description: Static analysis in every package.
+    test:
+      run: melos exec --dir-exists=test -- flutter test
+      description: Run the tests of every package that has them.
+    ops:
+      run: cd apps/ottos_ops && flutter run -d chrome --web-port 5050
+      description: Run the operations panel (web) against the local backend.
+    courier:
+      run: cd apps/ottos_courier && flutter run
+      description: Run the courier app on a connected device or emulator.

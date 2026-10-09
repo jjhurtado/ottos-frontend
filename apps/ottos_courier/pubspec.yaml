@@ -1,0 +1,31 @@
+name: ottos_courier
+description: Ottos courier app for deliveries and pickups.
+publish_to: none
+version: 0.1.0+1
+resolution: workspace
+
+environment:
+  sdk: ^3.13.5
+
+dependencies:
+  equatable: ^3.0.0
+  flutter:
+    sdk: flutter
+  flutter_bloc: ^9.1.1
+  flutter_localizations:
+    sdk: flutter
+  go_router: ^18.0.2
+  intl: ^0.20.3
+  ottos_core:
+    path: ../../packages/ottos_core
+  url_launcher: ^6.3.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  bloc_test: ^10.0.0
+  mocktail: ^1.0.5
+
+flutter:
+  uses-material-design: true
