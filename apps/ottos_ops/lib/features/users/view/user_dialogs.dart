@@ -4,15 +4,6 @@ import 'package:ottos_core/ottos_core.dart';
 
 import '../../../app/ops_texts.dart';
 
-/// Passwords must have 8 to 72 characters (the backend's rule).
-String? passwordError(String? password) {
-  final length = password?.length ?? 0;
-  if (length == 0) return OpsTexts.requiredField;
-  if (length < 8) return OpsTexts.passwordTooShort;
-  if (length > 72) return OpsTexts.passwordTooLong;
-  return null;
-}
-
 /// Creates a staff user; returns it, or null if cancelled.
 Future<StaffUser?> showNewUserDialog(BuildContext context) {
   final users = context.read<UserRepository>();
@@ -158,7 +149,7 @@ class _UserFormDialogState extends State<_UserFormDialog> {
                     obscureText: _obscure,
                     decoration: InputDecoration(
                       labelText: '${OpsTexts.initialPassword} *',
-                      helperText: OpsTexts.passwordHint,
+                      helperText: CoreTexts.passwordHint,
                       suffixIcon: IconButton(
                         tooltip: _obscure ? CoreTexts.showPassword : CoreTexts.hidePassword,
                         icon: Icon(_obscure ? Icons.visibility_outlined : Icons.visibility_off_outlined),
@@ -296,8 +287,8 @@ class _ResetPasswordDialogState extends State<_ResetPasswordDialog> {
                 autofocus: true,
                 obscureText: true,
                 decoration: const InputDecoration(
-                  labelText: '${OpsTexts.newPassword} *',
-                  helperText: OpsTexts.passwordHint,
+                  labelText: '${CoreTexts.newPassword} *',
+                  helperText: CoreTexts.passwordHint,
                 ),
                 validator: passwordError,
               ),

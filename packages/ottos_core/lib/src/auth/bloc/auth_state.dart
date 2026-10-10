@@ -3,14 +3,14 @@ part of 'auth_bloc.dart';
 enum AuthStatus { unknown, authenticated, unauthenticated }
 
 final class AuthState extends Equatable {
-  const AuthState._({required this.status, this.user, this.sessionExpired = false});
+  const AuthState._({required this.status, this.user, this.sessionExpired = false, this.passwordChanged = false});
 
   const AuthState.unknown() : this._(status: AuthStatus.unknown);
 
   const AuthState.authenticated(CurrentUser user) : this._(status: AuthStatus.authenticated, user: user);
 
-  const AuthState.unauthenticated({bool sessionExpired = false})
-    : this._(status: AuthStatus.unauthenticated, sessionExpired: sessionExpired);
+  const AuthState.unauthenticated({bool sessionExpired = false, bool passwordChanged = false})
+    : this._(status: AuthStatus.unauthenticated, sessionExpired: sessionExpired, passwordChanged: passwordChanged);
 
   final AuthStatus status;
   final CurrentUser? user;
@@ -19,8 +19,11 @@ final class AuthState extends Equatable {
   /// login screen can say why.
   final bool sessionExpired;
 
+  /// True when the user was logged out after changing their password.
+  final bool passwordChanged;
+
   bool get isAuthenticated => status == AuthStatus.authenticated;
 
   @override
-  List<Object?> get props => [status, user, sessionExpired];
+  List<Object?> get props => [status, user, sessionExpired, passwordChanged];
 }

@@ -4,6 +4,7 @@ abstract final class CourierTexts {
   static const appTitle = "Otto's · Repartidor";
 
   // Navigation
+  static const account = 'Mi cuenta';
   static const myRemittances = 'Mis remesas';
   static const myCash = 'Mi caja';
 

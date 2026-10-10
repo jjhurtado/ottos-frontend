@@ -108,6 +108,14 @@ class _UserMenu extends StatelessWidget {
         ),
         const PopupMenuDivider(),
         PopupMenuItem(
+          onTap: () => showChangePasswordDialog(context),
+          child: const ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: Icon(Icons.password),
+            title: Text(CoreTexts.changePassword),
+          ),
+        ),
+        PopupMenuItem(
           onTap: () => context.read<AuthBloc>().add(const AuthLogoutRequested()),
           child: const ListTile(
             contentPadding: EdgeInsets.zero,

@@ -234,10 +234,6 @@ abstract final class OpsTexts {
   static const userRoles = 'Roles';
   static const chooseRole = 'Elige al menos un rol';
   static const initialPassword = 'Contraseña inicial';
-  static const newPassword = 'Contraseña nueva';
-  static const passwordHint = 'Entre 8 y 72 caracteres';
-  static const passwordTooShort = 'Al menos 8 caracteres';
-  static const passwordTooLong = 'Como máximo 72 caracteres';
   static const active = 'Activo';
   static const you = 'tú';
   static const actions = 'Acciones';
