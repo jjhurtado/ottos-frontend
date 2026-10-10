@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../l10n/core_texts.dart';
+import '../theme/ottos_colors.dart';
 import '../utils/formatters.dart';
 
 typedef CompleteInput = ({String? pin, String? note});
@@ -62,6 +63,7 @@ class _CompleteDialogState extends State<_CompleteDialog> {
       actions: [
         TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text(CoreTexts.cancel)),
         FilledButton(
+          style: FilledButton.styleFrom(backgroundColor: widget.isPickup ? OttosColors.pickup : OttosColors.delivery),
           onPressed: () => Navigator.of(context).pop((pin: _pin.text.trim(), note: _emptyToNull(_note.text))),
           child: const Text(CoreTexts.confirm),
         ),

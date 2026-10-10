@@ -6,9 +6,12 @@ import '../theme/ottos_colors.dart';
 
 /// Status of a remittance; red when it is late, green when it is completed.
 class RemittanceStatusChip extends StatelessWidget {
-  const RemittanceStatusChip({super.key, required this.remittance});
+  const RemittanceStatusChip({super.key, required this.remittance, this.onDark = false});
 
   final Remittance remittance;
+
+  /// Solid white background, to stay readable on dark or colored headers.
+  final bool onDark;
 
   @override
   Widget build(BuildContext context) {
@@ -20,7 +23,10 @@ class RemittanceStatusChip extends StatelessWidget {
     };
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(color: color.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(20)),
+      decoration: BoxDecoration(
+        color: onDark ? Colors.white : color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(20),
+      ),
       child: Text(
         label,
         style: TextStyle(color: color, fontWeight: FontWeight.w600, fontSize: 12),

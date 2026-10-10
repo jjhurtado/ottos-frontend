@@ -42,5 +42,6 @@ export 'src/widgets/info_row.dart';
 export 'src/widgets/ottos_logo.dart';
 export 'src/widgets/remittance_dialogs.dart';
 export 'src/widgets/remittance_status_chip.dart';
+export 'src/widgets/remittance_type_badge.dart';
 export 'src/widgets/splash_page.dart';
 export 'src/app/ottos_localization.dart';

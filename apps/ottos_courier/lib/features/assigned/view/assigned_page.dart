@@ -71,42 +71,59 @@ class _AssignedCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    final type = remittance.type;
     final action = remittance.isPickup ? CourierTexts.toCollect : CourierTexts.toDeliver;
     return Card(
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+        child: IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Row(
-                children: [
-                  Expanded(child: Text(remittance.code, style: textTheme.titleMedium)),
-                  RemittanceStatusChip(remittance: remittance),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Text(remittance.beneficiaryName ?? '', style: textTheme.titleSmall),
-              Text(
-                [remittance.beneficiaryAddress, remittance.municipalityName].nonNulls.join(', '),
-                style: textTheme.bodyMedium,
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      '$action: ${Formatters.money(remittance.cashAmount, remittance.cashCurrency)}',
-                      style: textTheme.titleSmall?.copyWith(color: OttosColors.tealDark),
-                    ),
+              // The type's color down the side tells deliveries and pickups apart at a glance.
+              Container(width: 6, color: type.color),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(child: Text(remittance.code, style: textTheme.titleMedium)),
+                          RemittanceStatusChip(remittance: remittance),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      RemittanceTypeBadge(type: type),
+                      const SizedBox(height: 8),
+                      Text(remittance.beneficiaryName ?? '', style: textTheme.titleSmall),
+                      // The address already ends with the municipality and province.
+                      Text(
+                        remittance.beneficiaryAddress ?? remittance.municipalityName ?? '',
+                        style: textTheme.bodyMedium,
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Icon(type.icon, size: 20, color: type.color),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              '$action: ${Formatters.money(remittance.cashAmount, remittance.cashCurrency)}',
+                              style: textTheme.titleSmall?.copyWith(color: type.color, fontWeight: FontWeight.w700),
+                            ),
+                          ),
+                          Text(
+                            CourierTexts.dueOn(Formatters.date(remittance.expectedDate)),
+                            style: textTheme.bodySmall?.copyWith(color: remittance.late ? OttosColors.danger : null),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
-                  Text(
-                    CourierTexts.dueOn(Formatters.date(remittance.expectedDate)),
-                    style: textTheme.bodySmall?.copyWith(color: remittance.late ? OttosColors.danger : null),
-                  ),
-                ],
+                ),
               ),
             ],
           ),
