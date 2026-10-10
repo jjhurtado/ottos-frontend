@@ -2,6 +2,8 @@ import 'package:go_router/go_router.dart';
 import 'package:ottos_core/ottos_core.dart';
 
 import '../features/coming_soon/coming_soon_page.dart';
+import '../features/customers/view/customer_detail_page.dart';
+import '../features/customers/view/customer_list_page.dart';
 import '../features/home/view/home_page.dart';
 import '../features/remittances/view/new_remittance_page.dart';
 import '../features/remittances/view/remittance_detail_page.dart';
@@ -17,6 +19,14 @@ abstract final class Routes {
   static final newRemittance = '${Destinations.remittances.path}/new';
 
   static String remittance(String id) => '${Destinations.remittances.path}/$id';
+
+  /// The new remittance form with [customerId] already chosen.
+  static String newRemittanceFor(String customerId) => '$newRemittance?customerId=$customerId';
+
+  /// The remittance list filtered by sender.
+  static String remittancesOf(String customerId) => '${Destinations.remittances.path}?customerId=$customerId';
+
+  static String customer(String id) => '${Destinations.customers.path}/$id';
 }
 
 GoRouter buildRouter(AuthBloc authBloc) {
@@ -56,20 +66,27 @@ GoRouter buildRouter(AuthBloc authBloc) {
             builder: (_, state) => RemittanceListPage(initialFilter: _filterFrom(state.uri.queryParameters)),
             routes: [
               // Before ':id', which would otherwise match "new".
-              GoRoute(path: 'new', builder: (_, _) => const NewRemittancePage()),
+              GoRoute(
+                path: 'new',
+                builder: (_, state) => NewRemittancePage(initialCustomerId: state.uri.queryParameters['customerId']),
+              ),
               GoRoute(
                 path: ':id',
                 builder: (_, state) => RemittanceDetailPage(remittanceId: state.pathParameters['id']!),
               ),
             ],
           ),
-          for (final destination in [
-            Destinations.customers,
-            Destinations.rates,
-            Destinations.cash,
-            Destinations.users,
-            Destinations.roles,
-          ])
+          GoRoute(
+            path: Destinations.customers.path,
+            builder: (_, _) => const CustomerListPage(),
+            routes: [
+              GoRoute(
+                path: ':id',
+                builder: (_, state) => CustomerDetailPage(customerId: state.pathParameters['id']!),
+              ),
+            ],
+          ),
+          for (final destination in [Destinations.rates, Destinations.cash, Destinations.users, Destinations.roles])
             GoRoute(
               path: destination.path,
               builder: (_, _) => ComingSoonPage(title: destination.label),
@@ -81,5 +98,8 @@ GoRouter buildRouter(AuthBloc authBloc) {
 }
 
 /// Lets other screens link to a filtered list, e.g. `/remittances?late=true`.
-RemittanceFilter _filterFrom(Map<String, String> query) =>
-    RemittanceFilter(status: query['status'], late: query['late'] == 'true' ? true : null);
+RemittanceFilter _filterFrom(Map<String, String> query) => RemittanceFilter(
+  status: query['status'],
+  late: query['late'] == 'true' ? true : null,
+  customerId: query['customerId'],
+);

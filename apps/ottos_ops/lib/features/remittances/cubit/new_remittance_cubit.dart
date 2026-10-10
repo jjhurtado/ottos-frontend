@@ -92,8 +92,17 @@ class NewRemittanceCubit extends Cubit<NewRemittanceState> {
   Timer? _quoteTimer;
   int _quoteRequest = 0;
 
-  Future<void> load() async {
+  /// Loads the currencies and, with [customerId], starts with that customer chosen.
+  Future<void> load({String? customerId}) async {
     _emit(corridorsStatus: LoadStatus.loading, error: null);
+    if (customerId != null && state.customer == null) {
+      try {
+        final customer = await _customers.get(customerId);
+        if (customer.active) unawaited(customerSelected(customer));
+      } on ApiException {
+        // Start with an empty form; the user searches the customer.
+      }
+    }
     try {
       final currencies = [
         for (final corridor in await _rates.corridors())
@@ -132,6 +141,10 @@ class NewRemittanceCubit extends Cubit<NewRemittanceState> {
   }
 
   void beneficiarySelected(Beneficiary? beneficiary) => _emit(beneficiary: beneficiary);
+
+  /// Adds a beneficiary just created for the chosen customer, and picks it.
+  void beneficiaryCreated(Beneficiary beneficiary) =>
+      _emit(beneficiaries: [...state.beneficiaries, beneficiary], beneficiary: beneficiary);
 
   void targetCurrencyChanged(String? currency) {
     _emit(targetCurrency: currency);

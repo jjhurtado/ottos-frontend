@@ -62,7 +62,7 @@ abstract final class OpsTexts {
 
   // New remittance
   static const newRemittance = 'Nueva remesa';
-  static const searchCustomer = 'Nombre, teléfono o documento';
+  static const searchCustomer = 'Nombre o teléfono';
   static const changeCustomer = 'Cambiar remitente';
   static const chooseCustomerFirst = 'Elige primero el remitente';
   static const noBeneficiaries = 'Este remitente no tiene beneficiarios todavía.';
@@ -92,6 +92,44 @@ abstract final class OpsTexts {
     'POSTPONED' => 'Aplazada',
     _ => type,
   };
+
+  // Customers
+  static const newCustomer = 'Nuevo cliente';
+  static const editCustomer = 'Editar cliente';
+  static const customerData = 'Datos';
+  static const fullName = 'Nombre completo';
+  static const email = 'Correo electrónico';
+  static const document = 'Documento';
+  static const documentType = 'Tipo de documento';
+  static const documentNumber = 'Número de documento';
+  static const inactive = 'Inactivo';
+  static const noCustomers = 'Ningún cliente coincide con la búsqueda.';
+  static const noCustomersYet = 'Todavía no hay clientes.';
+  static const edit = 'Editar';
+  static const save = 'Guardar';
+  static const requiredField = 'Obligatorio';
+  static const phoneInvalid = 'Teléfono no válido';
+  static const viewRemittances = 'Ver remesas';
+  static const totalRemittances = 'Remesas';
+  static const openRemittancesLabel = 'Abiertas';
+  static const amountSent = 'Total enviado';
+  static const totalCharged = 'Total cobrado';
+  static const amountCollected = 'Total recogido';
+  static const lastRemittance = 'Última remesa';
+
+  // Beneficiaries
+  static const beneficiaries = 'Beneficiarios';
+  static const newBeneficiary = 'Nuevo beneficiario';
+  static const editBeneficiary = 'Editar beneficiario';
+  static const street = 'Calle';
+  static const houseNumber = 'Número';
+  static const betweenStreets = 'Entre calles';
+  static const neighborhood = 'Reparto';
+  static const province = 'Provincia';
+  static const unlink = 'Desvincular';
+  static const unlinkTitle = 'Desvincular beneficiario';
+  static String unlinkMessage(String name) =>
+      '$name dejará de aparecer como beneficiario de este cliente. Las remesas anteriores no cambian.';
 
   // Coming soon
   static const comingSoon = 'Esta sección estará disponible pronto.';
