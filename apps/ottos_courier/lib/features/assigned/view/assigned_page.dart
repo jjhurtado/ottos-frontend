@@ -96,7 +96,14 @@ class _AssignedCard extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: 8),
-                      RemittanceTypeBadge(type: type),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 6,
+                        children: [
+                          RemittanceTypeBadge(type: type),
+                          if (remittance.incident case final incident?) IncidentBadge(incident: incident),
+                        ],
+                      ),
                       const SizedBox(height: 8),
                       Text(remittance.beneficiaryName ?? '', style: textTheme.titleSmall),
                       // The address already ends with the municipality and province.

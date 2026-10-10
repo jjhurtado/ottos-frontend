@@ -7,7 +7,7 @@ import 'package:ottos_courier/features/assigned/view/assigned_page.dart';
 
 class _MockRemittances extends Mock implements RemittanceRepository {}
 
-Remittance _remittance(String code, RemittanceType type) => Remittance(
+Remittance _remittance(String code, RemittanceType type, {Incident? incident}) => Remittance(
   id: code,
   code: code,
   type: type,
@@ -19,6 +19,7 @@ Remittance _remittance(String code, RemittanceType type) => Remittance(
   municipalityName: 'Boyeros',
   cashAmount: 100,
   cashCurrency: 'USD',
+  incident: incident,
 );
 
 void main() {
@@ -50,5 +51,26 @@ void main() {
     );
     expect(find.text('Calle 1, Boyeros, La Habana'), findsNWidgets(2));
     expect(find.textContaining('La Habana, Boyeros'), findsNothing);
+  });
+
+  testWidgets('a remittance with an incident is marked in the list', (tester) async {
+    final remittances = _MockRemittances();
+    when(() => remittances.assignedToMe()).thenAnswer(
+      (_) async => [
+        _remittance('OT-1', RemittanceType.delivery, incident: const Incident(reason: IncidentReason.notHome)),
+        _remittance('OT-2', RemittanceType.pickup),
+      ],
+    );
+    await OttosLocalization.initialize();
+    await tester.pumpWidget(
+      RepositoryProvider<RemittanceRepository>.value(
+        value: remittances,
+        child: const MaterialApp(home: Scaffold(body: AssignedPage())),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byType(IncidentBadge), findsOneWidget);
+    expect(find.textContaining(CoreTexts.incidentReason(IncidentReason.notHome)), findsOneWidget);
   });
 }

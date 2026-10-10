@@ -21,6 +21,7 @@ class RemittancePage extends StatelessWidget {
           final message = switch (state.actionResult) {
             RemittanceActionResult.completed => CourierTexts.completed,
             RemittanceActionResult.postponed => CourierTexts.postponed,
+            RemittanceActionResult.incidentReported => CoreTexts.incidentReported,
             RemittanceActionResult.failed => state.error!,
             RemittanceActionResult.none => null,
           };
@@ -53,9 +54,11 @@ class _RemittanceView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    final incident = remittance.incident;
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
+        if (incident != null) ...[IncidentBanner(incident: incident), const SizedBox(height: 12)],
         Card(
           // Colored by type, as in the list: delivery and pickup never look alike.
           color: remittance.type.color,
@@ -148,41 +151,58 @@ class _Actions extends StatelessWidget {
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.all(12),
-        child: Row(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            if (user.can(Permissions.remittancesPostpone)) ...[
-              Expanded(
-                child: OutlinedButton(
-                  style: OutlinedButton.styleFrom(minimumSize: const Size(64, 48)),
-                  onPressed: submitting
-                      ? null
-                      : () async {
-                          final result = await showPostponeDialog(context, current: remittance.expectedDate);
-                          if (result != null) await cubit.postpone(newDate: result.newDate, reason: result.reason);
-                        },
-                  child: const Text(CoreTexts.postpone),
-                ),
-              ),
-              const SizedBox(width: 12),
-            ],
-            if (user.can(Permissions.remittancesDeliver))
-              Expanded(
-                flex: 2,
-                child: FilledButton(
-                  style: FilledButton.styleFrom(backgroundColor: remittance.type.color),
-                  onPressed: submitting
-                      ? null
-                      : () async {
-                          final result = await showCompleteDialog(context, isPickup: remittance.isPickup);
-                          if (result != null) await cubit.complete(pin: result.pin, note: result.note);
-                        },
-                  child: submitting
-                      ? const SizedBox.square(
-                          dimension: 22,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                        )
-                      : Text(remittance.isPickup ? CourierTexts.markCollected : CourierTexts.markDelivered),
-                ),
+            Row(
+              children: [
+                if (user.can(Permissions.remittancesPostpone)) ...[
+                  Expanded(
+                    child: OutlinedButton(
+                      style: OutlinedButton.styleFrom(minimumSize: const Size(64, 48)),
+                      onPressed: submitting
+                          ? null
+                          : () async {
+                              final result = await showPostponeDialog(context, current: remittance.expectedDate);
+                              if (result != null) await cubit.postpone(newDate: result.newDate, reason: result.reason);
+                            },
+                      child: const Text(CoreTexts.postpone),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                ],
+                if (user.can(Permissions.remittancesDeliver))
+                  Expanded(
+                    flex: 2,
+                    child: FilledButton(
+                      style: FilledButton.styleFrom(backgroundColor: remittance.type.color),
+                      onPressed: submitting
+                          ? null
+                          : () async {
+                              final result = await showCompleteDialog(context, isPickup: remittance.isPickup);
+                              if (result != null) await cubit.complete(pin: result.pin, note: result.note);
+                            },
+                      child: submitting
+                          ? const SizedBox.square(
+                              dimension: 22,
+                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                            )
+                          : Text(remittance.isPickup ? CourierTexts.markCollected : CourierTexts.markDelivered),
+                    ),
+                  ),
+              ],
+            ),
+            if (user.can(Permissions.remittancesReportIncident))
+              TextButton.icon(
+                style: TextButton.styleFrom(foregroundColor: OttosColors.danger, minimumSize: const Size(64, 48)),
+                onPressed: submitting
+                    ? null
+                    : () async {
+                        final result = await showIncidentDialog(context, isPickup: remittance.isPickup);
+                        if (result != null) await cubit.reportIncident(reason: result.reason, note: result.note);
+                      },
+                icon: const Icon(Icons.report_outlined),
+                label: Text(remittance.isPickup ? CoreTexts.reportIncidentPickup : CoreTexts.reportIncident),
               ),
           ],
         ),
