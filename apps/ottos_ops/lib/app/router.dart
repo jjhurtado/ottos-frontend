@@ -1,6 +1,8 @@
 import 'package:go_router/go_router.dart';
 import 'package:ottos_core/ottos_core.dart';
 
+import '../features/cash/view/cash_page.dart';
+import '../features/cash/view/courier_cash_page.dart';
 import '../features/coming_soon/coming_soon_page.dart';
 import '../features/customers/view/customer_detail_page.dart';
 import '../features/customers/view/customer_list_page.dart';
@@ -27,6 +29,8 @@ abstract final class Routes {
   static String remittancesOf(String customerId) => '${Destinations.remittances.path}?customerId=$customerId';
 
   static String customer(String id) => '${Destinations.customers.path}/$id';
+
+  static String courierCash(String courierId) => '${Destinations.cash.path}/couriers/$courierId';
 }
 
 GoRouter buildRouter(AuthBloc authBloc) {
@@ -86,7 +90,17 @@ GoRouter buildRouter(AuthBloc authBloc) {
               ),
             ],
           ),
-          for (final destination in [Destinations.rates, Destinations.cash, Destinations.users, Destinations.roles])
+          GoRoute(
+            path: Destinations.cash.path,
+            builder: (_, _) => const CashPage(),
+            routes: [
+              GoRoute(
+                path: 'couriers/:id',
+                builder: (_, state) => CourierCashPage(courierId: state.pathParameters['id']!),
+              ),
+            ],
+          ),
+          for (final destination in [Destinations.rates, Destinations.users, Destinations.roles])
             GoRoute(
               path: destination.path,
               builder: (_, _) => ComingSoonPage(title: destination.label),
