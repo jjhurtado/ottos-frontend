@@ -107,3 +107,44 @@ class NewStaffUser extends Equatable {
   @override
   List<Object?> get props => [email, name, roleIds];
 }
+
+/// Something a role can be granted (`PermissionView`), grouped by [module].
+class PermissionInfo extends Equatable {
+  const PermissionInfo({required this.code, required this.module, this.description});
+
+  factory PermissionInfo.fromJson(Map<String, dynamic> json) => PermissionInfo(
+    code: json['code'] as String,
+    module: json['module'] as String? ?? '',
+    description: json['description'] as String?,
+  );
+
+  final String code;
+  final String module;
+
+  /// In English, from the backend; shown when there is no Spanish label.
+  final String? description;
+
+  @override
+  List<Object?> get props => [code];
+}
+
+/// Data of a new role (`POST /roles`).
+class NewRole extends Equatable {
+  const NewRole({required this.code, required this.name, this.description, this.permissions = const {}});
+
+  /// UPPER_SNAKE_CASE, 2 to 50 characters; cannot change later.
+  final String code;
+  final String name;
+  final String? description;
+  final Set<String> permissions;
+
+  Map<String, dynamic> toJson() => {
+    'code': code.trim(),
+    'name': name.trim(),
+    'description': description == null || description!.trim().isEmpty ? null : description!.trim(),
+    'permissions': permissions.toList(),
+  };
+
+  @override
+  List<Object?> get props => [code, name, description, permissions];
+}

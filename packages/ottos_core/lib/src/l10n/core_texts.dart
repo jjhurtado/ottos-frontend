@@ -55,6 +55,10 @@ abstract final class CoreTexts {
     'UNKNOWN_ROLES': 'Alguno de los roles ya no existe. Recarga e inténtalo de nuevo.',
     'USER_NOT_FOUND': 'No se encontró el usuario.',
     'ROLE_NOT_FOUND': 'No se encontró el rol.',
+    'ROLE_CODE_TAKEN': 'Ya hay un rol con ese código.',
+    'ROLE_IN_USE': 'El rol está asignado a usuarios; quítaselo antes de eliminarlo.',
+    'BUILT_IN_ROLE': 'Este rol viene con el sistema y no se puede cambiar.',
+    'UNKNOWN_PERMISSIONS': 'Alguno de los permisos ya no existe. Recarga e inténtalo de nuevo.',
   };
 
   // Login
