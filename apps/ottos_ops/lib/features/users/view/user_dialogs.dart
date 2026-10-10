@@ -179,8 +179,8 @@ class _UserFormDialogState extends State<_UserFormDialog> {
                           CheckboxListTile(
                             contentPadding: EdgeInsets.zero,
                             value: _roleIds.contains(role.id),
-                            title: Text(role.name),
-                            subtitle: role.description == null ? null : Text(role.description!),
+                            title: Text(role.displayName),
+                            subtitle: role.displayDescription == null ? null : Text(role.displayDescription!),
                             onChanged: _saving
                                 ? null
                                 : (checked) =>

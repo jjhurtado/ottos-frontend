@@ -33,8 +33,9 @@ class RolesCubit extends Cubit<RolesState> {
       final results = await Future.wait<Object>([_roles.list(), _roles.permissions()], eagerError: true);
       final roles = [...results[0] as List<Role>]
         ..sort(
-          (a, b) =>
-              a.builtIn == b.builtIn ? a.name.toLowerCase().compareTo(b.name.toLowerCase()) : (a.builtIn ? -1 : 1),
+          (a, b) => a.builtIn == b.builtIn
+              ? a.displayName.toLowerCase().compareTo(b.displayName.toLowerCase())
+              : (a.builtIn ? -1 : 1),
         );
       emit(RolesState(status: RolesStatus.success, roles: roles, catalog: results[1] as List<PermissionInfo>));
     } on ApiException catch (error) {
