@@ -1,6 +1,8 @@
 import 'package:dio/dio.dart';
 
 import '../l10n/core_texts.dart';
+import '../models/json.dart';
+import '../utils/formatters.dart';
 
 /// An error returned by the API or caused by the network, with a message that
 /// can be shown to the user.
@@ -18,6 +20,10 @@ class ApiException implements Exception {
     final data = response.data;
     final code = data is Map ? data['code'] as String? : null;
     final detail = data is Map ? data['detail'] as String? : null;
+    if (code == 'AMOUNT_BELOW_MINIMUM' && data is Map) {
+      final minimum = Formatters.money(parseDecimal(data['minimumAmount']), data['currency'] as String?);
+      return ApiException(CoreTexts.amountBelowMinimum(minimum), statusCode: status, code: code);
+    }
     return ApiException(_messageFor(status, code, detail), statusCode: status, code: code);
   }
 
