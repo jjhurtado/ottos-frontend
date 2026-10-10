@@ -16,15 +16,22 @@ class StatusCount extends Equatable {
 enum HomeStatus { loading, success, failure }
 
 final class HomeState extends Equatable {
-  const HomeState({this.status = HomeStatus.loading, this.openByStatus = const [], this.late = 0, this.error});
+  const HomeState({
+    this.status = HomeStatus.loading,
+    this.openByStatus = const [],
+    this.late = 0,
+    this.incidents = 0,
+    this.error,
+  });
 
   final HomeStatus status;
   final List<StatusCount> openByStatus;
   final int late;
+  final int incidents;
   final String? error;
 
   @override
-  List<Object?> get props => [status, openByStatus, late, error];
+  List<Object?> get props => [status, openByStatus, late, incidents, error];
 }
 
 class HomeCubit extends Cubit<HomeState> {
@@ -40,12 +47,14 @@ class HomeCubit extends Cubit<HomeState> {
       final counts = await Future.wait([
         for (final status in open) _count(RemittanceFilter(status: status.code)),
         _count(const RemittanceFilter(late: true)),
+        _count(const RemittanceFilter(incident: true)),
       ]);
       emit(
         HomeState(
           status: HomeStatus.success,
           openByStatus: [for (var i = 0; i < open.length; i++) StatusCount(open[i], counts[i])],
-          late: counts.last,
+          late: counts[open.length],
+          incidents: counts[open.length + 1],
         ),
       );
     } on ApiException catch (error) {

@@ -27,6 +27,7 @@ class RemittanceDetailPage extends StatelessWidget {
             RemittanceAction.assigned => OpsTexts.assigned,
             RemittanceAction.completed => OpsTexts.completed,
             RemittanceAction.postponed => OpsTexts.postponed,
+            RemittanceAction.incidentReported => CoreTexts.incidentReported,
             RemittanceAction.failed => state.actionError ?? CoreTexts.unexpectedError,
             RemittanceAction.none => null,
           };
@@ -84,6 +85,10 @@ class _RemittanceDetailView extends StatelessWidget {
           ],
         ),
         _ActionBar(state: state),
+        if (remittance.incident case final incident?) ...[
+          const SizedBox(height: 16),
+          IncidentBanner(incident: incident),
+        ],
         const SizedBox(height: 16),
         LayoutBuilder(
           builder: (context, constraints) {
@@ -131,7 +136,12 @@ class _ActionBar extends StatelessWidget {
     final canAssign = workflow.canAssign(remittance.status, permissions);
     final canComplete = workflow.canComplete(remittance.status, permissions);
     final canPostpone = permissions.contains(Permissions.remittancesPostpone) && !workflow.isFinal(remittance.status);
-    if (!canAssign && !canComplete && !canPostpone) return const SizedBox.shrink();
+    // An incident is a failed attempt by the assigned courier.
+    final canReportIncident =
+        permissions.contains(Permissions.remittancesReportIncident) &&
+        remittance.courierId != null &&
+        !workflow.isFinal(remittance.status);
+    if (!canAssign && !canComplete && !canPostpone && !canReportIncident) return const SizedBox.shrink();
 
     final enabled = !state.submitting;
     return Padding(
@@ -173,6 +183,18 @@ class _ActionBar extends StatelessWidget {
                   : null,
               icon: const Icon(Icons.event_repeat_outlined),
               label: const Text(CoreTexts.postpone),
+            ),
+          if (canReportIncident)
+            TextButton.icon(
+              style: TextButton.styleFrom(foregroundColor: OttosColors.danger),
+              onPressed: enabled
+                  ? () async {
+                      final input = await showIncidentDialog(context, isPickup: remittance.isPickup);
+                      if (input != null) await cubit.reportIncident(reason: input.reason, note: input.note);
+                    }
+                  : null,
+              icon: const Icon(Icons.report_problem_outlined),
+              label: Text(remittance.isPickup ? CoreTexts.reportIncidentPickup : CoreTexts.reportIncident),
             ),
           if (state.submitting) const SizedBox.square(dimension: 20, child: CircularProgressIndicator(strokeWidth: 2)),
         ],
@@ -301,6 +323,7 @@ class _HistoryCard extends StatelessWidget {
                       Formatters.date(event.newDate),
                     ].where((date) => date.isNotEmpty).join(' → '),
                   ),
+                if (event.incidentReason != null) Text(CoreTexts.incidentReason(event.incidentReason!)),
                 if (event.note != null && event.note!.isNotEmpty) Text(event.note!),
                 Text(Formatters.dateTime(event.occurredAt), style: TextStyle(color: outline, fontSize: 12)),
               ],

@@ -62,6 +62,13 @@ class _Summary extends StatelessWidget {
               icon: Icons.schedule,
               onTap: () => context.go('${Destinations.remittances.path}?late=true'),
             ),
+            _CountCard(
+              label: OpsTexts.incidentRemittances,
+              count: state.incidents,
+              color: OttosColors.danger,
+              icon: Icons.error_outline,
+              onTap: () => context.go('${Destinations.remittances.path}?incident=true'),
+            ),
           ],
         ),
       },

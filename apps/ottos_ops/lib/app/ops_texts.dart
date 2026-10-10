@@ -18,6 +18,7 @@ abstract final class OpsTexts {
   static String greeting(String name) => 'Hola, $name';
   static const homeSubtitle = 'Resumen de las remesas abiertas';
   static const lateRemittances = 'Atrasadas';
+  static const incidentRemittances = 'Con incidencia';
   static const viewAll = 'Ver remesas';
 
   // Remittance list
@@ -25,6 +26,7 @@ abstract final class OpsTexts {
   static const allStatuses = 'Todos los estados';
   static const allTypes = 'Todos los tipos';
   static const onlyLate = 'Solo atrasadas';
+  static const onlyIncidents = 'Con incidencia';
   static const clearFilters = 'Quitar filtros';
   static const noRemittances = 'No hay remesas con estos filtros.';
   static const code = 'Código';
@@ -92,6 +94,7 @@ abstract final class OpsTexts {
     'CREATED' => 'Remesa registrada',
     'STATUS_CHANGED' => 'Cambio de estado',
     'POSTPONED' => 'Aplazada',
+    'INCIDENT_REPORTED' => CoreTexts.incidentReported,
     _ => type,
   };
 
@@ -291,6 +294,7 @@ abstract final class OpsTexts {
     Permissions.remittancesAssign => 'Asignar y reasignar repartidores',
     Permissions.remittancesDeliver => 'Marcar como entregada o recogida (repartidor)',
     Permissions.remittancesPostpone => 'Aplazar remesas',
+    Permissions.remittancesReportIncident => 'Reportar incidencias de entrega (repartidor)',
     Permissions.customersRead => 'Ver clientes y beneficiarios',
     Permissions.customersWrite => 'Crear y editar clientes y beneficiarios',
     Permissions.cashRead => 'Ver la caja del negocio y de los repartidores',

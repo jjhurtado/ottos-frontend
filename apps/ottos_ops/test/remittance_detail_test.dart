@@ -24,13 +24,14 @@ final _workflow = Workflow.fromJson({
   ],
 });
 
-Remittance _remittance(String status, {String? courierId}) => Remittance(
+Remittance _remittance(String status, {String? courierId, Incident? incident}) => Remittance(
   id: 'r1',
   code: 'OT-1',
   type: RemittanceType.delivery,
   status: status,
   statusName: _workflow.nameOf(status),
   courierId: courierId,
+  incident: incident,
 );
 
 CurrentUser _user(Set<String> permissions) =>
@@ -99,6 +100,33 @@ void main() {
       expect(find.text(OpsTexts.markDelivered), findsNothing);
       expect(find.text(CoreTexts.postpone), findsNothing);
     });
+
+    const withIncidents = {...all, Permissions.remittancesReportIncident};
+
+    testWidgets('an incident can be reported once a courier has the remittance', (tester) async {
+      await pumpDetail(tester, _remittance('ASSIGNED', courierId: 'k1'), withIncidents);
+
+      expect(find.text(CoreTexts.reportIncident), findsOneWidget);
+    });
+
+    testWidgets('no incident before a courier is assigned', (tester) async {
+      await pumpDetail(tester, _remittance('PAID'), withIncidents);
+      expect(find.text(CoreTexts.reportIncident), findsNothing);
+    });
+
+    testWidgets('no incident without the permission', (tester) async {
+      await pumpDetail(tester, _remittance('ASSIGNED', courierId: 'k1'), all);
+      expect(find.text(CoreTexts.reportIncident), findsNothing);
+    });
+
+    testWidgets('the reported incident is shown', (tester) async {
+      const incident = Incident(reason: IncidentReason.refused, note: 'No quiere el dinero');
+      await pumpDetail(tester, _remittance('ASSIGNED', courierId: 'k1', incident: incident), all);
+
+      expect(find.byType(IncidentBanner), findsOneWidget);
+      expect(find.textContaining(CoreTexts.incidentReason(IncidentReason.refused)), findsOneWidget);
+      expect(find.text('No quiere el dinero'), findsOneWidget);
+    });
   });
 
   group('cubit', () {
@@ -122,6 +150,17 @@ void main() {
       expect(cubit.state.remittance!.status, 'ASSIGNED');
       expect(cubit.state.submitting, isFalse);
       verify(() => remittances.events('r1')).called(2);
+    });
+
+    test('reporting an incident updates the remittance', () async {
+      const incident = Incident(reason: IncidentReason.notHome);
+      when(() => remittances.reportIncident('r1', reason: IncidentReason.notHome, note: null))
+          .thenAnswer((_) async => _remittance('ASSIGNED', courierId: 'k1', incident: incident));
+
+      await cubit.reportIncident(reason: IncidentReason.notHome);
+
+      expect(cubit.state.action, RemittanceAction.incidentReported);
+      expect(cubit.state.remittance!.incident, incident);
     });
 
     test('a rejected action keeps the remittance and reports the error', () async {
