@@ -6,6 +6,7 @@ import 'package:ottos_core/ottos_core.dart';
 import 'package:ottos_ops/app/ops_texts.dart';
 import 'package:ottos_ops/features/cash/cubit/cash_overview_cubit.dart';
 import 'package:ottos_ops/features/cash/view/cash_page.dart';
+import 'package:ottos_ops/features/cash/view/courier_cash_page.dart';
 
 class _MockCash extends Mock implements CashRepository {}
 
@@ -42,6 +43,8 @@ final _movements = [
 
 void main() {
   late _MockCash cash;
+
+  setUpAll(() => registerFallbackValue(const CashInput(amount: 0, currency: 'USD')));
 
   setUp(() {
     cash = _MockCash();
@@ -96,7 +99,7 @@ void main() {
   });
 
   group('page', () {
-    Future<void> pumpCash(WidgetTester tester, Set<String> permissions) async {
+    Future<void> pumpCash(WidgetTester tester, Set<String> permissions, {Widget page = const CashPage()}) async {
       final auth = _MockAuth();
       when(() => auth.sessionExpired).thenAnswer((_) => const Stream.empty());
       final authBloc = AuthBloc(authRepository: auth, accessPolicy: (_) => true)
@@ -124,7 +127,7 @@ void main() {
             child: MaterialApp(
               localizationsDelegates: OttosLocalization.delegates,
               supportedLocales: OttosLocalization.supportedLocales,
-              home: const Scaffold(body: CashPage()),
+              home: Scaffold(body: page),
             ),
           ),
         ),
@@ -150,6 +153,37 @@ void main() {
       expect(find.text('Ana'), findsOneWidget);
       expect(find.text(OpsTexts.deposit), findsNothing);
       expect(find.text(OpsTexts.fund), findsNothing);
+    });
+
+    testWidgets('a courier page shows the new balance after funding', (tester) async {
+      CourierStatement statement(double usd) => CourierStatement(
+        cash: CourierCash(
+          courierId: 'k1',
+          name: 'Ana',
+          balances: [Balance(currency: 'USD', amount: usd)],
+          negative: false,
+        ),
+        movements: const [],
+      );
+      var usd = 100.0;
+      when(() => cash.courierStatement('k1')).thenAnswer((_) async => statement(usd));
+      when(() => cash.fundCourier('k1', any())).thenAnswer((invocation) async {
+        usd += (invocation.positionalArguments[1] as CashInput).amount;
+        return _movements.single;
+      });
+      await pumpCash(tester, {
+        Permissions.cashRead,
+        Permissions.cashWrite,
+      }, page: const CourierCashPage(courierId: 'k1'));
+      expect(find.text(Formatters.money(100, null)), findsOneWidget);
+
+      await tester.tap(find.text(OpsTexts.fund));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextFormField).first, '5');
+      await tester.tap(find.descendant(of: find.byType(AlertDialog), matching: find.text(OpsTexts.fund)));
+      await tester.pumpAndSettle();
+
+      expect(find.text(Formatters.money(105, null)), findsOneWidget);
     });
   });
 }

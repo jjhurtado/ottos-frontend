@@ -29,7 +29,12 @@ class _CourierCashPageState extends State<CourierCashPage> {
 
   Future<CourierStatement> _load() => context.read<CashRepository>().courierStatement(widget.courierId);
 
-  void _reload() => setState(() => _statement = _load());
+  void _reload() {
+    // A block, not an arrow: setState must not return the future.
+    setState(() {
+      _statement = _load();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
