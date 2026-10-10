@@ -47,6 +47,13 @@ abstract final class CoreTexts {
     'FEE_PERCENTAGE_TOO_HIGH': 'Un porcentaje de comisión no puede pasar de 100.',
     'INVALID_FEE_RANGE': 'La comisión mínima no puede ser mayor que la máxima.',
     'CORRIDOR_NOT_FOUND': 'No se encontró el corredor.',
+    'EMAIL_TAKEN': 'Ya hay un usuario con ese correo.',
+    'CANNOT_DEACTIVATE_SELF': 'No puedes desactivar tu propia cuenta.',
+    'LAST_ADMIN': 'Debe quedar al menos un administrador activo.',
+    'PERMISSION_ESCALATION': 'No puedes dar permisos que tú no tienes.',
+    'UNKNOWN_ROLES': 'Alguno de los roles ya no existe. Recarga e inténtalo de nuevo.',
+    'USER_NOT_FOUND': 'No se encontró el usuario.',
+    'ROLE_NOT_FOUND': 'No se encontró el rol.',
   };
 
   // Login

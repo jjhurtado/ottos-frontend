@@ -396,6 +396,68 @@ void main() {
       );
     });
   }, skip: skip);
+
+  // Writes to the backend: creates one staff user per run and leaves it deactivated.
+  group('users', () {
+    late UserRepository users;
+
+    setUp(() async {
+      users = UserRepository(api: api);
+      await auth.login(email: email, password: password);
+    });
+
+    /// Logs in as another user with a client of its own; returns null if refused.
+    Future<CurrentUser?> loginAs(String userEmail, String userPassword) async {
+      final storage = _MemoryTokenStorage();
+      final client = ApiClient(config: config, tokenStorage: storage);
+      try {
+        return await AuthRepository(api: client, tokenStorage: storage).login(email: userEmail, password: userPassword);
+      } on ApiException {
+        return null;
+      } finally {
+        await client.dispose();
+      }
+    }
+
+    test('creates, edits, resets, deactivates and reactivates a user', () async {
+      final roles = await RoleRepository(api: api).list();
+      final sales = roles.firstWhere((role) => role.code == 'SALES');
+      final delivery = roles.firstWhere((role) => role.code == 'DELIVERY');
+      final userEmail = 'frontend-test-${Random().nextInt(1 << 32)}@ottos.test';
+
+      final created = await users.create(
+        NewStaffUser(email: userEmail, name: 'Prueba Frontend', password: 'first-pass-1', roleIds: {sales.id}),
+      );
+      expect(created.roles.map((r) => r.code), ['SALES']);
+      await expectLater(
+        users.create(NewStaffUser(email: userEmail, name: 'Otro', password: 'first-pass-1', roleIds: {sales.id})),
+        throwsA(isA<ApiException>().having((e) => e.code, 'code', 'EMAIL_TAKEN')),
+      );
+
+      expect((await users.rename(created.id, 'Prueba Frontend Editada')).name, 'Prueba Frontend Editada');
+      final reassigned = await users.replaceRoles(created.id, {sales.id, delivery.id});
+      expect(reassigned.roles.map((r) => r.code), containsAll(['SALES', 'DELIVERY']));
+
+      await users.resetPassword(created.id, 'second-pass-2');
+      expect(await loginAs(userEmail, 'first-pass-1'), isNull);
+      expect((await loginAs(userEmail, 'second-pass-2'))?.can(Permissions.remittancesCreate), isTrue);
+
+      expect((await users.deactivate(created.id)).active, isFalse);
+      expect(await loginAs(userEmail, 'second-pass-2'), isNull);
+      expect((await users.activate(created.id)).active, isTrue);
+      expect(await loginAs(userEmail, 'second-pass-2'), isNotNull);
+      await users.deactivate(created.id);
+    });
+
+    test('refuses to deactivate yourself', () async {
+      final me = await auth.currentUser();
+
+      await expectLater(
+        users.deactivate(me.id),
+        throwsA(isA<ApiException>().having((e) => e.code, 'code', 'CANNOT_DEACTIVATE_SELF')),
+      );
+    });
+  }, skip: skip);
 }
 
 extension on CustomerInput {
