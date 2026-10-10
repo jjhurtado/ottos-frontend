@@ -110,10 +110,14 @@ class _Calculator extends StatefulWidget {
 
 class _CalculatorState extends State<_Calculator> {
   final _amount = TextEditingController();
-  late Corridor _corridor = widget.corridors.firstWhere(
-    (corridor) => corridor.targetCurrency == 'CUP',
-    orElse: () => widget.corridors.first,
-  );
+  // The code, not the corridor: a new rate or fee rule reloads the corridors
+  // as new objects, and the dropdown needs its value among them.
+  late String _code = widget.corridors
+      .firstWhere((corridor) => corridor.targetCurrency == 'CUP', orElse: () => widget.corridors.first)
+      .code;
+
+  Corridor get _corridor =>
+      widget.corridors.firstWhere((corridor) => corridor.code == _code, orElse: () => widget.corridors.first);
   Future<Quote>? _quote;
 
   @override
@@ -166,15 +170,15 @@ class _CalculatorState extends State<_Calculator> {
                 ),
                 SizedBox(
                   width: 200,
-                  child: DropdownButtonFormField<Corridor>(
-                    initialValue: _corridor,
+                  child: DropdownButtonFormField<String>(
+                    initialValue: _corridor.code,
                     decoration: const InputDecoration(labelText: OpsTexts.targetCurrency),
                     items: [
                       for (final corridor in widget.corridors)
-                        DropdownMenuItem(value: corridor, child: Text(corridor.targetCurrency)),
+                        DropdownMenuItem(value: corridor.code, child: Text(corridor.targetCurrency)),
                     ],
-                    onChanged: (corridor) {
-                      _corridor = corridor!;
+                    onChanged: (code) {
+                      _code = code!;
                       _calculate();
                     },
                   ),
@@ -345,7 +349,9 @@ class _HistoryState extends State<_History> {
   void _load() {
     final rates = context.read<RateRepository>();
     final code = widget.corridor.code;
-    setState(() => _history = (rates.rateHistory(code), rates.feeRuleHistory(code)).wait);
+    setState(() {
+      _history = (rates.rateHistory(code), rates.feeRuleHistory(code)).wait;
+    });
   }
 
   @override

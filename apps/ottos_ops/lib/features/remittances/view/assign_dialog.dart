@@ -50,7 +50,9 @@ class _AssignDialogState extends State<_AssignDialog> {
               final error = snapshot.error;
               return ErrorView(
                 message: error is ApiException ? error.message : CoreTexts.unexpectedError,
-                onRetry: () => setState(() => _couriers = context.read<RemittanceRepository>().couriers()),
+                onRetry: () => setState(() {
+                  _couriers = context.read<RemittanceRepository>().couriers();
+                }),
               );
             }
             final couriers = snapshot.data;

@@ -141,6 +141,17 @@ void main() {
     testWidgets('saving a new rate reloads the corridors', (tester) async {
       when(() => rates.setRate('USD-CUP', 420)).thenAnswer((_) async => const ExchangeRate(id: 'r3', rate: 420));
       await pumpPage(tester, {Permissions.configurationRead, Permissions.configurationWrite, Permissions.ratesRead});
+      // Like the backend: the reload brings the corridor with its new rate, a
+      // different object from the one the calculator had selected.
+      const updated = Corridor(
+        code: 'USD-CUP',
+        sourceCurrency: 'USD',
+        targetCurrency: 'CUP',
+        deliveryRounding: 50,
+        rate: ExchangeRate(id: 'r3', rate: 420),
+        feeRule: FeeRule(id: 'f1', type: FeeType.percentage, value: 10, minFee: 10),
+      );
+      when(() => rates.corridors()).thenAnswer((_) async => [_eur, _usd, updated]);
 
       await tester.tap(find.text(OpsTexts.newRate).first);
       await tester.pumpAndSettle();
@@ -151,6 +162,19 @@ void main() {
       verify(() => rates.setRate('USD-CUP', 420)).called(1);
       verify(() => rates.corridors()).called(2);
       expect(find.text(OpsTexts.rateSaved), findsOneWidget);
+      expect(find.textContaining('420'), findsWidgets);
+    });
+
+    testWidgets('opens the history of a corridor', (tester) async {
+      when(() => rates.rateHistory('USD-CUP')).thenAnswer((_) async => const [ExchangeRate(id: 'r1', rate: 410)]);
+      when(() => rates.feeRuleHistory('USD-CUP')).thenAnswer((_) async => const []);
+      await pumpPage(tester, {Permissions.configurationRead});
+
+      await tester.tap(find.text(OpsTexts.history).first);
+      await tester.pumpAndSettle();
+
+      verify(() => rates.rateHistory('USD-CUP')).called(1);
+      expect(find.text(OpsTexts.rateHistory), findsOneWidget);
     });
 
     testWidgets('shows the settings and hides the calculator without rates:read', (tester) async {
