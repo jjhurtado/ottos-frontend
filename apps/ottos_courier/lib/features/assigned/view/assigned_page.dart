@@ -45,19 +45,140 @@ class _AssignedView extends StatelessWidget {
           onRefresh: cubit.load,
           child: ListView.separated(
             padding: const EdgeInsets.all(12),
-            itemCount: state.items.length,
+            itemCount: state.items.length + 1,
             separatorBuilder: (_, _) => const SizedBox(height: 8),
-            itemBuilder: (context, index) => _AssignedCard(
-              remittance: state.items[index],
-              onTap: () async {
-                // Reload on return: the remittance may have been completed or postponed.
-                await context.push(Routes.remittance(state.items[index].id));
-                await cubit.load();
-              },
-            ),
+            itemBuilder: (context, index) {
+              if (index == 0) return _SortSelector(sort: state.sort, onChanged: cubit.sortBy);
+              final remittance = state.items[index - 1];
+              return _Swipeable(
+                remittance: remittance,
+                child: _AssignedCard(
+                  remittance: remittance,
+                  onTap: () async {
+                    // Reload on return: the remittance may have been completed or postponed.
+                    await context.push(Routes.remittance(remittance.id));
+                    await cubit.load();
+                  },
+                ),
+              );
+            },
           ),
         );
       },
+    );
+  }
+}
+
+class _SortSelector extends StatelessWidget {
+  const _SortSelector({required this.sort, required this.onChanged});
+
+  final AssignedSort sort;
+  final ValueChanged<AssignedSort> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      spacing: 8,
+      children: [
+        for (final (option, label) in const [
+          (AssignedSort.byDay, CourierTexts.sortByDay),
+          (AssignedSort.mostLate, CourierTexts.sortMostLate),
+        ])
+          ChoiceChip(label: Text(label), selected: sort == option, onSelected: (_) => onChanged(option)),
+      ],
+    );
+  }
+}
+
+/// Swipe right to complete, left to postpone; each asks in a dialog first
+/// and the card stays in place until the list reloads.
+class _Swipeable extends StatelessWidget {
+  const _Swipeable({required this.remittance, required this.child});
+
+  final Remittance remittance;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final user = context.select((AuthBloc bloc) => bloc.state.user!);
+    final canComplete = user.can(Permissions.remittancesDeliver);
+    final canPostpone = user.can(Permissions.remittancesPostpone);
+    final direction = switch ((canComplete, canPostpone)) {
+      (true, true) => DismissDirection.horizontal,
+      (true, false) => DismissDirection.startToEnd,
+      (false, true) => DismissDirection.endToStart,
+      (false, false) => DismissDirection.none,
+    };
+    final cubit = context.read<AssignedCubit>();
+    final messenger = ScaffoldMessenger.of(context);
+
+    Future<bool> act(DismissDirection direction) async {
+      final String? error;
+      final String done;
+      if (direction == DismissDirection.startToEnd) {
+        final input = await showCompleteDialog(context, isPickup: remittance.isPickup);
+        if (input == null) return false;
+        error = await cubit.complete(remittance, pin: input.pin, note: input.note);
+        done = CourierTexts.completed;
+      } else {
+        if (!context.mounted) return false;
+        final input = await showPostponeDialog(context, current: remittance.expectedDate);
+        if (input == null) return false;
+        error = await cubit.postpone(remittance, newDate: input.newDate, reason: input.reason);
+        done = CourierTexts.postponed;
+      }
+      messenger.showSnackBar(SnackBar(content: Text(error ?? done)));
+      // Never dismissed here: the reload takes the remittance out of the list.
+      return false;
+    }
+
+    return Dismissible(
+      key: ValueKey(remittance.id),
+      direction: direction,
+      confirmDismiss: act,
+      background: _SwipeBackground(
+        color: remittance.type.color,
+        icon: Icons.check_circle_outline,
+        label: remittance.isPickup ? CourierTexts.markCollected : CourierTexts.markDelivered,
+        alignment: Alignment.centerLeft,
+      ),
+      secondaryBackground: const _SwipeBackground(
+        color: OttosColors.warning,
+        icon: Icons.event_repeat_outlined,
+        label: CoreTexts.postpone,
+        alignment: Alignment.centerRight,
+      ),
+      child: child,
+    );
+  }
+}
+
+class _SwipeBackground extends StatelessWidget {
+  const _SwipeBackground({required this.color, required this.icon, required this.label, required this.alignment});
+
+  final Color color;
+  final IconData icon;
+  final String label;
+  final Alignment alignment;
+
+  @override
+  Widget build(BuildContext context) {
+    final content = [
+      Icon(icon, color: Colors.white),
+      const SizedBox(width: 8),
+      Text(
+        label,
+        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+      ),
+    ];
+    return Container(
+      decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(12)),
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      alignment: alignment,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: alignment == Alignment.centerLeft ? content : content.reversed.toList(),
+      ),
     );
   }
 }
@@ -123,8 +244,14 @@ class _AssignedCard extends StatelessWidget {
                             ),
                           ),
                           Text(
-                            CourierTexts.dueOn(Formatters.date(remittance.expectedDate)),
-                            style: textTheme.bodySmall?.copyWith(color: remittance.late ? OttosColors.danger : null),
+                            switch (remittance.daysLate()) {
+                              0 => CourierTexts.dueOn(Formatters.date(remittance.expectedDate)),
+                              final days => CourierTexts.daysLate(days),
+                            },
+                            style: textTheme.bodySmall?.copyWith(
+                              color: remittance.late ? OttosColors.danger : null,
+                              fontWeight: remittance.late ? FontWeight.w600 : null,
+                            ),
                           ),
                         ],
                       ),

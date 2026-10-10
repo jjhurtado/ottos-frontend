@@ -16,16 +16,33 @@ class CourierShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final canSeeCash = context.select((AuthBloc bloc) => bloc.state.user?.can(Permissions.cashReadOwn) ?? false);
+    final user = context.select((AuthBloc bloc) => bloc.state.user);
     final onCash = location == Routes.cash;
     return Scaffold(
       appBar: AppBar(
-        title: Text(onCash ? CourierTexts.myCash : CourierTexts.myRemittances),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(onCash ? CourierTexts.myCash : CourierTexts.myRemittances),
+            if (user != null)
+              Text(
+                user.name,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.white70),
+                overflow: TextOverflow.ellipsis,
+              ),
+          ],
+        ),
         actions: [
           PopupMenuButton<VoidCallback>(
             tooltip: CourierTexts.account,
             icon: const Icon(Icons.account_circle_outlined),
             onSelected: (action) => action(),
             itemBuilder: (_) => [
+              if (user != null)
+                PopupMenuItem(
+                  enabled: false,
+                  child: ListTile(contentPadding: EdgeInsets.zero, title: Text(user.name), subtitle: Text(user.email)),
+                ),
               PopupMenuItem(
                 value: () => showChangePasswordDialog(context),
                 child: const ListTile(

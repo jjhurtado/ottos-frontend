@@ -26,6 +26,9 @@ class RemittancePage extends StatelessWidget {
             RemittanceActionResult.none => null,
           };
           if (message != null) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+          // With the incident reported there is nothing left to do here for now:
+          // back to the list, which puts it at the end.
+          if (state.actionResult == RemittanceActionResult.incidentReported) Navigator.of(context).maybePop();
         },
         builder: (context, state) => Scaffold(
           appBar: AppBar(title: Text(state.remittance?.code ?? '')),
@@ -129,9 +132,14 @@ class _PhoneRow extends StatelessWidget {
           child: InfoRow(label: label, value: number, labelWidth: 110),
         ),
         IconButton(
+          tooltip: CourierTexts.whatsApp,
+          icon: const Icon(Icons.chat_outlined, color: OttosColors.success),
+          onPressed: () => launchUrl(Phones.whatsApp(number), mode: LaunchMode.externalApplication),
+        ),
+        IconButton(
           tooltip: CourierTexts.call,
           icon: const Icon(Icons.phone, color: OttosColors.teal),
-          onPressed: () => launchUrl(Uri(scheme: 'tel', path: number)),
+          onPressed: () => launchUrl(Phones.call(number)),
         ),
       ],
     );
