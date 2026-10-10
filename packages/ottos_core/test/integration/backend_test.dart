@@ -240,7 +240,10 @@ void main() {
         containsAllInOrder([created.status, assigned.status, delivered.status]),
       );
       if ((await auth.currentUser()).can(Permissions.remittancesReportIncident)) {
-        expect(history.where((event) => event.type == 'INCIDENT_REPORTED').single.incidentReason, IncidentReason.notHome);
+        expect(
+          history.where((event) => event.type == 'INCIDENT_REPORTED').single.incidentReason,
+          IncidentReason.notHome,
+        );
       }
     });
   }, skip: skip);

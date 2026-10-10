@@ -46,6 +46,13 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  testWidgets('shows who is logged in, in the bar and in the menu', (tester) async {
+    await openAccountMenu(tester);
+
+    // Once in the app bar, once at the top of the menu.
+    expect(find.text('Courier 1'), findsNWidgets(2));
+  });
+
   testWidgets('the account menu changes the password', (tester) async {
     await openAccountMenu(tester);
 

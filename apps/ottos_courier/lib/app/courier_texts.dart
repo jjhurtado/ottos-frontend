@@ -13,6 +13,9 @@ abstract final class CourierTexts {
   static const toDeliver = 'Entregar';
   static const toCollect = 'Recoger';
   static String dueOn(String date) => 'Para el $date';
+  static String daysLate(int days) => days == 1 ? '1 día de atraso' : '$days días de atraso';
+  static const sortByDay = 'Del día';
+  static const sortMostLate = 'Más atrasadas primero';
 
   // Remittance
   static const beneficiary = 'Beneficiario';
@@ -25,6 +28,7 @@ abstract final class CourierTexts {
   static const expectedDate = 'Fecha prevista';
   static const notes = 'Notas';
   static const call = 'Llamar';
+  static const whatsApp = 'Escribir por WhatsApp';
   static const markDelivered = 'Marcar como entregada';
   static const markCollected = 'Marcar como recogida';
   static const completed = 'Remesa completada';
