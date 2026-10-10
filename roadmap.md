@@ -56,7 +56,7 @@ Criterio de salida: se puede registrar un cliente nuevo con un beneficiario y us
 
 Objetivo: sustituir las pantallas «Próximamente» que quedan. Todas tienen el backend listo; el orden sigue lo que más se necesita en la operación diaria.
 
-1. **Caja**: saldo del negocio y movimientos, saldo por repartidor, entregar fondos y recibir devoluciones de repartidores, depósitos y retiros, y movimientos de cada remesa en su detalle.
+1. ~~**Caja**~~ Hecho: saldo del negocio y movimientos, saldo por repartidor, entregar fondos y recibir devoluciones de repartidores, depósitos y retiros, y movimientos de cada remesa en su detalle. Falta el cierre y la conciliación de caja, que el backend todavía no tiene.
 2. **Tasas y comisiones**: corredores, historial de tasas, alta de tasa nueva y reglas de comisión.
 3. **Usuarios**: listado, alta, edición, roles, activar o desactivar y restablecer contraseña.
 4. **Roles y permisos**: listado, alta y edición de roles con la matriz de permisos.
