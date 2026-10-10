@@ -1,0 +1,17 @@
+import 'package:flutter_test/flutter_test.dart';
+import 'package:ottos_core/ottos_core.dart';
+
+void main() {
+  final now = DateTime(2026, 10, 10, 15, 30);
+
+  test('postpones to the day after the expected date when that is in the future', () {
+    expect(earliestPostponeDate(DateTime(2026, 10, 11), now: now), DateTime(2026, 10, 12));
+    expect(earliestPostponeDate(DateTime(2026, 10, 20), now: now), DateTime(2026, 10, 21));
+  });
+
+  test('postpones to tomorrow when the expected date has passed or is today', () {
+    expect(earliestPostponeDate(DateTime(2026, 10, 10), now: now), DateTime(2026, 10, 11));
+    expect(earliestPostponeDate(DateTime(2026, 10, 2), now: now), DateTime(2026, 10, 11));
+    expect(earliestPostponeDate(null, now: now), DateTime(2026, 10, 11));
+  });
+}
