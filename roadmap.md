@@ -59,7 +59,7 @@ Objetivo: sustituir las pantallas «Próximamente» que quedan. Todas tienen el 
 
 1. ~~**Caja**~~ Hecho: saldo del negocio y movimientos, saldo por repartidor, entregar fondos y recibir devoluciones de repartidores, depósitos y retiros, y movimientos de cada remesa en su detalle. Falta el cierre y la conciliación de caja, que el backend todavía no tiene.
 2. ~~**Tasas y comisiones**~~ Hecho: corredores con tasa y comisión en vigor, historial de ambas, nueva tasa y nueva regla de comisión, y una calculadora.
-3. **Usuarios**: listado, alta, edición, roles, activar o desactivar y restablecer contraseña.
+3. ~~**Usuarios**~~ Hecho: listado con búsqueda, alta con contraseña inicial y roles, edición de nombre y roles, restablecer contraseña, desactivar y reactivar.
 4. **Roles y permisos**: listado, alta y edición de roles con la matriz de permisos.
 5. **Mi cuenta**: cambio de contraseña (el repositorio ya lo soporta; falta la pantalla en ambas apps).
 
