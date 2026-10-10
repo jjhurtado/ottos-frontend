@@ -4,8 +4,11 @@ abstract final class Permissions {
   static const usersWrite = 'users:write';
   static const rolesRead = 'roles:read';
   static const rolesWrite = 'roles:write';
+
+  /// Only for quotes (`POST /quotes`).
   static const ratesRead = 'rates:read';
-  static const ratesWrite = 'rates:write';
+  static const configurationRead = 'configuration:read';
+  static const configurationWrite = 'configuration:write';
   static const customersRead = 'customers:read';
   static const customersWrite = 'customers:write';
   static const remittancesCreate = 'remittances:create';

@@ -58,7 +58,7 @@ Criterio de salida: se puede registrar un cliente nuevo con un beneficiario y us
 Objetivo: sustituir las pantallas «Próximamente» que quedan. Todas tienen el backend listo; el orden sigue lo que más se necesita en la operación diaria.
 
 1. ~~**Caja**~~ Hecho: saldo del negocio y movimientos, saldo por repartidor, entregar fondos y recibir devoluciones de repartidores, depósitos y retiros, y movimientos de cada remesa en su detalle. Falta el cierre y la conciliación de caja, que el backend todavía no tiene.
-2. ~~**Tasas y comisiones**~~ Hecho: corredores con tasa y comisión en vigor, historial de ambas, nueva tasa y nueva regla de comisión, y una calculadora.
+2. ~~**Configuración**~~ Hecho (`/configuration`): ajustes generales (monto mínimo por remesa y días para entregar), corredores con tasa y comisión en vigor, historial de ambas, nueva tasa y nueva regla de comisión, y una calculadora. Sigue al módulo `configuration` del backend (`configuration:read` y `configuration:write`).
 3. ~~**Usuarios**~~ Hecho: listado con búsqueda, alta con contraseña inicial y roles, edición de nombre y roles, restablecer contraseña, desactivar y reactivar.
 4. **Roles y permisos**: listado, alta y edición de roles con la matriz de permisos.
 5. **Mi cuenta**: cambio de contraseña (el repositorio ya lo soporta; falta la pantalla en ambas apps).
@@ -103,6 +103,9 @@ y cada versión publicada lleva su tag en `main`, sin prefijo (`1.0.0-beta.1`). 
 **Versión actual: `1.0.0-beta.1`.**
 
 ## Dependencias con el backend y preguntas abiertas
+
+- **Cambio incompatible del backend (resuelto):** las tasas y comisiones se movieron a `/api/v1/configuration/…` y `rates:write` se sustituyó por `configuration:read` y `configuration:write`. El frontend ya lo sigue. Las sesiones iniciadas antes del cambio tienen los permisos viejos y deben volver a entrar.
+- **Roles personalizados sin `configuration:read`:** no pueden listar las monedas al crear una remesa. Hoy ADMIN y SALES lo tienen; si se crea un rol que registra remesas, hay que darle también `configuration:read`.
 
 - ~~**Lista de repartidores para asignar.**~~ Resuelto: `GET /couriers` con `remittances:assign`. Incluye al admin porque tiene todos los permisos; decidir si el panel lo oculta.
 - ~~**Respuesta 401 sin cuerpo.**~~ Resuelto: 401 y 403 traen `ProblemDetail`.

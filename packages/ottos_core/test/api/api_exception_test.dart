@@ -21,6 +21,15 @@ void main() {
     expect(error.statusCode, 400);
   });
 
+  test('says what the minimum amount is', () async {
+    await OttosLocalization.initialize();
+
+    final error = _from(400, {'code': 'AMOUNT_BELOW_MINIMUM', 'minimumAmount': 20.0, 'currency': 'USD'});
+
+    expect(error.message, 'El monto mínimo es 20,00 USD.');
+    expect(error.code, 'AMOUNT_BELOW_MINIMUM');
+  });
+
   test('falls back to the English detail for an untranslated 400 code', () {
     expect(_from(400, {'code': 'SOMETHING_NEW', 'detail': 'Something new'}).message, 'Something new');
   });

@@ -9,7 +9,7 @@ abstract final class OpsTexts {
   static const home = 'Inicio';
   static const remittances = 'Remesas';
   static const customers = 'Clientes';
-  static const rates = 'Tasas y comisiones';
+  static const configuration = 'Configuración';
   static const cash = 'Caja';
   static const users = 'Usuarios';
   static const roles = 'Roles y permisos';
@@ -168,6 +168,18 @@ abstract final class OpsTexts {
     CashMovementType.businessWithdrawal => 'Retiro',
     CashMovementType.unknown => 'Movimiento',
   };
+
+  // Configuration
+  static const generalSettings = 'Ajustes generales';
+  static const minimumAmount = 'Monto mínimo por remesa';
+  static const minimumAmountHint = '0 = sin mínimo';
+  static const noMinimum = 'Sin mínimo';
+  static const deliveryDays = 'Días para entregar';
+  static String deliveryDaysValue(int days) =>
+      days == 1 ? '1 día desde que se registra' : '$days días desde que se registra';
+  static const deliveryDaysHint = 'Fecha prevista de las remesas nuevas: entre 1 y 60 días';
+  static const deliveryDaysRange = 'Entre 1 y 60';
+  static const settingsSaved = 'Ajustes guardados';
 
   // Rates
   static const calculator = 'Calculadora';

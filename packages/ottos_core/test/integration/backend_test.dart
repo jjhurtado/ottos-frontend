@@ -349,7 +349,7 @@ void main() {
     });
   }, skip: skip);
 
-  // Writes to the backend: saves a rate and a fee rule equal to the ones in force, so quotes do not change.
+  // Writes to the backend: saves a rate, a fee rule and settings equal to the ones in force, so nothing changes.
   group('rates', () {
     late RateRepository rates;
 
@@ -379,6 +379,22 @@ void main() {
       final refreshed = (await rates.corridors()).firstWhere((c) => c.code == corridor.code);
       expect(refreshed.rate?.id, rate.id);
       expect(refreshed.feeRule?.value, rule.value);
+    });
+
+    test('re-saves the settings in force', () async {
+      final settings = await rates.settings();
+
+      final saved = await rates.updateSettings(
+        minimumAmount: settings.minimumAmount,
+        defaultDeliveryDays: settings.defaultDeliveryDays,
+      );
+
+      expect(saved, settings);
+      await expectLater(
+        rates.updateSettings(defaultDeliveryDays: 0),
+        throwsA(isA<ApiException>().having((e) => e.code, 'code', 'VALIDATION_FAILED')),
+      );
+      expect(await rates.settings(), settings);
     });
 
     test('rejects a rate for a same-currency corridor and a percentage over 100', () async {

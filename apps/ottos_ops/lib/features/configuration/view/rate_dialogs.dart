@@ -119,6 +119,52 @@ Future<FeeRule?> showNewFeeRuleDialog(BuildContext context, Corridor corridor) {
   );
 }
 
+/// Changes the business settings; returns them as saved, or null if cancelled.
+Future<Settings?> showSettingsDialog(BuildContext context, Settings settings) {
+  final rates = context.read<RateRepository>();
+  return showDialog<Settings>(
+    context: context,
+    barrierDismissible: false,
+    builder: (_) => _SaveDialog<Settings>(
+      title: OpsTexts.generalSettings,
+      fieldsBuilder: (state) => [
+        TextFormField(
+          controller: state.controller('minimum', _plain(settings.minimumAmount)),
+          enabled: !state.saving,
+          autofocus: true,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d*[.,]?\d{0,2}'))],
+          decoration: InputDecoration(
+            labelText: '${OpsTexts.minimumAmount} *',
+            suffixText: settings.minimumAmountCurrency,
+            helperText: OpsTexts.minimumAmountHint,
+          ),
+          validator: (text) => _parse(text) == null ? OpsTexts.requiredField : null,
+        ),
+        const SizedBox(height: 12),
+        TextFormField(
+          controller: state.controller('days', '${settings.defaultDeliveryDays}'),
+          enabled: !state.saving,
+          keyboardType: TextInputType.number,
+          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+          decoration: const InputDecoration(
+            labelText: '${OpsTexts.deliveryDays} *',
+            helperText: OpsTexts.deliveryDaysHint,
+          ),
+          validator: (text) {
+            final days = int.tryParse(text ?? '');
+            return days == null || days < 1 || days > 60 ? OpsTexts.deliveryDaysRange : null;
+          },
+        ),
+      ],
+      save: (state) => rates.updateSettings(
+        minimumAmount: _parse(state.text('minimum')),
+        defaultDeliveryDays: int.parse(state.text('days')),
+      ),
+    ),
+  );
+}
+
 /// `410.0` → `410`, `0.1` → `0.1`: how a number is typed back into a field.
 String _plain(double value) => value == value.roundToDouble() ? value.toStringAsFixed(0) : '$value';
 

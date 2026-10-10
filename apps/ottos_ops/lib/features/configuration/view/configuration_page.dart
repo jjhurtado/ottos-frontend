@@ -4,43 +4,96 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:ottos_core/ottos_core.dart';
 
 import '../../../app/ops_texts.dart';
-import '../cubit/rates_cubit.dart';
+import '../cubit/configuration_cubit.dart';
 import 'rate_dialogs.dart';
 
-class RatesPage extends StatelessWidget {
-  const RatesPage({super.key});
+class ConfigurationPage extends StatelessWidget {
+  const ConfigurationPage({super.key});
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => RatesCubit(rates: context.read<RateRepository>())..load(),
-      child: BlocBuilder<RatesCubit, RatesState>(
+      create: (context) => ConfigurationCubit(rates: context.read<RateRepository>())..load(),
+      child: BlocBuilder<ConfigurationCubit, ConfigurationState>(
         builder: (context, state) => switch (state.status) {
-          RatesStatus.loading => const LoadingView(),
-          RatesStatus.failure => ErrorView(message: state.error!, onRetry: context.read<RatesCubit>().load),
-          RatesStatus.success => _RatesView(corridors: state.corridors),
+          ConfigurationStatus.loading => const LoadingView(),
+          ConfigurationStatus.failure => ErrorView(
+            message: state.error!,
+            onRetry: context.read<ConfigurationCubit>().load,
+          ),
+          ConfigurationStatus.success => _ConfigurationView(state: state),
         },
       ),
     );
   }
 }
 
-class _RatesView extends StatelessWidget {
-  const _RatesView({required this.corridors});
+class _ConfigurationView extends StatelessWidget {
+  const _ConfigurationView({required this.state});
 
-  final List<Corridor> corridors;
+  final ConfigurationState state;
 
   @override
   Widget build(BuildContext context) {
-    final quotable = corridors.where((corridor) => corridor.canQuote).toList();
+    final canQuote = context.select((AuthBloc bloc) => bloc.state.user!.can(Permissions.ratesRead));
+    final quotable = state.corridors.where((corridor) => corridor.canQuote).toList();
     return ListView(
       padding: const EdgeInsets.all(24),
       children: [
-        Text(OpsTexts.rates, style: Theme.of(context).textTheme.headlineMedium),
+        Text(OpsTexts.configuration, style: Theme.of(context).textTheme.headlineMedium),
         const SizedBox(height: 16),
-        if (quotable.isNotEmpty) _Calculator(corridors: quotable),
-        for (final corridor in corridors) _CorridorCard(corridor: corridor),
+        _SettingsCard(settings: state.settings),
+        if (canQuote && quotable.isNotEmpty) _Calculator(corridors: quotable),
+        for (final corridor in state.corridors) _CorridorCard(corridor: corridor),
       ],
+    );
+  }
+}
+
+/// Business-wide settings: minimum amount and days to deliver.
+class _SettingsCard extends StatelessWidget {
+  const _SettingsCard({required this.settings});
+
+  final Settings settings;
+
+  @override
+  Widget build(BuildContext context) {
+    final canWrite = context.select((AuthBloc bloc) => bloc.state.user!.can(Permissions.configurationWrite));
+    final cubit = context.read<ConfigurationCubit>();
+    return Card(
+      margin: const EdgeInsets.only(bottom: 16),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              OpsTexts.generalSettings,
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 12),
+            InfoRow(
+              label: OpsTexts.minimumAmount,
+              value: settings.minimumAmount <= 0
+                  ? OpsTexts.noMinimum
+                  : Formatters.money(settings.minimumAmount, settings.minimumAmountCurrency),
+            ),
+            InfoRow(label: OpsTexts.deliveryDays, value: OpsTexts.deliveryDaysValue(settings.defaultDeliveryDays)),
+            if (canWrite) ...[
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                onPressed: () async {
+                  if (await showSettingsDialog(context, settings) == null || !context.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text(OpsTexts.settingsSaved)));
+                  await cubit.load();
+                },
+                icon: const Icon(Icons.edit_outlined),
+                label: const Text(OpsTexts.edit),
+              ),
+            ],
+          ],
+        ),
+      ),
     );
   }
 }
@@ -191,8 +244,8 @@ class _CorridorCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final canWrite = context.select((AuthBloc bloc) => bloc.state.user!.can(Permissions.ratesWrite));
-    final cubit = context.read<RatesCubit>();
+    final canWrite = context.select((AuthBloc bloc) => bloc.state.user!.can(Permissions.configurationWrite));
+    final cubit = context.read<ConfigurationCubit>();
     final textTheme = Theme.of(context).textTheme;
     final colors = Theme.of(context).colorScheme;
     final rate = corridor.rate;

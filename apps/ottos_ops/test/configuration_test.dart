@@ -4,8 +4,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:ottos_core/ottos_core.dart';
 import 'package:ottos_ops/app/ops_texts.dart';
-import 'package:ottos_ops/features/rates/cubit/rates_cubit.dart';
-import 'package:ottos_ops/features/rates/view/rates_page.dart';
+import 'package:ottos_ops/features/configuration/cubit/configuration_cubit.dart';
+import 'package:ottos_ops/features/configuration/view/configuration_page.dart';
 
 class _MockRates extends Mock implements RateRepository {}
 
@@ -40,6 +40,7 @@ void main() {
   setUp(() {
     rates = _MockRates();
     when(() => rates.corridors()).thenAnswer((_) async => [_eur, _usd, _cup]);
+    when(() => rates.settings()).thenAnswer((_) async => const Settings());
   });
 
   group('texts', () {
@@ -57,17 +58,18 @@ void main() {
     });
   });
 
-  test('lists active corridors first, then by code', () async {
-    final cubit = RatesCubit(rates: rates);
+  test('loads the settings and lists active corridors first, then by code', () async {
+    final cubit = ConfigurationCubit(rates: rates);
     addTearDown(cubit.close);
 
     await cubit.load();
 
+    expect(cubit.state.settings, const Settings());
     expect(cubit.state.corridors.map((c) => c.code), ['USD-CUP', 'USD-USD', 'USD-EUR']);
   });
 
   group('page', () {
-    Future<void> pumpRates(WidgetTester tester, Set<String> permissions) async {
+    Future<void> pumpPage(WidgetTester tester, Set<String> permissions) async {
       final auth = _MockAuth();
       when(() => auth.sessionExpired).thenAnswer((_) => const Stream.empty());
       final authBloc = AuthBloc(authRepository: auth, accessPolicy: (_) => true)
@@ -94,7 +96,7 @@ void main() {
             child: MaterialApp(
               localizationsDelegates: OttosLocalization.delegates,
               supportedLocales: OttosLocalization.supportedLocales,
-              home: const Scaffold(body: RatesPage()),
+              home: const Scaffold(body: ConfigurationPage()),
             ),
           ),
         ),
@@ -103,7 +105,7 @@ void main() {
     }
 
     testWidgets('a writer can change rates, except the fixed USD-USD one', (tester) async {
-      await pumpRates(tester, {Permissions.ratesRead, Permissions.ratesWrite});
+      await pumpPage(tester, {Permissions.configurationRead, Permissions.configurationWrite, Permissions.ratesRead});
 
       expect(find.text(OpsTexts.newRate), findsNWidgets(2), reason: 'USD-CUP and USD-EUR');
       expect(find.text(OpsTexts.newFeeRule), findsNWidgets(3));
@@ -113,7 +115,7 @@ void main() {
     });
 
     testWidgets('a reader sees the rates but cannot change them', (tester) async {
-      await pumpRates(tester, {Permissions.ratesRead});
+      await pumpPage(tester, {Permissions.configurationRead, Permissions.ratesRead});
 
       expect(find.text(OpsTexts.rateValue(410, _cup, null)), findsOneWidget);
       expect(find.text(OpsTexts.newRate), findsNothing);
@@ -121,7 +123,7 @@ void main() {
     });
 
     testWidgets('the fee dialog checks the percentage and the bounds before saving', (tester) async {
-      await pumpRates(tester, {Permissions.ratesRead, Permissions.ratesWrite});
+      await pumpPage(tester, {Permissions.configurationRead, Permissions.configurationWrite, Permissions.ratesRead});
 
       await tester.tap(find.text(OpsTexts.newFeeRule).first);
       await tester.pumpAndSettle();
@@ -138,7 +140,7 @@ void main() {
 
     testWidgets('saving a new rate reloads the corridors', (tester) async {
       when(() => rates.setRate('USD-CUP', 420)).thenAnswer((_) async => const ExchangeRate(id: 'r3', rate: 420));
-      await pumpRates(tester, {Permissions.ratesRead, Permissions.ratesWrite});
+      await pumpPage(tester, {Permissions.configurationRead, Permissions.configurationWrite, Permissions.ratesRead});
 
       await tester.tap(find.text(OpsTexts.newRate).first);
       await tester.pumpAndSettle();
@@ -149,6 +151,35 @@ void main() {
       verify(() => rates.setRate('USD-CUP', 420)).called(1);
       verify(() => rates.corridors()).called(2);
       expect(find.text(OpsTexts.rateSaved), findsOneWidget);
+    });
+
+    testWidgets('shows the settings and hides the calculator without rates:read', (tester) async {
+      await pumpPage(tester, {Permissions.configurationRead});
+
+      expect(find.text(OpsTexts.noMinimum), findsOneWidget);
+      expect(find.text(OpsTexts.deliveryDaysValue(2)), findsOneWidget);
+      expect(find.text(OpsTexts.calculator), findsNothing);
+      expect(find.text(OpsTexts.edit), findsNothing);
+    });
+
+    testWidgets('the settings dialog checks the days and saves both values', (tester) async {
+      when(() => rates.updateSettings(minimumAmount: 20, defaultDeliveryDays: 3))
+          .thenAnswer((_) async => const Settings(minimumAmount: 20, defaultDeliveryDays: 3));
+      await pumpPage(tester, {Permissions.configurationRead, Permissions.configurationWrite});
+
+      await tester.tap(find.text(OpsTexts.edit));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.widgetWithText(TextFormField, '${OpsTexts.minimumAmount} *'), '20');
+      await tester.enterText(find.widgetWithText(TextFormField, '${OpsTexts.deliveryDays} *'), '90');
+      await tester.tap(find.text(OpsTexts.save));
+      await tester.pumpAndSettle();
+      expect(find.text(OpsTexts.deliveryDaysRange), findsOneWidget);
+
+      await tester.enterText(find.widgetWithText(TextFormField, '${OpsTexts.deliveryDays} *'), '3');
+      await tester.tap(find.text(OpsTexts.save));
+      await tester.pumpAndSettle();
+      verify(() => rates.updateSettings(minimumAmount: 20, defaultDeliveryDays: 3)).called(1);
+      expect(find.text(OpsTexts.settingsSaved), findsOneWidget);
     });
   });
 }
