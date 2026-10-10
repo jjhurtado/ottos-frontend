@@ -48,6 +48,7 @@ Objetivo: gestionar clientes y sus beneficiarios desde el panel. Va en paralelo 
 - [x] **Beneficiarios**: alta, edición y desvinculación dentro de la ficha del cliente, con selector de provincia y municipio.
 - [x] **Crear cliente o beneficiario desde «Nueva remesa»** sin salir del formulario; el nuevo queda elegido.
 - [ ] Revisar en el navegador las pantallas de la ficha y los formularios (la extensión de Chrome no pudo hacer capturas; los tests de widget e integración pasan).
+- [ ] **Eliminar y restaurar beneficiarios** (borrado lógico para todos los clientes): el backend ya tiene `DELETE /beneficiaries/{id}` y `POST /beneficiaries/{id}/restore`.
 - [ ] Los tests de integración dejan clientes de prueba en la base local («Prueba Frontend Editada»); no hay endpoint para borrarlos. Valorar una base de datos aparte para tests.
 
 Criterio de salida: se puede registrar un cliente nuevo con un beneficiario y usarlo en una remesa sin salir del panel.
@@ -57,7 +58,7 @@ Criterio de salida: se puede registrar un cliente nuevo con un beneficiario y us
 Objetivo: sustituir las pantallas «Próximamente» que quedan. Todas tienen el backend listo; el orden sigue lo que más se necesita en la operación diaria.
 
 1. ~~**Caja**~~ Hecho: saldo del negocio y movimientos, saldo por repartidor, entregar fondos y recibir devoluciones de repartidores, depósitos y retiros, y movimientos de cada remesa en su detalle. Falta el cierre y la conciliación de caja, que el backend todavía no tiene.
-2. **Tasas y comisiones**: corredores, historial de tasas, alta de tasa nueva y reglas de comisión.
+2. ~~**Tasas y comisiones**~~ Hecho: corredores con tasa y comisión en vigor, historial de ambas, nueva tasa y nueva regla de comisión, y una calculadora.
 3. **Usuarios**: listado, alta, edición, roles, activar o desactivar y restablecer contraseña.
 4. **Roles y permisos**: listado, alta y edición de roles con la matriz de permisos.
 5. **Mi cuenta**: cambio de contraseña (el repositorio ya lo soporta; falta la pantalla en ambas apps).

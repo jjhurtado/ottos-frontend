@@ -52,10 +52,26 @@ void main() {
     rates = _MockRates();
     when(() => rates.corridors()).thenAnswer(
       (_) async => const [
-        Corridor(code: 'USD-CUP', sourceCurrency: 'USD', targetCurrency: 'CUP', currentRate: 410),
+        Corridor(
+          code: 'USD-CUP',
+          sourceCurrency: 'USD',
+          targetCurrency: 'CUP',
+          rate: ExchangeRate(id: 'x', rate: 410),
+        ),
         Corridor(code: 'USD-EUR', sourceCurrency: 'USD', targetCurrency: 'EUR'),
-        Corridor(code: 'USD-USD', sourceCurrency: 'USD', targetCurrency: 'USD', currentRate: 1),
-        Corridor(code: 'USD-MLC', sourceCurrency: 'USD', targetCurrency: 'MLC', currentRate: 1, active: false),
+        Corridor(
+          code: 'USD-USD',
+          sourceCurrency: 'USD',
+          targetCurrency: 'USD',
+          rate: ExchangeRate(id: 'x', rate: 1),
+        ),
+        Corridor(
+          code: 'USD-MLC',
+          sourceCurrency: 'USD',
+          targetCurrency: 'MLC',
+          rate: ExchangeRate(id: 'x', rate: 1),
+          active: false,
+        ),
       ],
     );
     when(() => customers.beneficiaries('c1')).thenAnswer((_) async => const [_beneficiary]);
@@ -91,7 +107,14 @@ void main() {
 
   test('preselects the first currency when USD has no rate', () async {
     when(() => rates.corridors()).thenAnswer(
-      (_) async => const [Corridor(code: 'USD-CUP', sourceCurrency: 'USD', targetCurrency: 'CUP', currentRate: 410)],
+      (_) async => const [
+        Corridor(
+          code: 'USD-CUP',
+          sourceCurrency: 'USD',
+          targetCurrency: 'CUP',
+          rate: ExchangeRate(id: 'x', rate: 410),
+        ),
+      ],
     );
 
     await cubit.load();

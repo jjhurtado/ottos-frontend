@@ -169,6 +169,50 @@ abstract final class OpsTexts {
     CashMovementType.unknown => 'Movimiento',
   };
 
+  // Rates
+  static const calculator = 'Calculadora';
+  static const calculate = 'Calcular';
+  static const newRate = 'Nueva tasa';
+  static const newFeeRule = 'Nueva comisión';
+  static String newRateTitle(String corridor) => 'Nueva tasa $corridor';
+  static String newRateHelp(String source, String target) =>
+      'Cuántos $target se entregan por cada $source. Se aplica a las remesas que se registren desde ahora.';
+  static String newFeeRuleTitle(String corridor) => 'Nueva comisión $corridor';
+  static const newFeeRuleHelp = 'Se aplica a las remesas que se registren desde ahora; las anteriores no cambian.';
+  static const feePercentage = 'Porcentaje';
+  static const feeFixed = 'Fija';
+  static const feeValue = 'Valor';
+  static const minFee = 'Mínimo';
+  static const maxFee = 'Máximo';
+  static const fixedRate = '1 (misma moneda)';
+  static const noRate = 'Sin tasa';
+  static const noFeeRule = 'Sin comisión configurada';
+  static const noRateWarning = 'Sin tasa no se pueden registrar remesas en esta moneda.';
+  static const rounding = 'Redondeo';
+  static String roundingValue(String step) => 'A entregar se redondea hacia abajo a múltiplos de $step';
+  static const rateSaved = 'Tasa guardada';
+  static const feeRuleSaved = 'Comisión guardada';
+  static const rateHistory = 'Tasas anteriores';
+  static const feeHistory = 'Comisiones anteriores';
+
+  /// `410 CUP por 1 USD, desde 9 oct 2026 14:32`.
+  static String rateValue(double rate, Corridor corridor, DateTime? since) {
+    final value = '${Formatters.money(rate, corridor.targetCurrency)} por 1 ${corridor.sourceCurrency}';
+    return since == null ? value : '$value, desde ${Formatters.dateTime(since)}';
+  }
+
+  /// `10 % (mínimo 10,00 USD)` or `5,00 USD`.
+  static String describeFee(FeeRule rule, String currency) {
+    final base = rule.type == FeeType.percentage
+        ? '${Formatters.money(rule.value, null)} %'
+        : Formatters.money(rule.value, currency);
+    final bounds = [
+      if (rule.minFee != null && rule.minFee! > 0) 'mínimo ${Formatters.money(rule.minFee, currency)}',
+      if (rule.maxFee != null) 'máximo ${Formatters.money(rule.maxFee, currency)}',
+    ];
+    return bounds.isEmpty ? base : '$base (${bounds.join(', ')})';
+  }
+
   // Coming soon
   static const comingSoon = 'Esta sección estará disponible pronto.';
 }
