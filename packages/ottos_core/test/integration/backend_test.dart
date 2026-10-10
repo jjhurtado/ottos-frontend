@@ -474,6 +474,52 @@ void main() {
       );
     });
   }, skip: skip);
+
+  // Writes to the backend: creates one role per run and deletes it.
+  group('roles', () {
+    late RoleRepository roles;
+
+    setUp(() async {
+      roles = RoleRepository(api: api);
+      await auth.login(email: email, password: password);
+    });
+
+    test('creates, describes, re-permissions and deletes a role', () async {
+      final catalog = await roles.permissions();
+      expect(catalog.map((p) => p.code), contains(Permissions.remittancesRead));
+      final code = 'FRONTEND_TEST_${Random().nextInt(1 << 30)}';
+
+      final created = await roles.create(
+        NewRole(code: code, name: 'Prueba Frontend', permissions: const {Permissions.remittancesRead}),
+      );
+      expect(created.permissions, [Permissions.remittancesRead]);
+      expect(created.builtIn, isFalse);
+      await expectLater(
+        roles.create(NewRole(code: code, name: 'Otro')),
+        throwsA(isA<ApiException>().having((e) => e.code, 'code', 'ROLE_CODE_TAKEN')),
+      );
+
+      final described = await roles.describe(created.id, name: 'Prueba Frontend Editada', description: 'Rol de prueba');
+      expect(described.description, 'Rol de prueba');
+      final permitted = await roles.replacePermissions(created.id, {
+        Permissions.remittancesRead,
+        Permissions.customersRead,
+      });
+      expect(permitted.permissions, containsAll([Permissions.remittancesRead, Permissions.customersRead]));
+
+      await roles.delete(created.id);
+      expect((await roles.list()).map((r) => r.id), isNot(contains(created.id)));
+    });
+
+    test('refuses to change a built-in role', () async {
+      final builtIn = (await roles.list()).firstWhere((role) => role.builtIn);
+
+      await expectLater(
+        roles.describe(builtIn.id, name: builtIn.name),
+        throwsA(isA<ApiException>().having((e) => e.code, 'code', 'BUILT_IN_ROLE')),
+      );
+    });
+  }, skip: skip);
 }
 
 extension on CustomerInput {
