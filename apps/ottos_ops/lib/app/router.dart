@@ -3,6 +3,7 @@ import 'package:ottos_core/ottos_core.dart';
 
 import '../features/coming_soon/coming_soon_page.dart';
 import '../features/home/view/home_page.dart';
+import '../features/remittances/view/new_remittance_page.dart';
 import '../features/remittances/view/remittance_detail_page.dart';
 import '../features/remittances/view/remittance_list_page.dart';
 import '../shell/ops_shell.dart';
@@ -13,6 +14,8 @@ abstract final class Routes {
   static const splash = '/splash';
   static const login = '/login';
 
+  static final newRemittance = '${Destinations.remittances.path}/new';
+
   static String remittance(String id) => '${Destinations.remittances.path}/$id';
 }
 
@@ -22,13 +25,20 @@ GoRouter buildRouter(AuthBloc authBloc) {
     refreshListenable: GoRouterRefreshStream(authBloc.stream),
     redirect: (context, state) {
       final auth = authBloc.state;
-      final location = state.matchedLocation;
-      if (auth.status == AuthStatus.unknown) return location == Routes.splash ? null : Routes.splash;
-      if (!auth.isAuthenticated) return location == Routes.login ? null : Routes.login;
-      if (location == Routes.login || location == Routes.splash) return Destinations.home.path;
+      final sessionRedirect = authRedirect(
+        auth,
+        state,
+        home: Destinations.home.path,
+        splash: Routes.splash,
+        login: Routes.login,
+      );
+      if (sessionRedirect != null || !auth.isAuthenticated) return sessionRedirect;
       // Permission guard: sections the user cannot see send them home.
-      final destination = Destinations.forLocation(location);
+      final destination = Destinations.forLocation(state.matchedLocation);
       if (destination != null && !destination.isVisibleTo(auth.user!)) return Destinations.home.path;
+      if (state.matchedLocation == Routes.newRemittance && !auth.user!.can(Permissions.remittancesCreate)) {
+        return Destinations.remittances.path;
+      }
       return null;
     },
     routes: [
@@ -45,6 +55,8 @@ GoRouter buildRouter(AuthBloc authBloc) {
             path: Destinations.remittances.path,
             builder: (_, state) => RemittanceListPage(initialFilter: _filterFrom(state.uri.queryParameters)),
             routes: [
+              // Before ':id', which would otherwise match "new".
+              GoRoute(path: 'new', builder: (_, _) => const NewRemittancePage()),
               GoRoute(
                 path: ':id',
                 builder: (_, state) => RemittanceDetailPage(remittanceId: state.pathParameters['id']!),

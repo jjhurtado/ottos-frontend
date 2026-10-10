@@ -60,6 +60,32 @@ abstract final class OpsTexts {
   static const noCourier = 'Sin asignar';
   static const noHistory = 'Sin eventos.';
 
+  // New remittance
+  static const newRemittance = 'Nueva remesa';
+  static const searchCustomer = 'Nombre, teléfono o documento';
+  static const changeCustomer = 'Cambiar remitente';
+  static const chooseCustomerFirst = 'Elige primero el remitente';
+  static const noBeneficiaries = 'Este remitente no tiene beneficiarios todavía.';
+  static const amountToSend = 'Monto a enviar';
+  static const targetCurrency = 'Moneda a entregar';
+  static const noRates = 'No hay tasas de cambio configuradas; no se pueden registrar remesas.';
+  static const quoteHint = 'Escribe el monto para ver la comisión y lo que se entrega.';
+  static const notesOptional = 'Notas (opcional)';
+  static const register = 'Registrar remesa';
+  static String remittanceRegistered(String code) => 'Remesa $code registrada';
+
+  // Remittance actions
+  static const assignCourier = 'Asignar repartidor';
+  static const reassignCourier = 'Reasignar repartidor';
+  static const assign = 'Asignar';
+  static const noCouriers = 'No hay repartidores disponibles.';
+  static String openRemittances(int count) => count == 1 ? '1 remesa abierta' : '$count remesas abiertas';
+  static const markDelivered = 'Marcar como entregada';
+  static const markCollected = 'Marcar como recogida';
+  static const assigned = 'Repartidor asignado';
+  static const completed = 'Remesa completada';
+  static const postponed = 'Remesa aplazada';
+
   static String eventTitle(String type) => switch (type) {
     'CREATED' => 'Remesa registrada',
     'STATUS_CHANGED' => 'Cambio de estado',

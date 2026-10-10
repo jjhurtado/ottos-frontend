@@ -26,21 +26,7 @@ abstract final class CourierTexts {
   static const call = 'Llamar';
   static const markDelivered = 'Marcar como entregada';
   static const markCollected = 'Marcar como recogida';
-  static const postpone = 'Aplazar';
   static const completed = 'Remesa completada';
-
-  // Deliver dialog
-  static const confirmDelivery = 'Confirmar entrega';
-  static const confirmCollection = 'Confirmar recogida';
-  static const pin = 'PIN del beneficiario';
-  static const pinHint = 'Opcional si el remitente no recibió PIN';
-  static const note = 'Nota (opcional)';
-
-  // Postpone dialog
-  static const postponeTitle = 'Aplazar remesa';
-  static const newDate = 'Nueva fecha';
-  static const reason = 'Motivo';
-  static const reasonRequired = 'Escribe el motivo';
   static const postponed = 'Remesa aplazada';
 
   // Cash

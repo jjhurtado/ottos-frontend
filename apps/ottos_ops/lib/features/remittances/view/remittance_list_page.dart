@@ -35,7 +35,17 @@ class _RemittanceListView extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(OpsTexts.remittances, style: Theme.of(context).textTheme.headlineMedium),
+          Row(
+            children: [
+              Expanded(child: Text(OpsTexts.remittances, style: Theme.of(context).textTheme.headlineMedium)),
+              if (context.select((AuthBloc bloc) => bloc.state.user!.can(Permissions.remittancesCreate)))
+                FilledButton.icon(
+                  onPressed: () => context.go(Routes.newRemittance),
+                  icon: const Icon(Icons.add),
+                  label: const Text(OpsTexts.newRemittance),
+                ),
+            ],
+          ),
           const SizedBox(height: 16),
           const _FilterBar(),
           const SizedBox(height: 16),

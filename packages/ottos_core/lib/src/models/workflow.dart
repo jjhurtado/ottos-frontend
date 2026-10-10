@@ -66,6 +66,22 @@ class Workflow {
   final List<RemittanceStatus> statuses;
   final List<RemittanceTransition> transitions;
 
+  RemittanceStatus? statusOf(String code) => statuses.where((status) => status.code == code).firstOrNull;
+
+  bool isFinal(String code) => statusOf(code)?.isFinal ?? false;
+
+  /// Transitions out of [from] whose permission is in [permissions].
+  Iterable<RemittanceTransition> allowedFrom(String from, Set<String> permissions) =>
+      transitions.where((transition) => transition.from == from && permissions.contains(transition.permission));
+
+  /// Whether [permissions] allow (re)assigning a courier from status [from].
+  bool canAssign(String from, Set<String> permissions) =>
+      allowedFrom(from, permissions).any((transition) => statusOf(transition.to)?.requiresCourier ?? false);
+
+  /// Whether [permissions] allow completing (delivering or collecting) from status [from].
+  bool canComplete(String from, Set<String> permissions) =>
+      allowedFrom(from, permissions).any((transition) => isFinal(transition.to));
+
   String nameOf(String code) => statuses.firstWhere((status) => status.code == code, orElse: () => _unknown(code)).name;
 
   static RemittanceStatus _unknown(String code) =>
