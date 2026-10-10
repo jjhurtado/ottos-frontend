@@ -36,6 +36,7 @@ export 'src/theme/ottos_theme.dart';
 export 'src/utils/auth_redirect.dart';
 export 'src/utils/formatters.dart';
 export 'src/utils/go_router_refresh_stream.dart';
+export 'src/utils/phones.dart';
 export 'src/widgets/async_view.dart';
 export 'src/widgets/change_password_dialog.dart';
 export 'src/widgets/incident_banner.dart';
