@@ -213,6 +213,36 @@ abstract final class OpsTexts {
     return bounds.isEmpty ? base : '$base (${bounds.join(', ')})';
   }
 
+  // Users
+  static const newUser = 'Nuevo usuario';
+  static const editUser = 'Editar usuario';
+  static const searchUser = 'Nombre, correo o rol';
+  static String showInactive(int count) => 'Mostrar inactivos ($count)';
+  static const noUsers = 'Ningún usuario coincide.';
+  static const userRoles = 'Roles';
+  static const chooseRole = 'Elige al menos un rol';
+  static const initialPassword = 'Contraseña inicial';
+  static const newPassword = 'Contraseña nueva';
+  static const passwordHint = 'Entre 8 y 72 caracteres';
+  static const passwordTooShort = 'Al menos 8 caracteres';
+  static const passwordTooLong = 'Como máximo 72 caracteres';
+  static const active = 'Activo';
+  static const you = 'tú';
+  static const actions = 'Acciones';
+  static const resetPassword = 'Restablecer contraseña';
+  static String resetPasswordTitle(String name) => 'Contraseña de $name';
+  static const resetPasswordHelp = 'Se cerrarán sus sesiones abiertas; tendrá que entrar con la contraseña nueva.';
+  static const deactivate = 'Desactivar';
+  static const activate = 'Activar';
+  static const deactivateTitle = 'Desactivar usuario';
+  static String deactivateMessage(String name) =>
+      '$name no podrá entrar y se cerrarán sus sesiones. Sus datos y remesas no cambian; puedes reactivarlo cuando quieras.';
+  static String userCreated(String name) => 'Usuario $name creado';
+  static const userSaved = 'Usuario guardado';
+  static const passwordReset = 'Contraseña restablecida';
+  static const userDeactivated = 'Usuario desactivado';
+  static const userActivated = 'Usuario activado';
+
   // Coming soon
   static const comingSoon = 'Esta sección estará disponible pronto.';
 }
