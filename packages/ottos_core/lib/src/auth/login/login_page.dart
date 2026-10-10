@@ -77,6 +77,7 @@ class _LoginFormState extends State<_LoginForm> {
   @override
   Widget build(BuildContext context) {
     final sessionExpired = context.select((AuthBloc bloc) => bloc.state.sessionExpired);
+    final passwordChanged = context.select((AuthBloc bloc) => bloc.state.passwordChanged);
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -130,6 +131,9 @@ class _LoginFormState extends State<_LoginForm> {
                     if (error != null) ...[
                       const SizedBox(height: 16),
                       Text(error, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+                    ] else if (passwordChanged) ...[
+                      const SizedBox(height: 16),
+                      Text(CoreTexts.passwordChanged, style: TextStyle(color: Theme.of(context).colorScheme.primary)),
                     ],
                     const SizedBox(height: 24),
                     FilledButton(

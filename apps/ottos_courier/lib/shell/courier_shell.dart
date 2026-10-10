@@ -6,7 +6,7 @@ import 'package:ottos_core/ottos_core.dart';
 import '../app/courier_texts.dart';
 import '../app/router.dart';
 
-/// App bar with logout and bottom navigation between the courier's sections.
+/// App bar with the account menu and bottom navigation between the courier's sections.
 class CourierShell extends StatelessWidget {
   const CourierShell({super.key, required this.location, required this.child});
 
@@ -21,10 +21,28 @@ class CourierShell extends StatelessWidget {
       appBar: AppBar(
         title: Text(onCash ? CourierTexts.myCash : CourierTexts.myRemittances),
         actions: [
-          IconButton(
-            tooltip: CoreTexts.logout,
-            icon: const Icon(Icons.logout),
-            onPressed: () => context.read<AuthBloc>().add(const AuthLogoutRequested()),
+          PopupMenuButton<VoidCallback>(
+            tooltip: CourierTexts.account,
+            icon: const Icon(Icons.account_circle_outlined),
+            onSelected: (action) => action(),
+            itemBuilder: (_) => [
+              PopupMenuItem(
+                value: () => showChangePasswordDialog(context),
+                child: const ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: Icon(Icons.password),
+                  title: Text(CoreTexts.changePassword),
+                ),
+              ),
+              PopupMenuItem(
+                value: () => context.read<AuthBloc>().add(const AuthLogoutRequested()),
+                child: const ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: Icon(Icons.logout),
+                  title: Text(CoreTexts.logout),
+                ),
+              ),
+            ],
           ),
         ],
       ),

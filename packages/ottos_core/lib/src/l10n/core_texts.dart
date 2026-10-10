@@ -69,8 +69,22 @@ abstract final class CoreTexts {
   static const emailRequired = 'Escribe tu correo';
   static const emailInvalid = 'Correo no válido';
   static const passwordRequired = 'Escribe tu contraseña';
+  static const requiredField = 'Obligatorio';
   static const showPassword = 'Mostrar contraseña';
   static const hidePassword = 'Ocultar contraseña';
+
+  // Passwords
+  static const changePassword = 'Cambiar contraseña';
+  static const currentPassword = 'Contraseña actual';
+  static const newPassword = 'Contraseña nueva';
+  static const repeatPassword = 'Repite la contraseña nueva';
+  static const passwordHint = 'Entre 8 y 72 caracteres';
+  static const passwordTooShort = 'Al menos 8 caracteres';
+  static const passwordTooLong = 'Como máximo 72 caracteres';
+  static const passwordsDiffer = 'No coincide con la contraseña nueva';
+  static const samePassword = 'Debe ser distinta de la actual';
+  static const changePasswordHelp = 'Al cambiarla se cerrará tu sesión en todos los dispositivos.';
+  static const passwordChanged = 'Contraseña cambiada. Entra con la contraseña nueva.';
 
   // Common
   static const retry = 'Reintentar';

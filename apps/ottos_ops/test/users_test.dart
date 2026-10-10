@@ -5,7 +5,6 @@ import 'package:mocktail/mocktail.dart';
 import 'package:ottos_core/ottos_core.dart';
 import 'package:ottos_ops/app/ops_texts.dart';
 import 'package:ottos_ops/features/users/cubit/user_list_cubit.dart';
-import 'package:ottos_ops/features/users/view/user_dialogs.dart';
 import 'package:ottos_ops/features/users/view/user_list_page.dart';
 
 class _MockUsers extends Mock implements UserRepository {}
@@ -35,13 +34,6 @@ void main() {
     roles = _MockRoles();
     when(() => users.list()).thenAnswer((_) async => [_old, _me, _ana]);
     when(() => roles.list()).thenAnswer((_) async => _roles);
-  });
-
-  test('passwords need 8 to 72 characters', () {
-    expect(passwordError(''), OpsTexts.requiredField);
-    expect(passwordError('1234567'), OpsTexts.passwordTooShort);
-    expect(passwordError('12345678'), isNull);
-    expect(passwordError('x' * 73), OpsTexts.passwordTooLong);
   });
 
   group('cubit', () {
@@ -140,7 +132,7 @@ void main() {
       await tester.enterText(find.widgetWithText(TextFormField, '${OpsTexts.initialPassword} *'), 'short');
       await tester.tap(find.text(OpsTexts.save));
       await tester.pumpAndSettle();
-      expect(find.text(OpsTexts.passwordTooShort), findsOneWidget);
+      expect(find.text(CoreTexts.passwordTooShort), findsOneWidget);
 
       await tester.enterText(find.widgetWithText(TextFormField, '${OpsTexts.initialPassword} *'), 'long-enough');
       await tester.tap(find.text(OpsTexts.save));

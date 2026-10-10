@@ -61,7 +61,9 @@ Objetivo: sustituir las pantallas «Próximamente» que quedan. Todas tienen el 
 2. ~~**Configuración**~~ Hecho (`/configuration`): ajustes generales (monto mínimo por remesa y días para entregar), corredores con tasa y comisión en vigor, historial de ambas, nueva tasa y nueva regla de comisión, y una calculadora. Sigue al módulo `configuration` del backend (`configuration:read` y `configuration:write`).
 3. ~~**Usuarios**~~ Hecho: listado con búsqueda, alta con contraseña inicial y roles, edición de nombre y roles, restablecer contraseña, desactivar y reactivar.
 4. ~~**Roles y permisos**~~ Hecho: roles con sus permisos por área y en español, alta, edición y eliminación; el rol del sistema es de solo lectura y solo se pueden dar permisos que uno tiene.
-5. **Mi cuenta**: cambio de contraseña (el repositorio ya lo soporta; falta la pantalla en ambas apps).
+5. ~~**Mi cuenta**~~ Hecho: cambio de contraseña desde el menú de usuario del panel y el menú de cuenta de la app de repartidores; al cambiarla se cierra la sesión y el login explica por qué.
+
+Pendiente de la Fase 3: traducir los nombres de los roles del sistema por su código (el backend los devuelve en inglés y no se traducirán allí).
 
 Criterio de salida: no queda ninguna sección «Próximamente» en el menú y cada una respeta sus permisos.
 

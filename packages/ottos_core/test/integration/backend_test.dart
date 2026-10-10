@@ -415,7 +415,7 @@ void main() {
     });
   }, skip: skip);
 
-  // Writes to the backend: creates one staff user per run and leaves it deactivated.
+  // Writes to the backend: creates two staff users per run and leaves them deactivated.
   group('users', () {
     late UserRepository users;
 
@@ -465,6 +465,37 @@ void main() {
       expect((await users.activate(created.id)).active, isTrue);
       expect(await loginAs(userEmail, 'second-pass-2'), isNotNull);
       await users.deactivate(created.id);
+    });
+
+    test('a user changes their own password and is signed out everywhere', () async {
+      final sales = (await RoleRepository(api: api).list()).firstWhere((role) => role.code == 'SALES');
+      final userEmail = 'frontend-test-${Random().nextInt(1 << 32)}@ottos.test';
+      final created = await users.create(
+        NewStaffUser(email: userEmail, name: 'Prueba Contraseña', password: 'first-pass-1', roleIds: {sales.id}),
+      );
+
+      final storage = _MemoryTokenStorage();
+      final client = ApiClient(config: config, tokenStorage: storage);
+      final own = AuthRepository(api: client, tokenStorage: storage);
+      try {
+        await own.login(email: userEmail, password: 'first-pass-1');
+        await expectLater(
+          own.changePassword(currentPassword: 'wrong-pass', newPassword: 'second-pass-2'),
+          throwsA(isA<ApiException>().having((e) => e.code, 'code', 'INCORRECT_CURRENT_PASSWORD')),
+        );
+        final refreshToken = storage.tokens!.refreshToken;
+
+        await own.changePassword(currentPassword: 'first-pass-1', newPassword: 'second-pass-2');
+
+        // The session's refresh token no longer works; the new password does.
+        storage.tokens = AuthTokens(accessToken: 'expired', refreshToken: refreshToken);
+        await expectLater(own.currentUser(), throwsA(isA<ApiException>()));
+        expect(await loginAs(userEmail, 'first-pass-1'), isNull);
+        expect(await loginAs(userEmail, 'second-pass-2'), isNotNull);
+      } finally {
+        await client.dispose();
+        await users.deactivate(created.id);
+      }
     });
 
     test('refuses to deactivate yourself', () async {
