@@ -99,6 +99,35 @@ void main() {
     expect(cubit.state.targetCurrency, 'CUP');
   });
 
+  test('starts with the customer given, if active', () async {
+    when(() => customers.get('c1')).thenAnswer((_) async => _customer);
+
+    await cubit.load(customerId: 'c1');
+    await settle();
+
+    expect(cubit.state.customer, _customer);
+    expect(cubit.state.beneficiary, _beneficiary);
+  });
+
+  test('ignores a customer that cannot be loaded', () async {
+    when(() => customers.get('c9')).thenThrow(const ApiException(CoreTexts.notFound, statusCode: 404));
+
+    await cubit.load(customerId: 'c9');
+
+    expect(cubit.state.corridorsStatus, LoadStatus.success);
+    expect(cubit.state.customer, isNull);
+  });
+
+  test('picks a beneficiary created from the form', () async {
+    await fillForm();
+    const marta = Beneficiary(id: 'b2', fullName: 'Marta', phone: '535');
+
+    cubit.beneficiaryCreated(marta);
+
+    expect(cubit.state.beneficiaries, const [_beneficiary, marta]);
+    expect(cubit.state.beneficiary, marta);
+  });
+
   test('picks the beneficiary when the customer has only one', () async {
     await cubit.load();
     await cubit.customerSelected(_customer);

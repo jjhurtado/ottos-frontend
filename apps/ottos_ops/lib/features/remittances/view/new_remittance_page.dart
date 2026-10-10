@@ -7,10 +7,15 @@ import 'package:ottos_core/ottos_core.dart';
 import '../../../app/destinations.dart';
 import '../../../app/ops_texts.dart';
 import '../../../app/router.dart';
+import '../../customers/view/beneficiary_form_dialog.dart';
+import '../../customers/view/customer_form_dialog.dart';
 import '../cubit/new_remittance_cubit.dart';
 
 class NewRemittancePage extends StatelessWidget {
-  const NewRemittancePage({super.key});
+  const NewRemittancePage({super.key, this.initialCustomerId});
+
+  /// Customer to start with, e.g. when coming from their page.
+  final String? initialCustomerId;
 
   @override
   Widget build(BuildContext context) {
@@ -19,7 +24,7 @@ class NewRemittancePage extends StatelessWidget {
         remittances: context.read<RemittanceRepository>(),
         customers: context.read<CustomerRepository>(),
         rates: context.read<RateRepository>(),
-      )..load(),
+      )..load(customerId: initialCustomerId),
       child: BlocConsumer<NewRemittanceCubit, NewRemittanceState>(
         listenWhen: (previous, current) => previous.created == null && current.created != null,
         listener: (context, state) {
@@ -201,7 +206,8 @@ class _CustomerField extends StatelessWidget {
         ),
       );
     }
-    return Autocomplete<Customer>(
+    final canCreate = context.select((AuthBloc bloc) => bloc.state.user!.can(Permissions.customersWrite));
+    final search = Autocomplete<Customer>(
       displayStringForOption: (customer) => customer.fullName,
       optionsBuilder: (value) async {
         if (value.text.trim().length < 2) return const [];
@@ -244,6 +250,27 @@ class _CustomerField extends StatelessWidget {
         ),
       ),
     );
+    if (!canCreate) return search;
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(child: search),
+        const SizedBox(width: 12),
+        Padding(
+          padding: const EdgeInsets.only(top: 8),
+          child: TextButton.icon(
+            onPressed: enabled
+                ? () async {
+                    final created = await showCustomerFormDialog(context);
+                    if (created != null) await cubit.customerSelected(created);
+                  }
+                : null,
+            icon: const Icon(Icons.person_add_alt_1),
+            label: const Text(OpsTexts.newCustomer),
+          ),
+        ),
+      ],
+    );
   }
 }
 
@@ -261,14 +288,41 @@ class _BeneficiaryField extends StatelessWidget {
       );
     }
     if (state.beneficiariesStatus == LoadStatus.loading) return const LinearProgressIndicator();
-    if (state.beneficiariesStatus == LoadStatus.success && state.beneficiaries.isEmpty) {
-      return const InputDecorator(
-        decoration: InputDecoration(labelText: OpsTexts.beneficiary),
-        child: Text(OpsTexts.noBeneficiaries),
-      );
-    }
+    final canCreate = context.select((AuthBloc bloc) => bloc.state.user!.can(Permissions.customersWrite));
+    final field = state.beneficiariesStatus == LoadStatus.success && state.beneficiaries.isEmpty
+        ? const InputDecorator(
+            decoration: InputDecoration(labelText: OpsTexts.beneficiary),
+            child: Text(OpsTexts.noBeneficiaries),
+          )
+        : _dropdown(context);
+    if (!canCreate) return field;
+    final cubit = context.read<NewRemittanceCubit>();
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(child: field),
+        const SizedBox(width: 12),
+        Padding(
+          padding: const EdgeInsets.only(top: 8),
+          child: TextButton.icon(
+            onPressed: state.submitting
+                ? null
+                : () async {
+                    final created = await showBeneficiaryFormDialog(context, customerId: state.customer!.id);
+                    if (created != null) cubit.beneficiaryCreated(created);
+                  },
+            icon: const Icon(Icons.add),
+            label: const Text(OpsTexts.newBeneficiary),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _dropdown(BuildContext context) {
     return DropdownButtonFormField<Beneficiary>(
-      key: ValueKey(state.customer!.id),
+      // Rebuilt when the list changes, so a new beneficiary shows as selected.
+      key: ValueKey('${state.customer!.id}-${state.beneficiaries.length}'),
       initialValue: state.beneficiary,
       isExpanded: true,
       decoration: const InputDecoration(labelText: OpsTexts.beneficiary),

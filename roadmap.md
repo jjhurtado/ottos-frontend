@@ -41,12 +41,14 @@ Criterio de salida: el recorrido completo funciona en Chrome con tres usuarios d
 
 Objetivo: gestionar clientes y sus beneficiarios desde el panel. Va en paralelo con la Fase 1, porque crear una remesa necesita elegir ambos. El backend ya tiene CRUD y búsqueda (`?q=`); en el frontend falta todo, empezando por los modelos y un `CustomerRepository` en `ottos_core`.
 
-- [ ] **Modelos y repositorio** en `ottos_core`: cliente, beneficiario, provincias y municipios (`/provinces`, `/municipalities`).
-- [ ] **Listado de clientes** con búsqueda por nombre o teléfono, sustituyendo la pantalla «Próximamente».
-- [ ] **Alta y edición de cliente**, con validación de teléfono.
-- [ ] **Ficha de cliente**: sus beneficiarios, sus remesas (enlace al listado filtrado por `customerId`) y estadísticas (`/customers/{id}/stats`).
-- [ ] **Beneficiarios**: alta, edición y baja dentro de la ficha del cliente, con selector de provincia y municipio.
-- [ ] **Buscadores reutilizables** de cliente y beneficiario, con opción de crear uno nuevo sin salir del formulario de remesa.
+- [x] **Modelos y repositorios** en `ottos_core`: cliente, beneficiario, estadísticas, provincias y municipios (`CustomerRepository`, `ZoneRepository`).
+- [x] **Listado de clientes** (`/customers`) con búsqueda por nombre o teléfono.
+- [x] **Alta y edición de cliente**, con validación de teléfono y el error de teléfono repetido en español.
+- [x] **Ficha de cliente** (`/customers/{id}`): datos, estadísticas de remesas, beneficiarios, «Ver remesas» (listado filtrado por `customerId`) y «Nueva remesa» con el cliente ya elegido.
+- [x] **Beneficiarios**: alta, edición y desvinculación dentro de la ficha del cliente, con selector de provincia y municipio.
+- [x] **Crear cliente o beneficiario desde «Nueva remesa»** sin salir del formulario; el nuevo queda elegido.
+- [ ] Revisar en el navegador las pantallas de la ficha y los formularios (la extensión de Chrome no pudo hacer capturas; los tests de widget e integración pasan).
+- [ ] Los tests de integración dejan clientes de prueba en la base local («Prueba Frontend Editada»); no hay endpoint para borrarlos. Valorar una base de datos aparte para tests.
 
 Criterio de salida: se puede registrar un cliente nuevo con un beneficiario y usarlo en una remesa sin salir del panel.
 

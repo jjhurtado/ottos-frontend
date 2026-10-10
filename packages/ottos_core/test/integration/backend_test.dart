@@ -13,6 +13,7 @@
 library;
 
 import 'dart:io';
+import 'dart:math';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ottos_core/ottos_core.dart';
@@ -225,4 +226,93 @@ void main() {
       );
     });
   }, skip: skip);
+
+  // Writes to the backend: registers one customer and two beneficiaries per run.
+  group('customers', () {
+    late CustomerRepository customers;
+    late ZoneRepository zones;
+
+    setUp(() async {
+      customers = CustomerRepository(api: api);
+      zones = ZoneRepository(api: api);
+      await auth.login(email: email, password: password);
+    });
+
+    test('registers and edits a customer and their beneficiaries', () async {
+      final phone = '+1305${Random().nextInt(9000000) + 1000000}';
+      final created = await customers.create(CustomerInput(fullName: 'Prueba Frontend', phone: phone, email: ' '));
+      expect(created.fullName, 'Prueba Frontend');
+      expect(created.email, isNull);
+      expect((await customers.search(phone.substring(4))).map((c) => c.id), contains(created.id));
+
+      await expectLater(
+        customers.create(CustomerInput(fullName: 'Duplicado', phone: phone)),
+        throwsA(isA<ApiException>().having((e) => e.code, 'code', 'PHONE_ALREADY_REGISTERED')),
+      );
+
+      final updated = await customers.update(
+        created.id,
+        CustomerInput.of(created).copyWithName('Prueba Frontend Editada'),
+      );
+      expect(updated.fullName, 'Prueba Frontend Editada');
+
+      final provinces = await zones.provinces();
+      final municipality = (await zones.municipalities()).firstWhere((m) => m.provinceCode == provinces.first.code);
+      final input = BeneficiaryInput(
+        fullName: 'Beneficiaria Prueba',
+        phone: '5352${Random().nextInt(900000) + 100000}',
+        street: 'Calle 1',
+        municipalityCode: municipality.code,
+      );
+      final beneficiary = await customers.addBeneficiary(created.id, input);
+      expect(beneficiary.municipalityName, municipality.name);
+
+      final edited = await customers.updateBeneficiary(
+        beneficiary.id,
+        BeneficiaryInput.of(beneficiary).copyWithStreet('Calle 2'),
+      );
+      expect(edited.street, 'Calle 2');
+      expect((await customers.beneficiaries(created.id)).map((b) => b.id), [beneficiary.id]);
+
+      await customers.unlinkBeneficiary(created.id, beneficiary.id);
+      expect(await customers.beneficiaries(created.id), isEmpty);
+
+      await expectLater(
+        customers.addBeneficiary(created.id, BeneficiaryInput.of(beneficiary).copyWithMunicipality('9999')),
+        throwsA(isA<ApiException>().having((e) => e.statusCode, 'statusCode', anyOf(400, 404))),
+      );
+    });
+  }, skip: skip);
+}
+
+extension on CustomerInput {
+  CustomerInput copyWithName(String fullName) => CustomerInput(
+    fullName: fullName,
+    phone: phone,
+    email: email,
+    documentType: documentType,
+    documentNumber: documentNumber,
+    address: address,
+    notes: notes,
+  );
+}
+
+extension on BeneficiaryInput {
+  BeneficiaryInput copyWithStreet(String street) => _copy(street: street);
+
+  BeneficiaryInput copyWithMunicipality(String municipalityCode) => _copy(municipalityCode: municipalityCode);
+
+  BeneficiaryInput _copy({String? street, String? municipalityCode}) => BeneficiaryInput(
+    fullName: fullName,
+    phone: phone,
+    street: street ?? this.street,
+    municipalityCode: municipalityCode ?? this.municipalityCode,
+    alternatePhone: alternatePhone,
+    houseNumber: houseNumber,
+    betweenStreets: betweenStreets,
+    neighborhood: neighborhood,
+    reference: reference,
+    documentNumber: documentNumber,
+    notes: notes,
+  );
 }

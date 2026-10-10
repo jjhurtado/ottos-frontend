@@ -8,12 +8,13 @@ import '../auth/token_storage.dart';
 import '../cash/cash_repository.dart';
 import '../config/app_config.dart';
 import '../customers/customer_repository.dart';
+import '../customers/zone_repository.dart';
 import '../rates/rate_repository.dart';
 import '../remittances/remittance_repository.dart';
 
 /// Creates the shared services and provides them to [child]: [ApiClient],
 /// [AuthRepository], [RemittanceRepository], [CashRepository], [CustomerRepository],
-/// [RateRepository], the app's [AccessPolicy] and
+/// [RateRepository], [ZoneRepository], the app's [AccessPolicy] and
 /// the [AuthBloc] (already started).
 class OttosScope extends StatefulWidget {
   const OttosScope({super.key, required this.config, required this.accessPolicy, required this.child});
@@ -33,6 +34,7 @@ class _OttosScopeState extends State<OttosScope> {
   late final CashRepository _cashRepository;
   late final CustomerRepository _customerRepository;
   late final RateRepository _rateRepository;
+  late final ZoneRepository _zoneRepository;
 
   @override
   void initState() {
@@ -44,6 +46,7 @@ class _OttosScopeState extends State<OttosScope> {
     _cashRepository = CashRepository(api: _api);
     _customerRepository = CustomerRepository(api: _api);
     _rateRepository = RateRepository(api: _api);
+    _zoneRepository = ZoneRepository(api: _api);
   }
 
   @override
@@ -62,6 +65,7 @@ class _OttosScopeState extends State<OttosScope> {
         RepositoryProvider.value(value: _cashRepository),
         RepositoryProvider.value(value: _customerRepository),
         RepositoryProvider.value(value: _rateRepository),
+        RepositoryProvider.value(value: _zoneRepository),
         RepositoryProvider<AccessPolicy>.value(value: widget.accessPolicy),
       ],
       child: BlocProvider(
