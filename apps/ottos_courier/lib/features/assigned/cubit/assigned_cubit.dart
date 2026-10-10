@@ -87,8 +87,8 @@ class AssignedCubit extends Cubit<AssignedState> {
         : _remittances.deliverWithPin(remittance.id, pin: pin, note: note),
   );
 
-  Future<String?> postpone(Remittance remittance, {required DateTime newDate, required String reason}) =>
-      _run(() => _remittances.postpone(remittance.id, newDate: newDate, reason: reason));
+  Future<String?> reportIncident(Remittance remittance, {required IncidentReason reason, String? note}) =>
+      _run(() => _remittances.reportIncident(remittance.id, reason: reason, note: note));
 
   Future<String?> _run(Future<Remittance> Function() action) async {
     try {

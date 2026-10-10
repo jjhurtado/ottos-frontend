@@ -37,6 +37,10 @@ Remittance _remittance(
 void main() {
   late _MockRemittances remittances;
 
+  setUpAll(() => registerFallbackValue(IncidentReason.other));
+
+  setUpAll(() => registerFallbackValue(IncidentReason.other));
+
   setUp(() => remittances = _MockRemittances());
 
   Future<void> pumpList(WidgetTester tester, List<Remittance> items) async {
@@ -52,7 +56,7 @@ void main() {
             name: 'Repartidor',
             type: 'COURIER',
             roles: [],
-            permissions: {Permissions.remittancesDeliver, Permissions.remittancesPostpone},
+            permissions: {Permissions.remittancesDeliver, Permissions.remittancesReportIncident},
           ),
         ),
       );
@@ -128,24 +132,41 @@ void main() {
     expect(find.text(CourierTexts.completed), findsOneWidget);
   });
 
-  testWidgets('swiping left asks to postpone; cancelling keeps the remittance', (tester) async {
+  testWidgets('swiping left asks for the incident; cancelling keeps the remittance', (tester) async {
     await pumpList(tester, [_remittance('OT-1', RemittanceType.delivery)]);
 
     await tester.drag(find.text('OT-1'), const Offset(-500, 0));
     await tester.pumpAndSettle();
-    expect(find.text(CoreTexts.postponeTitle), findsOneWidget);
+    expect(find.text(CoreTexts.incidentTitle), findsOneWidget);
 
     await tester.tap(find.text(CoreTexts.cancel));
     await tester.pumpAndSettle();
 
     expect(find.text('OT-1'), findsOneWidget);
     verifyNever(
-      () => remittances.postpone(
+      () => remittances.reportIncident(
         any(),
-        newDate: any(named: 'newDate'),
         reason: any(named: 'reason'),
+        note: any(named: 'note'),
       ),
     );
+  });
+
+  testWidgets('swiping left reports the incident and reloads', (tester) async {
+    when(() => remittances.reportIncident('OT-1', reason: IncidentReason.notHome, note: null))
+        .thenAnswer((_) async => _remittance('OT-1', RemittanceType.delivery));
+    await pumpList(tester, [_remittance('OT-1', RemittanceType.delivery)]);
+
+    await tester.drag(find.text('OT-1'), const Offset(-500, 0));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(CoreTexts.incidentReason(IncidentReason.notHome)));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(CoreTexts.report));
+    await tester.pumpAndSettle();
+
+    verify(() => remittances.reportIncident('OT-1', reason: IncidentReason.notHome, note: null)).called(1);
+    verify(() => remittances.assignedToMe()).called(2);
+    expect(find.text(CoreTexts.incidentReported), findsOneWidget);
   });
 
   group('order', () {

@@ -73,7 +73,7 @@ La app tiene lista de asignadas, detalle, entregar (con o sin PIN), posponer y s
 
 - [x] Probada en un emulador Android contra el backend local: login, lista, detalle, recoger, entregar con PIN (incorrecto y correcto), aplazar y Mi caja. Arreglos que salieron: fecha propuesta al aplazar, municipio repetido en la dirección, y entregas y recogidas diferenciadas por color e icono.
 - [x] **Incidencias de entrega**: «No se pudo entregar/recoger» con motivo (nota obligatoria en «Otro motivo») en la app y en el detalle del panel; aviso en la lista de la app, en la lista y el detalle del panel; filtro «Con incidencia», tarjeta en Inicio e historial con el motivo. Motivos traducidos por código.
-- [x] **Lista del repartidor**: las atrasadas y con incidencia van al final; orden «Más atrasadas primero» por días; días de atraso en la tarjeta; deslizar a la derecha para completar y a la izquierda para aplazar, siempre con confirmación; nombre del usuario en la barra; WhatsApp junto a Llamar; tras reportar una incidencia vuelve a la lista.
+- [x] **Lista del repartidor**: las atrasadas y con incidencia van al final; orden «Más atrasadas primero» por días; días de atraso en la tarjeta; deslizar a la derecha para completar y a la izquierda para marcar una incidencia, siempre con confirmación; nombre del usuario en la barra; WhatsApp junto a Llamar; tras reportar una incidencia vuelve a la lista.
 - [ ] En una recogida completada el estado dice «Entregada» (nombre del estado final que manda el backend). Valorar mostrar «Recogida» en el frontend o pedir un nombre neutro al backend.
 - [ ] Tests de los cubits de asignadas, remesa y caja.
 - [ ] Llamar y abrir mapas desde el detalle (`url_launcher` ya está en las dependencias).

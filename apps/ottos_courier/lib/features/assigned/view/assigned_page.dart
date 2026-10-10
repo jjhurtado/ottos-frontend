@@ -90,7 +90,7 @@ class _SortSelector extends StatelessWidget {
   }
 }
 
-/// Swipe right to complete, left to postpone; each asks in a dialog first
+/// Swipe right to complete, left to report an incident; each asks in a dialog first
 /// and the card stays in place until the list reloads.
 class _Swipeable extends StatelessWidget {
   const _Swipeable({required this.remittance, required this.child});
@@ -102,8 +102,8 @@ class _Swipeable extends StatelessWidget {
   Widget build(BuildContext context) {
     final user = context.select((AuthBloc bloc) => bloc.state.user!);
     final canComplete = user.can(Permissions.remittancesDeliver);
-    final canPostpone = user.can(Permissions.remittancesPostpone);
-    final direction = switch ((canComplete, canPostpone)) {
+    final canReportIncident = user.can(Permissions.remittancesReportIncident);
+    final direction = switch ((canComplete, canReportIncident)) {
       (true, true) => DismissDirection.horizontal,
       (true, false) => DismissDirection.startToEnd,
       (false, true) => DismissDirection.endToStart,
@@ -122,10 +122,10 @@ class _Swipeable extends StatelessWidget {
         done = CourierTexts.completed;
       } else {
         if (!context.mounted) return false;
-        final input = await showPostponeDialog(context, current: remittance.expectedDate);
+        final input = await showIncidentDialog(context, isPickup: remittance.isPickup);
         if (input == null) return false;
-        error = await cubit.postpone(remittance, newDate: input.newDate, reason: input.reason);
-        done = CourierTexts.postponed;
+        error = await cubit.reportIncident(remittance, reason: input.reason, note: input.note);
+        done = CoreTexts.incidentReported;
       }
       messenger.showSnackBar(SnackBar(content: Text(error ?? done)));
       // Never dismissed here: the reload takes the remittance out of the list.
@@ -142,10 +142,10 @@ class _Swipeable extends StatelessWidget {
         label: remittance.isPickup ? CourierTexts.markCollected : CourierTexts.markDelivered,
         alignment: Alignment.centerLeft,
       ),
-      secondaryBackground: const _SwipeBackground(
-        color: OttosColors.warning,
-        icon: Icons.event_repeat_outlined,
-        label: CoreTexts.postpone,
+      secondaryBackground: _SwipeBackground(
+        color: OttosColors.danger,
+        icon: Icons.report_outlined,
+        label: remittance.isPickup ? CoreTexts.reportIncidentPickup : CoreTexts.reportIncident,
         alignment: Alignment.centerRight,
       ),
       child: child,
