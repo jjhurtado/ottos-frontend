@@ -3,7 +3,6 @@ import 'package:ottos_core/ottos_core.dart';
 
 import '../features/cash/view/cash_page.dart';
 import '../features/cash/view/courier_cash_page.dart';
-import '../features/coming_soon/coming_soon_page.dart';
 import '../features/customers/view/customer_detail_page.dart';
 import '../features/customers/view/customer_list_page.dart';
 import '../features/home/view/home_page.dart';
@@ -11,6 +10,7 @@ import '../features/configuration/view/configuration_page.dart';
 import '../features/remittances/view/new_remittance_page.dart';
 import '../features/remittances/view/remittance_detail_page.dart';
 import '../features/remittances/view/remittance_list_page.dart';
+import '../features/roles/view/roles_page.dart';
 import '../features/users/view/user_list_page.dart';
 import '../shell/ops_shell.dart';
 import 'destinations.dart';
@@ -104,11 +104,7 @@ GoRouter buildRouter(AuthBloc authBloc) {
           ),
           GoRoute(path: Destinations.configuration.path, builder: (_, _) => const ConfigurationPage()),
           GoRoute(path: Destinations.users.path, builder: (_, _) => const UserListPage()),
-          for (final destination in [Destinations.roles])
-            GoRoute(
-              path: destination.path,
-              builder: (_, _) => ComingSoonPage(title: destination.label),
-            ),
+          GoRoute(path: Destinations.roles.path, builder: (_, _) => const RolesPage()),
         ],
       ),
     ],

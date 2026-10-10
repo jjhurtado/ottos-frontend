@@ -255,6 +255,59 @@ abstract final class OpsTexts {
   static const userDeactivated = 'Usuario desactivado';
   static const userActivated = 'Usuario activado';
 
-  // Coming soon
-  static const comingSoon = 'Esta sección estará disponible pronto.';
+  // Roles
+  static const newRole = 'Nuevo rol';
+  static String editRole(String name) => 'Editar rol $name';
+  static const roleCode = 'Código';
+  static const roleCodeHint = 'Mayúsculas y guiones bajos, p. ej. SUPERVISOR; no se puede cambiar';
+  static const roleCodeInvalid = 'Solo mayúsculas, números y guiones bajos; empieza por una letra (2 a 50)';
+  static const roleName = 'Nombre';
+  static const roleDescription = 'Descripción';
+  static const permissions = 'Permisos';
+  static const onlyYourPermissions = 'Solo puedes dar o quitar permisos que tú tienes.';
+  static const builtIn = 'Del sistema';
+  static const delete = 'Eliminar';
+  static String permissionCount(int count) => count == 1 ? '1 permiso' : '$count permisos';
+  static const deleteRoleTitle = 'Eliminar rol';
+  static String deleteRoleMessage(String name) =>
+      'El rol $name se eliminará. Solo se puede si ningún usuario lo tiene.';
+  static String roleCreated(String name) => 'Rol $name creado';
+  static const roleSaved = 'Rol guardado';
+  static const roleDeleted = 'Rol eliminado';
+
+  static String permissionModule(String module) => switch (module) {
+    'remittances' => 'Remesas',
+    'customers' => 'Clientes y beneficiarios',
+    'payments' => 'Caja',
+    'configuration' => 'Configuración',
+    'rates' => 'Cotizaciones',
+    'identity' => 'Usuarios y roles',
+    '' => 'Otros',
+    _ => module,
+  };
+
+  /// What a permission allows, in Spanish; the backend's English description otherwise.
+  static String permissionLabel(PermissionInfo permission) => switch (permission.code) {
+    Permissions.remittancesCreate => 'Registrar remesas',
+    Permissions.remittancesRead => 'Ver todas las remesas y su historial',
+    Permissions.remittancesReadAssigned => 'Ver sus remesas asignadas (repartidor)',
+    Permissions.remittancesReadFinancials => 'Ver importes de las recogidas',
+    Permissions.remittancesAssign => 'Asignar y reasignar repartidores',
+    Permissions.remittancesDeliver => 'Marcar como entregada o recogida (repartidor)',
+    Permissions.remittancesPostpone => 'Aplazar remesas',
+    Permissions.customersRead => 'Ver clientes y beneficiarios',
+    Permissions.customersWrite => 'Crear y editar clientes y beneficiarios',
+    Permissions.cashRead => 'Ver la caja del negocio y de los repartidores',
+    Permissions.cashReadOwn => 'Ver su propia caja (repartidor)',
+    Permissions.cashWrite => 'Entregar fondos y registrar devoluciones de repartidores',
+    Permissions.cashAdjust => 'Depositar y retirar de la caja del negocio',
+    Permissions.configurationRead => 'Ver la configuración, tasas y comisiones',
+    Permissions.configurationWrite => 'Cambiar la configuración, tasas y comisiones',
+    Permissions.ratesRead => 'Calcular cotizaciones',
+    Permissions.usersRead => 'Ver usuarios',
+    Permissions.usersWrite => 'Crear, editar, activar y desactivar usuarios',
+    Permissions.rolesRead => 'Ver roles y permisos',
+    Permissions.rolesWrite => 'Crear, editar y eliminar roles',
+    _ => permission.description ?? permission.code,
+  };
 }
