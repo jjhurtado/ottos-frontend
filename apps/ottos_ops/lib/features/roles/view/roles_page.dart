@@ -48,7 +48,7 @@ class _RolesView extends StatelessWidget {
                 onPressed: () async {
                   final role = await showRoleDialog(context, catalog: state.catalog, grantable: user.permissions);
                   if (role == null || !context.mounted) return;
-                  _notify(context, OpsTexts.roleCreated(role.name));
+                  _notify(context, OpsTexts.roleCreated(role.displayName));
                   await cubit.load();
                 },
                 icon: const Icon(Icons.add),
@@ -93,14 +93,14 @@ class _RoleCard extends StatelessWidget {
               runSpacing: 8,
               crossAxisAlignment: WrapCrossAlignment.center,
               children: [
-                Text(role.name, style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600)),
+                Text(role.displayName, style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600)),
                 Text(role.code, style: textTheme.bodySmall),
                 if (role.builtIn) const Chip(label: Text(OpsTexts.builtIn), visualDensity: VisualDensity.compact),
               ],
             ),
-            if (role.description != null && role.description!.isNotEmpty) ...[
+            if (role.displayDescription case final description? when description.isNotEmpty) ...[
               const SizedBox(height: 4),
-              Text(role.description!),
+              Text(description),
             ],
             if (canWrite) ...[
               const SizedBox(height: 12),
@@ -175,7 +175,7 @@ class _RoleCard extends StatelessWidget {
           context: context,
           builder: (context) => AlertDialog(
             title: const Text(OpsTexts.deleteRoleTitle),
-            content: Text(OpsTexts.deleteRoleMessage(role.name)),
+            content: Text(OpsTexts.deleteRoleMessage(role.displayName)),
             actions: [
               TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text(CoreTexts.cancel)),
               FilledButton(onPressed: () => Navigator.of(context).pop(true), child: const Text(OpsTexts.delete)),

@@ -63,7 +63,7 @@ Objetivo: sustituir las pantallas «Próximamente» que quedan. Todas tienen el 
 4. ~~**Roles y permisos**~~ Hecho: roles con sus permisos por área y en español, alta, edición y eliminación; el rol del sistema es de solo lectura y solo se pueden dar permisos que uno tiene.
 5. ~~**Mi cuenta**~~ Hecho: cambio de contraseña desde el menú de usuario del panel y el menú de cuenta de la app de repartidores; al cambiarla se cierra la sesión y el login explica por qué.
 
-Pendiente de la Fase 3: traducir los nombres de los roles del sistema por su código (el backend los devuelve en inglés y no se traducirán allí).
+Los roles del sistema (ADMIN, SALES, DELIVERY) y los permisos se muestran en español, traducidos por su código; el backend los guarda en inglés.
 
 Criterio de salida: no queda ninguna sección «Próximamente» en el menú y cada una respeta sus permisos.
 

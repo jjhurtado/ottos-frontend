@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 
+import '../l10n/core_texts.dart';
 import 'json.dart';
 
 /// A role as shown on a user (`RoleSummary`).
@@ -15,6 +16,9 @@ class RoleSummary extends Equatable {
   final String id;
   final String code;
   final String name;
+
+  /// [name], in Spanish for the roles the system seeds.
+  String get displayName => CoreTexts.roleName(code, name);
 
   @override
   List<Object?> get props => [id];
@@ -46,6 +50,12 @@ class Role extends Equatable {
   final String? description;
   final bool builtIn;
   final List<String> permissions;
+
+  /// [name], in Spanish for the roles the system seeds.
+  String get displayName => CoreTexts.roleName(code, name);
+
+  /// [description], in Spanish for the roles the system seeds.
+  String? get displayDescription => CoreTexts.roleDescription(code, description);
 
   @override
   List<Object?> get props => [id, code, name, description, builtIn, permissions];

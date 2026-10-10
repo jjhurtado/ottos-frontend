@@ -86,6 +86,32 @@ abstract final class CoreTexts {
   static const changePasswordHelp = 'Al cambiarla se cerrará tu sesión en todos los dispositivos.';
   static const passwordChanged = 'Contraseña cambiada. Entra con la contraseña nueva.';
 
+  // Roles
+  /// The roles the backend seeds, by code: (English name, English description, Spanish name, Spanish description).
+  /// The backend keeps them in English; SALES and DELIVERY can be renamed, and a renamed one shows as typed.
+  static const _systemRoles = {
+    'ADMIN': ('Administrator', 'Full access to the system', 'Administrador', 'Acceso completo al sistema'),
+    'SALES': ('Sales', 'Registers and charges remittances', 'Ventas', 'Registra y cobra las remesas'),
+    'DELIVERY': (
+      'Delivery',
+      'Delivers remittances to beneficiaries',
+      'Repartidor',
+      'Entrega las remesas a los beneficiarios',
+    ),
+  };
+
+  /// The role's name in Spanish while it keeps the backend's original English one.
+  static String roleName(String code, String name) {
+    final seed = _systemRoles[code];
+    return seed != null && name == seed.$1 ? seed.$3 : name;
+  }
+
+  /// The role's description in Spanish while it keeps the backend's original English one.
+  static String? roleDescription(String code, String? description) {
+    final seed = _systemRoles[code];
+    return seed != null && description == seed.$2 ? seed.$4 : description;
+  }
+
   // Common
   static const retry = 'Reintentar';
   static const logout = 'Cerrar sesión';

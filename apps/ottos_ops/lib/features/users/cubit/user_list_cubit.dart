@@ -30,7 +30,7 @@ final class UserListState extends Equatable {
       if (text.isEmpty) return true;
       return user.name.toLowerCase().contains(text) ||
           user.email.toLowerCase().contains(text) ||
-          user.roles.any((role) => role.name.toLowerCase().contains(text));
+          user.roles.any((role) => role.displayName.toLowerCase().contains(text));
     }).toList();
   }
 

@@ -103,7 +103,7 @@ class _RoleDialogState extends State<_RoleDialog> {
       modules.putIfAbsent(permission.module, () => []).add(permission);
     }
     return AlertDialog(
-      title: Text(_creating ? OpsTexts.newRole : OpsTexts.editRole(widget.role!.name)),
+      title: Text(_creating ? OpsTexts.newRole : OpsTexts.editRole(widget.role!.displayName)),
       content: SizedBox(
         width: 640,
         child: Form(

@@ -138,7 +138,7 @@ class _UserTable extends StatelessWidget {
                       spacing: 4,
                       children: [
                         for (final role in user.roles)
-                          Chip(label: Text(role.name), visualDensity: VisualDensity.compact),
+                          Chip(label: Text(role.displayName), visualDensity: VisualDensity.compact),
                       ],
                     ),
                   ),
