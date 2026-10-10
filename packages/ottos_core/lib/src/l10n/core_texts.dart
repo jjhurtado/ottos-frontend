@@ -42,6 +42,7 @@ abstract final class CoreTexts {
     'INVALID_PHONE': 'El teléfono no es válido.',
     'UNKNOWN_MUNICIPALITY': 'El municipio no existe.',
     'INCORRECT_CURRENT_PASSWORD': 'La contraseña actual no es correcta.',
+    'NO_BUSINESS_CASH': 'La caja del negocio no maneja esa moneda.',
   };
 
   // Login
