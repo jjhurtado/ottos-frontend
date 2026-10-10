@@ -1,6 +1,9 @@
 import 'package:equatable/equatable.dart';
 
+import 'dart:math';
+
 import '../api/api_client.dart';
+import '../models/courier.dart';
 import '../models/event.dart';
 import '../models/page_result.dart';
 import '../models/remittance.dart';
@@ -64,6 +67,38 @@ class RemittanceFilter extends Equatable {
   };
 }
 
+/// Data to register a remittance (`POST /remittances`). The source currency is
+/// always USD; the backend quotes the amount at today's rate.
+class NewRemittance extends Equatable {
+  const NewRemittance({
+    required this.type,
+    required this.customerId,
+    required this.beneficiaryId,
+    required this.amount,
+    required this.targetCurrency,
+    this.notes,
+  });
+
+  final RemittanceType type;
+  final String customerId;
+  final String beneficiaryId;
+  final double amount;
+  final String targetCurrency;
+  final String? notes;
+
+  Map<String, dynamic> toJson() => {
+    'type': type.code,
+    'customerId': customerId,
+    'beneficiaryId': beneficiaryId,
+    'amount': amount,
+    'targetCurrency': targetCurrency,
+    'notes': notes,
+  };
+
+  @override
+  List<Object?> get props => [type, customerId, beneficiaryId, amount, targetCurrency, notes];
+}
+
 class RemittanceRepository {
   RemittanceRepository({required this._api});
 
@@ -76,6 +111,28 @@ class RemittanceRepository {
       query: {...filter.toQuery(), 'page': page, 'size': size},
     );
     return PageResult.fromJson(json, Remittance.fromJson);
+  }
+
+  /// Registers a remittance. Sending the same [idempotencyKey] again (a retry
+  /// or a double click) returns the first remittance instead of a second one.
+  Future<Remittance> register(NewRemittance remittance, {required String idempotencyKey}) async => Remittance.fromJson(
+    await _api.post<Map<String, dynamic>>(
+      '/remittances',
+      body: remittance.toJson(),
+      headers: {'Idempotency-Key': idempotencyKey},
+    ),
+  );
+
+  /// A random key for [register], one per remittance being filled in.
+  static String newIdempotencyKey() {
+    final random = Random.secure();
+    return List.generate(16, (_) => random.nextInt(256).toRadixString(16).padLeft(2, '0')).join();
+  }
+
+  /// Staff who can be assigned remittances, by name (`remittances:assign`).
+  Future<List<Courier>> couriers() async {
+    final json = await _api.get<List<dynamic>>('/couriers');
+    return json.map((item) => Courier.fromJson(item as Map<String, dynamic>)).toList();
   }
 
   Future<Remittance> get(String id) async =>

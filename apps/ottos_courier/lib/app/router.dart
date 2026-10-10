@@ -22,11 +22,15 @@ GoRouter buildRouter(AuthBloc authBloc) {
     refreshListenable: GoRouterRefreshStream(authBloc.stream),
     redirect: (context, state) {
       final auth = authBloc.state;
-      final location = state.matchedLocation;
-      if (auth.status == AuthStatus.unknown) return location == Routes.splash ? null : Routes.splash;
-      if (!auth.isAuthenticated) return location == Routes.login ? null : Routes.login;
-      if (location == Routes.login || location == Routes.splash) return Routes.assigned;
-      if (location == Routes.cash && !auth.user!.can(Permissions.cashReadOwn)) return Routes.assigned;
+      final sessionRedirect = authRedirect(
+        auth,
+        state,
+        home: Routes.assigned,
+        splash: Routes.splash,
+        login: Routes.login,
+      );
+      if (sessionRedirect != null || !auth.isAuthenticated) return sessionRedirect;
+      if (state.matchedLocation == Routes.cash && !auth.user!.can(Permissions.cashReadOwn)) return Routes.assigned;
       return null;
     },
     routes: [

@@ -5,8 +5,6 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../../app/courier_texts.dart';
 import '../cubit/remittance_cubit.dart';
-import 'complete_dialog.dart';
-import 'postpone_dialog.dart';
 
 class RemittancePage extends StatelessWidget {
   const RemittancePage({super.key, required this.remittanceId});
@@ -159,7 +157,7 @@ class _Actions extends StatelessWidget {
                           final result = await showPostponeDialog(context, current: remittance.expectedDate);
                           if (result != null) await cubit.postpone(newDate: result.newDate, reason: result.reason);
                         },
-                  child: const Text(CourierTexts.postpone),
+                  child: const Text(CoreTexts.postpone),
                 ),
               ),
               const SizedBox(width: 12),

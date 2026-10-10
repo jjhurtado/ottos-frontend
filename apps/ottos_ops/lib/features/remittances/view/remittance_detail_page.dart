@@ -6,6 +6,7 @@ import 'package:ottos_core/ottos_core.dart';
 import '../../../app/destinations.dart';
 import '../../../app/ops_texts.dart';
 import '../cubit/remittance_detail_cubit.dart';
+import 'assign_dialog.dart';
 
 class RemittanceDetailPage extends StatelessWidget {
   const RemittanceDetailPage({super.key, required this.remittanceId});
@@ -18,15 +19,32 @@ class RemittanceDetailPage extends StatelessWidget {
       key: ValueKey(remittanceId),
       create: (context) =>
           RemittanceDetailCubit(remittances: context.read<RemittanceRepository>(), id: remittanceId)..load(),
-      child: BlocBuilder<RemittanceDetailCubit, RemittanceDetailState>(
-        builder: (context, state) => switch (state.status) {
-          RemittanceDetailStatus.loading => const LoadingView(),
-          RemittanceDetailStatus.failure => ErrorView(
-            message: state.error!,
-            onRetry: context.read<RemittanceDetailCubit>().load,
-          ),
-          RemittanceDetailStatus.success => _RemittanceDetailView(state: state),
+      child: BlocListener<RemittanceDetailCubit, RemittanceDetailState>(
+        listenWhen: (previous, current) => current.action != RemittanceAction.none,
+        listener: (context, state) {
+          final message = switch (state.action) {
+            RemittanceAction.assigned => OpsTexts.assigned,
+            RemittanceAction.completed => OpsTexts.completed,
+            RemittanceAction.postponed => OpsTexts.postponed,
+            RemittanceAction.failed => state.actionError ?? CoreTexts.unexpectedError,
+            RemittanceAction.none => null,
+          };
+          if (message != null) {
+            ScaffoldMessenger.of(context)
+              ..hideCurrentSnackBar()
+              ..showSnackBar(SnackBar(content: Text(message)));
+          }
         },
+        child: BlocBuilder<RemittanceDetailCubit, RemittanceDetailState>(
+          builder: (context, state) => switch (state.status) {
+            RemittanceDetailStatus.loading => const LoadingView(),
+            RemittanceDetailStatus.failure => ErrorView(
+              message: state.error!,
+              onRetry: context.read<RemittanceDetailCubit>().load,
+            ),
+            RemittanceDetailStatus.success => _RemittanceDetailView(state: state),
+          },
+        ),
       ),
     );
   }
@@ -63,6 +81,7 @@ class _RemittanceDetailView extends StatelessWidget {
             Chip(label: Text(remittance.isPickup ? CoreTexts.pickup : CoreTexts.delivery)),
           ],
         ),
+        _ActionBar(state: state),
         const SizedBox(height: 16),
         LayoutBuilder(
           builder: (context, constraints) {
@@ -83,6 +102,72 @@ class _RemittanceDetailView extends StatelessWidget {
           },
         ),
       ],
+    );
+  }
+}
+
+/// The actions the workflow allows from the current status, among those the
+/// user has permission for. Nothing at all when there are none.
+class _ActionBar extends StatelessWidget {
+  const _ActionBar({required this.state});
+
+  final RemittanceDetailState state;
+
+  @override
+  Widget build(BuildContext context) {
+    final permissions = context.select((AuthBloc bloc) => bloc.state.user!.permissions);
+    final remittance = state.remittance!;
+    final workflow = state.workflow!;
+    final cubit = context.read<RemittanceDetailCubit>();
+    final canAssign = workflow.canAssign(remittance.status, permissions);
+    final canComplete = workflow.canComplete(remittance.status, permissions);
+    final canPostpone = permissions.contains(Permissions.remittancesPostpone) && !workflow.isFinal(remittance.status);
+    if (!canAssign && !canComplete && !canPostpone) return const SizedBox.shrink();
+
+    final enabled = !state.submitting;
+    return Padding(
+      padding: const EdgeInsets.only(top: 16),
+      child: Wrap(
+        spacing: 12,
+        runSpacing: 8,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: [
+          if (canAssign)
+            FilledButton.tonalIcon(
+              onPressed: enabled
+                  ? () async {
+                      final input = await showAssignDialog(context, currentCourierId: remittance.courierId);
+                      if (input != null) await cubit.assign(courierId: input.courierId, note: input.note);
+                    }
+                  : null,
+              icon: const Icon(Icons.person_add_alt_1_outlined),
+              label: Text(remittance.courierId == null ? OpsTexts.assignCourier : OpsTexts.reassignCourier),
+            ),
+          if (canComplete)
+            FilledButton.icon(
+              onPressed: enabled
+                  ? () async {
+                      final input = await showCompleteDialog(context, isPickup: remittance.isPickup);
+                      if (input != null) await cubit.complete(pin: input.pin, note: input.note);
+                    }
+                  : null,
+              icon: const Icon(Icons.check_circle_outline),
+              label: Text(remittance.isPickup ? OpsTexts.markCollected : OpsTexts.markDelivered),
+            ),
+          if (canPostpone)
+            OutlinedButton.icon(
+              onPressed: enabled
+                  ? () async {
+                      final input = await showPostponeDialog(context, current: remittance.expectedDate);
+                      if (input != null) await cubit.postpone(newDate: input.newDate, reason: input.reason);
+                    }
+                  : null,
+              icon: const Icon(Icons.event_repeat_outlined),
+              label: const Text(CoreTexts.postpone),
+            ),
+          if (state.submitting) const SizedBox.square(dimension: 20, child: CircularProgressIndicator(strokeWidth: 2)),
+        ],
+      ),
     );
   }
 }
@@ -201,7 +286,12 @@ class _HistoryCard extends StatelessWidget {
                     ].where((name) => name.isNotEmpty).join(' → '),
                   ),
                 if (event.newDate != null)
-                  Text('${Formatters.date(event.previousDate)} → ${Formatters.date(event.newDate)}'),
+                  Text(
+                    [
+                      Formatters.date(event.previousDate),
+                      Formatters.date(event.newDate),
+                    ].where((date) => date.isNotEmpty).join(' → '),
+                  ),
                 if (event.note != null && event.note!.isNotEmpty) Text(event.note!),
                 Text(Formatters.dateTime(event.occurredAt), style: TextStyle(color: outline, fontSize: 12)),
               ],
