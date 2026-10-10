@@ -43,6 +43,10 @@ abstract final class CoreTexts {
     'UNKNOWN_MUNICIPALITY': 'El municipio no existe.',
     'INCORRECT_CURRENT_PASSWORD': 'La contraseña actual no es correcta.',
     'NO_BUSINESS_CASH': 'La caja del negocio no maneja esa moneda.',
+    'FIXED_RATE': 'La tasa de este corredor siempre es 1.',
+    'FEE_PERCENTAGE_TOO_HIGH': 'Un porcentaje de comisión no puede pasar de 100.',
+    'INVALID_FEE_RANGE': 'La comisión mínima no puede ser mayor que la máxima.',
+    'CORRIDOR_NOT_FOUND': 'No se encontró el corredor.',
   };
 
   // Login

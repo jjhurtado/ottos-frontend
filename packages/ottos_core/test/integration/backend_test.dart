@@ -348,6 +348,54 @@ void main() {
       expect(movements.every((m) => m.remittanceId == delivered.id), isTrue);
     });
   }, skip: skip);
+
+  // Writes to the backend: saves a rate and a fee rule equal to the ones in force, so quotes do not change.
+  group('rates', () {
+    late RateRepository rates;
+
+    setUp(() async {
+      rates = RateRepository(api: api);
+      await auth.login(email: email, password: password);
+    });
+
+    test('re-saves the rate and fee rule in force and finds them first in the history', () async {
+      final corridor = (await rates.corridors())
+          .where((c) => c.canQuote && !c.hasFixedRate && c.feeRule != null)
+          .firstOrNull;
+      if (corridor == null) {
+        markTestSkipped('Needs a corridor with a rate and a fee rule');
+        return;
+      }
+      final rule = corridor.feeRule!;
+
+      final rate = await rates.setRate(corridor.code, corridor.currentRate!);
+      final feeRule = await rates.setFeeRule(
+        corridor.code,
+        FeeRuleInput(type: rule.type, value: rule.value, minFee: rule.minFee, maxFee: rule.maxFee),
+      );
+
+      expect((await rates.rateHistory(corridor.code)).first.id, rate.id);
+      expect((await rates.feeRuleHistory(corridor.code)).first.id, feeRule.id);
+      final refreshed = (await rates.corridors()).firstWhere((c) => c.code == corridor.code);
+      expect(refreshed.rate?.id, rate.id);
+      expect(refreshed.feeRule?.value, rule.value);
+    });
+
+    test('rejects a rate for a same-currency corridor and a percentage over 100', () async {
+      final corridors = await rates.corridors();
+      final fixed = corridors.where((c) => c.hasFixedRate).firstOrNull;
+      if (fixed != null) {
+        await expectLater(
+          rates.setRate(fixed.code, 2),
+          throwsA(isA<ApiException>().having((e) => e.code, 'code', 'FIXED_RATE')),
+        );
+      }
+      await expectLater(
+        rates.setFeeRule(corridors.first.code, const FeeRuleInput(type: FeeType.percentage, value: 150)),
+        throwsA(isA<ApiException>().having((e) => e.code, 'code', 'FEE_PERCENTAGE_TOO_HIGH')),
+      );
+    });
+  }, skip: skip);
 }
 
 extension on CustomerInput {
