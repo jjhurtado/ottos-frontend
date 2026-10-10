@@ -184,14 +184,16 @@ void main() {
         return;
       }
 
-      final quote = await rates.quote(sourceCurrency: 'USD', targetCurrency: currency, amount: 100);
+      // At least the configured minimum, which the backend enforces.
+      final amount = max(100.0, (await rates.settings()).minimumAmount);
+      final quote = await rates.quote(sourceCurrency: 'USD', targetCurrency: currency, amount: amount);
       expect(quote.total, greaterThan(quote.amount));
 
       final newRemittance = NewRemittance(
         type: RemittanceType.delivery,
         customerId: customer.id,
         beneficiaryId: beneficiary.id,
-        amount: 100,
+        amount: amount,
         targetCurrency: currency,
         notes: 'Frontend integration test',
       );
