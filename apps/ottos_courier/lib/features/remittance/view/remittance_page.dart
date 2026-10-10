@@ -57,15 +57,18 @@ class _RemittanceView extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       children: [
         Card(
-          color: OttosColors.navy,
+          // Colored by type, as in the list: delivery and pickup never look alike.
+          color: remittance.type.color,
           child: Padding(
             padding: const EdgeInsets.all(20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                RemittanceTypeBadge(type: remittance.type, onDark: true),
+                const SizedBox(height: 12),
                 Text(
                   remittance.isPickup ? CourierTexts.toCollect : CourierTexts.toDeliver,
-                  style: textTheme.titleSmall?.copyWith(color: OttosColors.cream),
+                  style: textTheme.titleSmall?.copyWith(color: Colors.white70),
                 ),
                 const SizedBox(height: 4),
                 Text(
@@ -73,7 +76,7 @@ class _RemittanceView extends StatelessWidget {
                   style: textTheme.headlineMedium?.copyWith(color: Colors.white, fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(height: 8),
-                RemittanceStatusChip(remittance: remittance),
+                RemittanceStatusChip(remittance: remittance, onDark: true),
               ],
             ),
           ),
@@ -166,6 +169,7 @@ class _Actions extends StatelessWidget {
               Expanded(
                 flex: 2,
                 child: FilledButton(
+                  style: FilledButton.styleFrom(backgroundColor: remittance.type.color),
                   onPressed: submitting
                       ? null
                       : () async {
