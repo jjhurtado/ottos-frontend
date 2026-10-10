@@ -74,6 +74,15 @@ class _CompleteDialogState extends State<_CompleteDialog> {
 
 typedef PostponeInput = ({DateTime newDate, String reason});
 
+/// The first date a remittance expected on [current] can be postponed to: the
+/// backend wants a later date than the expected one, and never today or before.
+DateTime earliestPostponeDate(DateTime? current, {DateTime? now}) {
+  final tomorrow = DateUtils.dateOnly(now ?? DateTime.now()).add(const Duration(days: 1));
+  if (current == null) return tomorrow;
+  final dayAfter = DateUtils.dateOnly(current).add(const Duration(days: 1));
+  return dayAfter.isAfter(tomorrow) ? dayAfter : tomorrow;
+}
+
 /// Asks for the new date and the (required) reason to postpone.
 Future<PostponeInput?> showPostponeDialog(BuildContext context, {DateTime? current}) {
   return showDialog<PostponeInput>(
@@ -94,14 +103,8 @@ class _PostponeDialog extends StatefulWidget {
 class _PostponeDialogState extends State<_PostponeDialog> {
   final _formKey = GlobalKey<FormState>();
   final _reason = TextEditingController();
-  late DateTime _date = _initialDate();
-
-  DateTime _initialDate() {
-    final tomorrow = DateUtils.dateOnly(DateTime.now()).add(const Duration(days: 1));
-    final current = widget.current;
-    if (current == null || !current.isAfter(tomorrow)) return tomorrow;
-    return DateUtils.dateOnly(current).add(const Duration(days: 1));
-  }
+  late final DateTime _earliest = earliestPostponeDate(widget.current);
+  late DateTime _date = _earliest;
 
   @override
   void dispose() {
@@ -114,8 +117,10 @@ class _PostponeDialogState extends State<_PostponeDialog> {
     final picked = await showDatePicker(
       context: context,
       initialDate: _date,
-      firstDate: today.add(const Duration(days: 1)),
-      lastDate: today.add(const Duration(days: 60)),
+      firstDate: _earliest,
+      lastDate: today.add(const Duration(days: 60)).isAfter(_earliest)
+          ? today.add(const Duration(days: 60))
+          : _earliest.add(const Duration(days: 60)),
     );
     if (picked != null) setState(() => _date = picked);
   }
