@@ -283,6 +283,71 @@ void main() {
       );
     });
   }, skip: skip);
+
+  // Writes to the backend: each operation is undone by its opposite, so balances end as they started.
+  group('cash', () {
+    late CashRepository cash;
+
+    setUp(() async {
+      cash = CashRepository(api: api);
+      await auth.login(email: email, password: password);
+    });
+
+    double balanceOf(List<Balance> balances, String currency) =>
+        balances.where((b) => b.currency == currency).fold(0, (sum, b) => sum + b.amount);
+
+    test('deposits and withdraws from the business box', () async {
+      final before = balanceOf(await cash.businessBalances(), 'USD');
+
+      final deposit = await cash.deposit(const CashInput(amount: 12.5, currency: 'USD', note: 'Integration test'));
+      expect(deposit.type, CashMovementType.businessDeposit);
+      expect(balanceOf(await cash.businessBalances(), 'USD'), before + 12.5);
+
+      await cash.withdraw(const CashInput(amount: 12.5, currency: 'USD', note: 'Integration test'));
+      expect(balanceOf(await cash.businessBalances(), 'USD'), before);
+
+      await expectLater(
+        cash.deposit(const CashInput(amount: 1, currency: 'USD')),
+        throwsA(isA<ApiException>().having((e) => e.code, 'code', 'VALIDATION_FAILED')),
+      );
+      final latest = await cash.businessMovements();
+      expect(latest.first.type, CashMovementType.businessWithdrawal);
+    });
+
+    test('funds a courier and registers the return', () async {
+      final couriers = await cash.couriers();
+      if (couriers.isEmpty) {
+        markTestSkipped('No courier with cash movements');
+        return;
+      }
+      final courier = couriers.first;
+      final before = balanceOf((await cash.courierStatement(courier.courierId)).cash.balances, 'USD');
+
+      final funding = await cash.fundCourier(courier.courierId, const CashInput(amount: 20, currency: 'USD'));
+      expect(funding.toOwnerId, courier.courierId);
+      final funded = await cash.courierStatement(courier.courierId);
+      expect(balanceOf(funded.cash.balances, 'USD'), before + 20);
+      expect(funded.movements.first.type, CashMovementType.courierFunding);
+
+      await cash.courierReturn(courier.courierId, const CashInput(amount: 20, currency: 'USD'));
+      expect(balanceOf((await cash.courierStatement(courier.courierId)).cash.balances, 'USD'), before);
+    });
+
+    test('lists the movements of a delivered remittance', () async {
+      final delivered = (await RemittanceRepository(
+        api: api,
+      ).search(const RemittanceFilter(status: 'DELIVERED'), size: 1)).items.firstOrNull;
+      if (delivered == null) {
+        markTestSkipped('No delivered remittance');
+        return;
+      }
+
+      final movements = await cash.remittanceMovements(delivered.id);
+
+      expect(movements.map((m) => m.type), contains(CashMovementType.remittancePayment));
+      expect(movements.every((m) => m.remittanceId == delivered.id), isTrue);
+    });
+  }, skip: skip);
 }
 
 extension on CustomerInput {

@@ -6,6 +6,7 @@ import 'package:ottos_core/ottos_core.dart';
 import '../../../app/destinations.dart';
 import '../../../app/ops_texts.dart';
 import '../cubit/remittance_detail_cubit.dart';
+import '../../cash/view/movement_tile.dart';
 import 'assign_dialog.dart';
 
 class RemittanceDetailPage extends StatelessWidget {
@@ -59,6 +60,7 @@ class _RemittanceDetailView extends StatelessWidget {
   Widget build(BuildContext context) {
     final remittance = state.remittance!;
     final textTheme = Theme.of(context).textTheme;
+    final canReadCash = context.select((AuthBloc bloc) => bloc.state.user!.can(Permissions.cashRead));
     return ListView(
       padding: const EdgeInsets.all(24),
       children: [
@@ -88,15 +90,22 @@ class _RemittanceDetailView extends StatelessWidget {
             final summary = _SummaryCard(remittance: remittance);
             final money = _MoneyCard(remittance: remittance);
             final history = _HistoryCard(state: state);
+            final cash = canReadCash
+                ? _CashMovementsCard(
+                    // A new key reloads the movements after an action changes the remittance.
+                    key: ValueKey('${remittance.status}-${remittance.completedAt}'),
+                    remittanceId: remittance.id,
+                  )
+                : null;
             if (constraints.maxWidth < 900) {
-              return Column(children: [summary, money, history]);
+              return Column(children: [summary, money, history, ?cash]);
             }
             return Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(flex: 3, child: Column(children: [summary, money])),
                 const SizedBox(width: 16),
-                Expanded(flex: 2, child: history),
+                Expanded(flex: 2, child: Column(children: [history, ?cash])),
               ],
             );
           },
@@ -297,6 +306,48 @@ class _HistoryCard extends StatelessWidget {
               ],
             ),
           ),
+      ],
+    );
+  }
+}
+
+/// Cash movements this remittance caused (payment, payout, collection).
+class _CashMovementsCard extends StatefulWidget {
+  const _CashMovementsCard({super.key, required this.remittanceId});
+
+  final String remittanceId;
+
+  @override
+  State<_CashMovementsCard> createState() => _CashMovementsCardState();
+}
+
+class _CashMovementsCardState extends State<_CashMovementsCard> {
+  late final Future<List<CashMovement>> _movements;
+
+  @override
+  void initState() {
+    super.initState();
+    _movements = context.read<CashRepository>().remittanceMovements(widget.remittanceId);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return _Section(
+      title: OpsTexts.cashMovements,
+      children: [
+        FutureBuilder<List<CashMovement>>(
+          future: _movements,
+          builder: (context, snapshot) {
+            if (snapshot.hasError) {
+              final error = snapshot.error;
+              return Text(error is ApiException ? error.message : CoreTexts.unexpectedError);
+            }
+            final movements = snapshot.data;
+            if (movements == null) return const LinearProgressIndicator();
+            if (movements.isEmpty) return const Text(OpsTexts.noMovements);
+            return Column(children: [for (final movement in movements) MovementTile(movement: movement)]);
+          },
+        ),
       ],
     );
   }

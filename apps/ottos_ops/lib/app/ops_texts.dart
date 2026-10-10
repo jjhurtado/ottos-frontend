@@ -1,3 +1,5 @@
+import 'package:ottos_core/ottos_core.dart';
+
 /// User-facing texts of the operations panel.
 abstract final class OpsTexts {
   static const appName = 'Panel de operaciones';
@@ -130,6 +132,42 @@ abstract final class OpsTexts {
   static const unlinkTitle = 'Desvincular beneficiario';
   static String unlinkMessage(String name) =>
       '$name dejará de aparecer como beneficiario de este cliente. Las remesas anteriores no cambian.';
+
+  // Cash
+  static const businessCash = 'Caja del negocio';
+  static const couriersCash = 'Efectivo de los repartidores';
+  static const latestMovements = 'Últimos movimientos';
+  static const cashMovements = 'Movimientos de caja';
+  static const balance = 'Saldo';
+  static const currency = 'Moneda';
+  static const amountRequired = 'Escribe un monto mayor que 0';
+  static const noBalances = 'Sin saldo todavía.';
+  static const noCourierCash = 'Ningún repartidor tiene movimientos de caja.';
+  static const noMovements = 'Sin movimientos.';
+  static const courierOwes = 'Debe efectivo al negocio en alguna moneda.';
+  static const deposit = 'Depositar';
+  static const withdraw = 'Retirar';
+  static const depositHelp = 'Dinero que entra a la caja desde fuera: capital, CUP comprados…';
+  static const withdrawHelp = 'Dinero que sale de la caja: gastos, USD vendidos…';
+  static const fund = 'Entregar fondos';
+  static const registerReturn = 'Registrar devolución';
+  static String fundCourierTitle(String name) => 'Entregar fondos a $name';
+  static String courierReturnTitle(String name) => 'Devolución de $name';
+  static String movementRegistered(String amount) => 'Movimiento de $amount registrado';
+
+  /// Movement names from the business's point of view.
+  static String movementTitle(CashMovementType type) => switch (type) {
+    CashMovementType.remittancePayment => 'Cobro de remesa',
+    CashMovementType.courierFunding => 'Fondos a repartidor',
+    CashMovementType.deliveryPayout => 'Entrega de remesa',
+    CashMovementType.pickupCollection => 'Recogida de remesa',
+    CashMovementType.courierReturn => 'Devolución de repartidor',
+    CashMovementType.courierSurplus => 'Sobrante de repartidor',
+    CashMovementType.remittanceRefund => 'Reembolso de remesa',
+    CashMovementType.businessDeposit => 'Depósito',
+    CashMovementType.businessWithdrawal => 'Retiro',
+    CashMovementType.unknown => 'Movimiento',
+  };
 
   // Coming soon
   static const comingSoon = 'Esta sección estará disponible pronto.';
