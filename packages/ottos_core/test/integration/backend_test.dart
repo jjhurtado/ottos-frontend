@@ -213,6 +213,19 @@ void main() {
       expect(assigned.courierId, courier.id);
       expect(workflow.canComplete(assigned.status, admin), isTrue);
 
+      // A failed attempt: the remittance stays assigned and shows the incident.
+      if ((await auth.currentUser()).can(Permissions.remittancesReportIncident)) {
+        await expectLater(
+          remittances.reportIncident(created.id, reason: IncidentReason.other),
+          throwsA(isA<ApiException>().having((e) => e.code, 'code', 'INCIDENT_NOTE_REQUIRED')),
+        );
+        final reported = await remittances.reportIncident(created.id, reason: IncidentReason.notHome, note: 'Test');
+        expect(reported.status, assigned.status);
+        expect(reported.incident?.reason, IncidentReason.notHome);
+        final withIncident = await remittances.search(const RemittanceFilter(incident: true), size: 100);
+        expect(withIncident.items.map((r) => r.id), contains(created.id));
+      }
+
       await expectLater(
         remittances.deliverWithPin(created.id, pin: assigned.pin == '000000' ? '111111' : '000000'),
         throwsA(isA<ApiException>().having((e) => e.code, 'code', 'INCORRECT_PIN')),
@@ -226,6 +239,9 @@ void main() {
         history.map((event) => event.toStatus),
         containsAllInOrder([created.status, assigned.status, delivered.status]),
       );
+      if ((await auth.currentUser()).can(Permissions.remittancesReportIncident)) {
+        expect(history.where((event) => event.type == 'INCIDENT_REPORTED').single.incidentReason, IncidentReason.notHome);
+      }
     });
   }, skip: skip);
 

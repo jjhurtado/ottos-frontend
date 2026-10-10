@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../l10n/core_texts.dart';
+import '../models/remittance.dart';
 import '../theme/ottos_colors.dart';
 import '../utils/formatters.dart';
 
@@ -161,6 +162,104 @@ class _PostponeDialogState extends State<_PostponeDialog> {
             }
           },
           child: const Text(CoreTexts.postpone),
+        ),
+      ],
+    );
+  }
+}
+
+typedef IncidentInput = ({IncidentReason reason, String? note});
+
+/// Asks why a delivery or pickup could not be done. The note is required
+/// for [IncidentReason.other], as the backend asks.
+Future<IncidentInput?> showIncidentDialog(BuildContext context, {required bool isPickup}) {
+  return showDialog<IncidentInput>(
+    context: context,
+    builder: (_) => _IncidentDialog(isPickup: isPickup),
+  );
+}
+
+class _IncidentDialog extends StatefulWidget {
+  const _IncidentDialog({required this.isPickup});
+
+  final bool isPickup;
+
+  @override
+  State<_IncidentDialog> createState() => _IncidentDialogState();
+}
+
+class _IncidentDialogState extends State<_IncidentDialog> {
+  final _formKey = GlobalKey<FormState>();
+  final _note = TextEditingController();
+  IncidentReason? _reason;
+  // After a failed attempt, revalidate on every change so the note error
+  // goes away when another reason is chosen.
+  var _autovalidate = AutovalidateMode.disabled;
+
+  @override
+  void dispose() {
+    _note.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final noteRequired = _reason == IncidentReason.other;
+    return AlertDialog(
+      title: Text(widget.isPickup ? CoreTexts.reportIncidentPickup : CoreTexts.reportIncident),
+      content: Form(
+        key: _formKey,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(CoreTexts.incidentTitle, style: Theme.of(context).textTheme.titleSmall),
+              RadioGroup<IncidentReason>(
+                groupValue: _reason,
+                onChanged: (reason) => setState(() => _reason = reason),
+                child: Column(
+                  children: [
+                    for (final reason in IncidentReason.values)
+                      RadioListTile<IncidentReason>(
+                        contentPadding: EdgeInsets.zero,
+                        value: reason,
+                        title: Text(CoreTexts.incidentReason(reason)),
+                      ),
+                  ],
+                ),
+              ),
+              TextFormField(
+                controller: _note,
+                maxLines: 2,
+                // On the field, not the form: the form would revalidate with
+                // the validator of the previous reason.
+                autovalidateMode: _autovalidate,
+                decoration: InputDecoration(
+                  labelText: noteRequired ? '${CoreTexts.incidentNote} *' : CoreTexts.incidentNoteOptional,
+                ),
+                validator: (value) =>
+                    noteRequired && (value ?? '').trim().isEmpty ? CoreTexts.incidentNoteRequired : null,
+              ),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text(CoreTexts.cancel)),
+        FilledButton(
+          style: FilledButton.styleFrom(backgroundColor: OttosColors.danger),
+          onPressed: _reason == null
+              ? null
+              : () {
+                  if (!_formKey.currentState!.validate()) {
+                    setState(() => _autovalidate = AutovalidateMode.always);
+                    return;
+                  }
+                  final note = _note.text.trim();
+                  Navigator.of(context).pop((reason: _reason!, note: note.isEmpty ? null : note));
+                },
+          child: const Text(CoreTexts.report),
         ),
       ],
     );
