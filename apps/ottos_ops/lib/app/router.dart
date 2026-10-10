@@ -111,9 +111,10 @@ GoRouter buildRouter(AuthBloc authBloc) {
   );
 }
 
-/// Lets other screens link to a filtered list, e.g. `/remittances?late=true`.
+/// Lets other screens link to a filtered list, e.g. `/remittances?late=true` or `?incident=true`.
 RemittanceFilter _filterFrom(Map<String, String> query) => RemittanceFilter(
   status: query['status'],
   late: query['late'] == 'true' ? true : null,
+  incident: query['incident'] == 'true' ? true : null,
   customerId: query['customerId'],
 );

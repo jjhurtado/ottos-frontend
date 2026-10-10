@@ -14,6 +14,43 @@ enum RemittanceType {
       values.firstWhere((type) => type.code == code, orElse: () => delivery);
 }
 
+/// Why a delivery or pickup could not be done (`IncidentReason`).
+enum IncidentReason {
+  notHome('NOT_HOME'),
+  wrongAddress('WRONG_ADDRESS'),
+  unreachable('UNREACHABLE'),
+  refused('REFUSED'),
+  other('OTHER');
+
+  const IncidentReason(this.code);
+
+  final String code;
+
+  static IncidentReason fromCode(String? code) =>
+      values.firstWhere((reason) => reason.code == code, orElse: () => other);
+}
+
+/// The open incident of a remittance (`OpenIncident`): it stays until someone
+/// reassigns, postpones, completes or otherwise moves the remittance.
+class Incident extends Equatable {
+  const Incident({required this.reason, this.note, this.reportedAt, this.reportedBy});
+
+  factory Incident.fromJson(Map<String, dynamic> json) => Incident(
+    reason: IncidentReason.fromCode(json['reason'] as String?),
+    note: json['note'] as String?,
+    reportedAt: parseDateTime(json['reportedAt']),
+    reportedBy: json['reportedBy'] as String?,
+  );
+
+  final IncidentReason reason;
+  final String? note;
+  final DateTime? reportedAt;
+  final String? reportedBy;
+
+  @override
+  List<Object?> get props => [reason, note, reportedAt, reportedBy];
+}
+
 /// A remittance as returned by the API (`RemittanceView`). Financial fields
 /// of a pickup are null unless the user has `remittances:read-financials`.
 class Remittance extends Equatable {
@@ -50,6 +87,7 @@ class Remittance extends Equatable {
     this.late = false,
     this.postponements = 0,
     this.notes,
+    this.incident,
     this.createdAt,
     this.createdBy,
     this.completedAt,
@@ -88,6 +126,7 @@ class Remittance extends Equatable {
     late: json['late'] as bool? ?? false,
     postponements: json['postponements'] as int? ?? 0,
     notes: json['notes'] as String?,
+    incident: json['incident'] == null ? null : Incident.fromJson(json['incident'] as Map<String, dynamic>),
     createdAt: parseDateTime(json['createdAt']),
     createdBy: json['createdBy'] as String?,
     completedAt: parseDateTime(json['completedAt']),
@@ -127,6 +166,9 @@ class Remittance extends Equatable {
   final bool late;
   final int postponements;
   final String? notes;
+
+  /// The open incident, null when there is none.
+  final Incident? incident;
   final DateTime? createdAt;
   final String? createdBy;
   final DateTime? completedAt;
@@ -136,5 +178,5 @@ class Remittance extends Equatable {
   bool get isPickup => type == RemittanceType.pickup;
 
   @override
-  List<Object?> get props => [id, status, courierId, expectedDate, late, postponements, completedAt];
+  List<Object?> get props => [id, status, courierId, expectedDate, late, postponements, incident, completedAt];
 }

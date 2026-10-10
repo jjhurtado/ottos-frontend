@@ -5,7 +5,7 @@ import 'package:ottos_core/ottos_core.dart';
 enum RemittanceLoadStatus { loading, success, failure }
 
 /// Result of the last action, for one-off feedback (snackbars).
-enum RemittanceActionResult { none, completed, postponed, failed }
+enum RemittanceActionResult { none, completed, postponed, incidentReported, failed }
 
 final class RemittanceState extends Equatable {
   const RemittanceState({
@@ -65,6 +65,9 @@ class RemittanceCubit extends Cubit<RemittanceState> {
 
   Future<void> postpone({required DateTime newDate, required String reason}) =>
       _run(RemittanceActionResult.postponed, () => _remittances.postpone(_id, newDate: newDate, reason: reason));
+
+  Future<void> reportIncident({required IncidentReason reason, String? note}) =>
+      _run(RemittanceActionResult.incidentReported, () => _remittances.reportIncident(_id, reason: reason, note: note));
 
   Future<void> _run(RemittanceActionResult result, Future<Remittance> Function() action) async {
     if (state.submitting) return;

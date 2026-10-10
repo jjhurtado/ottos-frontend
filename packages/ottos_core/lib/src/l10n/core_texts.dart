@@ -1,3 +1,5 @@
+import '../models/remittance.dart';
+
 /// User-facing texts of the shared package. The interface is in Spanish only.
 abstract final class CoreTexts {
   // Errors
@@ -43,6 +45,7 @@ abstract final class CoreTexts {
     'INVALID_PHONE': 'El teléfono no es válido.',
     'UNKNOWN_MUNICIPALITY': 'El municipio no existe.',
     'INCORRECT_CURRENT_PASSWORD': 'La contraseña actual no es correcta.',
+    'INCIDENT_NOTE_REQUIRED': 'Explica qué pasó en la nota.',
     'NO_BUSINESS_CASH': 'La caja del negocio no maneja esa moneda.',
     'FIXED_RATE': 'La tasa de este corredor siempre es 1.',
     'FEE_PERCENTAGE_TOO_HIGH': 'Un porcentaje de comisión no puede pasar de 100.',
@@ -122,6 +125,25 @@ abstract final class CoreTexts {
   // Remittances
   static const late = 'Atrasada';
   static const postpone = 'Aplazar';
+
+  // Incidents
+  static const reportIncident = 'No se pudo entregar';
+  static const reportIncidentPickup = 'No se pudo recoger';
+  static const incidentTitle = '¿Qué pasó?';
+  static const incidentNote = 'Nota';
+  static const incidentNoteOptional = 'Nota (opcional)';
+  static const incidentNoteRequired = 'Explica qué pasó';
+  static const report = 'Reportar';
+  static const incidentReported = 'Incidencia reportada';
+  static const incident = 'Incidencia';
+
+  static String incidentReason(IncidentReason reason) => switch (reason) {
+    IncidentReason.notHome => 'No estaba en casa',
+    IncidentReason.wrongAddress => 'Dirección errónea',
+    IncidentReason.unreachable => 'No contesta el teléfono',
+    IncidentReason.refused => 'No la acepta',
+    IncidentReason.other => 'Otro motivo',
+  };
 
   // Complete dialog
   static const confirmDelivery = 'Confirmar entrega';

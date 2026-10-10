@@ -16,6 +16,7 @@ class RemittanceFilter extends Equatable {
     this.status,
     this.type,
     this.late,
+    this.incident,
     this.courierId,
     this.customerId,
     this.beneficiaryId,
@@ -27,6 +28,9 @@ class RemittanceFilter extends Equatable {
   final String? status;
   final RemittanceType? type;
   final bool? late;
+
+  /// true: only remittances with an open incident.
+  final bool? incident;
   final String? courierId;
   final String? customerId;
   final String? beneficiaryId;
@@ -37,10 +41,16 @@ class RemittanceFilter extends Equatable {
   static const _keep = Object();
 
   /// Copies the filter; pass `null` explicitly to clear a field.
-  RemittanceFilter copyWith({Object? status = _keep, Object? type = _keep, Object? late = _keep}) => RemittanceFilter(
+  RemittanceFilter copyWith({
+    Object? status = _keep,
+    Object? type = _keep,
+    Object? late = _keep,
+    Object? incident = _keep,
+  }) => RemittanceFilter(
     status: status == _keep ? this.status : status as String?,
     type: type == _keep ? this.type : type as RemittanceType?,
     late: late == _keep ? this.late : late as bool?,
+    incident: incident == _keep ? this.incident : incident as bool?,
     courierId: courierId,
     customerId: customerId,
     beneficiaryId: beneficiaryId,
@@ -52,12 +62,24 @@ class RemittanceFilter extends Equatable {
   bool get isEmpty => toQuery().values.every((value) => value == null);
 
   @override
-  List<Object?> get props => [status, type, late, courierId, customerId, beneficiaryId, municipality, from, to];
+  List<Object?> get props => [
+    status,
+    type,
+    late,
+    incident,
+    courierId,
+    customerId,
+    beneficiaryId,
+    municipality,
+    from,
+    to,
+  ];
 
   Map<String, dynamic> toQuery() => {
     'status': status,
     'type': type?.code,
     'late': late,
+    'incident': incident,
     'courierId': courierId,
     'customerId': customerId,
     'beneficiaryId': beneficiaryId,
@@ -171,6 +193,16 @@ class RemittanceRepository {
   Future<Remittance> assign(String id, {required String courierId, String? note}) async => Remittance.fromJson(
     await _api.post<Map<String, dynamic>>('/remittances/$id/assign', body: {'courierId': courierId, 'note': note}),
   );
+
+  /// Reports why the delivery or pickup could not be done; the note is
+  /// required for [IncidentReason.other] (`INCIDENT_NOTE_REQUIRED`).
+  Future<Remittance> reportIncident(String id, {required IncidentReason reason, String? note}) async =>
+      Remittance.fromJson(
+        await _api.post<Map<String, dynamic>>(
+          '/remittances/$id/incidents',
+          body: {'reason': reason.code, 'note': note == null || note.trim().isEmpty ? null : note.trim()},
+        ),
+      );
 
   Future<Remittance> postpone(String id, {required DateTime newDate, required String reason}) async =>
       Remittance.fromJson(
