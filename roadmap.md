@@ -83,6 +83,24 @@ La app tiene lista de asignadas, detalle, entregar (con o sin PIN), posponer y s
 - [ ] Build de producción del panel (`flutter build web`) y dónde se sirve (mismo dominio que la API o CORS configurado).
 - [ ] Variables por entorno (`OTTOS_API_URL`) documentadas para desarrollo, pruebas y producción.
 
+## Versionado
+
+Versionado semántico (`MAYOR.MENOR.PARCHE`) con etiquetas de pre-release, igual que el backend. La versión vive en el
+`pubspec.yaml` de cada app y de `ottos_core` (la misma en los tres), se sube en la rama `release/` o `hotfix/` de Git Flow
+y cada versión publicada lleva su tag en `main`, sin prefijo (`1.0.0-beta.1`). Detalles del flujo en
+[STANDARDS.md](STANDARDS.md).
+
+| Etapa | Formato | Significa | Qué entra |
+| --- | --- | --- | --- |
+| Beta | `1.0.0-beta.N` | Fase 1 en construcción; se prueba en local o staging, sin dinero real | Funcionalidad nueva, refactors y arreglos |
+| Release candidate | `1.0.0-rc.N` | Fase 1 completa; candidata a producción | Solo arreglos |
+| Estable | `1.0.0` | Primera remesa real gestionada con las apps | — |
+| Parche | `1.0.X` | Arreglo urgente en producción (rama `hotfix/`) | Solo el arreglo |
+| Menor | `1.X.0` | Cada fase siguiente, con su propio ciclo beta → rc → estable | Funcionalidad nueva compatible |
+| Mayor | `X.0.0` | Cambio incompatible (por ejemplo, exige una versión nueva del backend) | Solo con migración planificada |
+
+**Versión actual: `1.0.0-beta.1`.**
+
 ## Dependencias con el backend y preguntas abiertas
 
 - ~~**Lista de repartidores para asignar.**~~ Resuelto: `GET /couriers` con `remittances:assign`. Incluye al admin porque tiene todos los permisos; decidir si el panel lo oculta.
