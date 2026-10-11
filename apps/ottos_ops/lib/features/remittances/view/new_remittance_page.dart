@@ -120,6 +120,8 @@ class _NewRemittanceViewState extends State<_NewRemittanceView> {
                           SizedBox(
                             width: 200,
                             child: DropdownButtonFormField<String>(
+                              // Pickups and deliveries offer their own currencies.
+                              key: ValueKey(state.type),
                               initialValue: state.targetCurrency,
                               decoration: const InputDecoration(labelText: OpsTexts.targetCurrency),
                               items: [

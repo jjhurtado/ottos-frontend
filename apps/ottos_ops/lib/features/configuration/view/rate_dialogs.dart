@@ -9,18 +9,20 @@ double? _parse(String? text) => double.tryParse((text ?? '').trim().replaceAll('
 
 final _decimal = FilteringTextInputFormatter.allow(RegExp(r'^\d*[.,]?\d{0,6}'));
 
-/// Asks for a new exchange rate for [corridor] and saves it; returns it, or null if cancelled.
-Future<ExchangeRate?> showNewRateDialog(BuildContext context, Corridor corridor) {
+/// Asks for a new exchange rate of [corridor] for [remittanceType] and saves
+/// it; returns it, or null if cancelled.
+Future<ExchangeRate?> showNewRateDialog(BuildContext context, Corridor corridor, RemittanceType remittanceType) {
   final rates = context.read<RateRepository>();
+  final current = corridor.rateFor(remittanceType)?.rate;
   return showDialog<ExchangeRate>(
     context: context,
     barrierDismissible: false,
     builder: (_) => _SaveDialog<ExchangeRate>(
-      title: OpsTexts.newRateTitle(corridor.code),
+      title: OpsTexts.newRateTitle(corridor.code, remittanceType),
       help: OpsTexts.newRateHelp(corridor.sourceCurrency, corridor.targetCurrency),
       fieldsBuilder: (state) => [
         TextFormField(
-          controller: state.controller('rate', corridor.currentRate == null ? '' : _plain(corridor.currentRate!)),
+          controller: state.controller('rate', current == null ? '' : _plain(current)),
           enabled: !state.saving,
           autofocus: true,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
@@ -32,21 +34,22 @@ Future<ExchangeRate?> showNewRateDialog(BuildContext context, Corridor corridor)
           validator: (text) => (_parse(text) ?? 0) > 0 ? null : OpsTexts.amountRequired,
         ),
       ],
-      save: (state) => rates.setRate(corridor.code, _parse(state.text('rate'))!),
+      save: (state) => rates.setRate(corridor.code, _parse(state.text('rate'))!, type: remittanceType),
     ),
   );
 }
 
-/// Asks for a new fee rule for [corridor] and saves it; returns it, or null if cancelled.
-Future<FeeRule?> showNewFeeRuleDialog(BuildContext context, Corridor corridor) {
+/// Asks for a new fee rule of [corridor] for [remittanceType] and saves it;
+/// returns it, or null if cancelled.
+Future<FeeRule?> showNewFeeRuleDialog(BuildContext context, Corridor corridor, RemittanceType remittanceType) {
   final rates = context.read<RateRepository>();
-  final current = corridor.feeRule;
+  final current = corridor.feeRuleFor(remittanceType);
   var type = current?.type ?? FeeType.percentage;
   return showDialog<FeeRule>(
     context: context,
     barrierDismissible: false,
     builder: (_) => _SaveDialog<FeeRule>(
-      title: OpsTexts.newFeeRuleTitle(corridor.code),
+      title: OpsTexts.newFeeRuleTitle(corridor.code, remittanceType),
       help: OpsTexts.newFeeRuleHelp,
       fieldsBuilder: (state) => [
         SegmentedButton<FeeType>(
@@ -114,6 +117,7 @@ Future<FeeRule?> showNewFeeRuleDialog(BuildContext context, Corridor corridor) {
           minFee: _parse(state.text('min')),
           maxFee: _parse(state.text('max')),
         ),
+        type: remittanceType,
       ),
     ),
   );

@@ -35,6 +35,7 @@ void main() {
   late NewRemittanceCubit cubit;
 
   setUpAll(() {
+    registerFallbackValue(RemittanceType.delivery);
     registerFallbackValue(
       const NewRemittance(
         type: RemittanceType.delivery,
@@ -57,6 +58,7 @@ void main() {
           sourceCurrency: 'USD',
           targetCurrency: 'CUP',
           rate: ExchangeRate(id: 'x', rate: 410),
+          pickupRate: ExchangeRate(id: 'p', rate: 1, remittanceType: RemittanceType.pickup),
         ),
         Corridor(code: 'USD-EUR', sourceCurrency: 'USD', targetCurrency: 'EUR'),
         Corridor(
@@ -80,6 +82,7 @@ void main() {
         sourceCurrency: any(named: 'sourceCurrency'),
         targetCurrency: any(named: 'targetCurrency'),
         amount: any(named: 'amount'),
+        type: any(named: 'type'),
       ),
     ).thenAnswer((_) async => _quote);
     cubit = NewRemittanceCubit(remittances: remittances, customers: customers, rates: rates, quoteDelay: Duration.zero);
@@ -172,7 +175,22 @@ void main() {
 
     expect(cubit.state.quote, _quote);
     expect(cubit.state.canSubmit, isTrue);
-    verify(() => rates.quote(sourceCurrency: 'USD', targetCurrency: 'USD', amount: 100)).called(1);
+    verify(() => rates.quote(sourceCurrency: 'USD', targetCurrency: 'USD', amount: 100, type: RemittanceType.delivery))
+        .called(1);
+  });
+
+  test('a pickup offers the currencies with a pickup rate and quotes with it', () async {
+    await fillForm();
+    cubit.targetCurrencyChanged('CUP');
+    await settle();
+
+    cubit.typeChanged(RemittanceType.pickup);
+    await settle();
+
+    expect(cubit.state.targetCurrencies, ['CUP']);
+    expect(cubit.state.targetCurrency, 'CUP');
+    verify(() => rates.quote(sourceCurrency: 'USD', targetCurrency: 'CUP', amount: 100, type: RemittanceType.pickup))
+        .called(1);
   });
 
   test('drops the quote when the amount is cleared', () async {

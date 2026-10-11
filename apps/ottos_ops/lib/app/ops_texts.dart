@@ -189,10 +189,18 @@ abstract final class OpsTexts {
   static const calculate = 'Calcular';
   static const newRate = 'Nueva tasa';
   static const newFeeRule = 'Nueva comisión';
-  static String newRateTitle(String corridor) => 'Nueva tasa $corridor';
+  static String ratesFor(RemittanceType type) => switch (type) {
+    RemittanceType.delivery => 'Entregas',
+    RemittanceType.pickup => 'Recogidas',
+  };
+  static String _ofType(RemittanceType type) => switch (type) {
+    RemittanceType.delivery => 'de entrega',
+    RemittanceType.pickup => 'de recogida',
+  };
+  static String newRateTitle(String corridor, RemittanceType type) => 'Nueva tasa ${_ofType(type)} $corridor';
   static String newRateHelp(String source, String target) =>
       'Cuántos $target se entregan por cada $source. Se aplica a las remesas que se registren desde ahora.';
-  static String newFeeRuleTitle(String corridor) => 'Nueva comisión $corridor';
+  static String newFeeRuleTitle(String corridor, RemittanceType type) => 'Nueva comisión ${_ofType(type)} $corridor';
   static const newFeeRuleHelp = 'Se aplica a las remesas que se registren desde ahora; las anteriores no cambian.';
   static const feePercentage = 'Porcentaje';
   static const feeFixed = 'Fija';
@@ -202,7 +210,10 @@ abstract final class OpsTexts {
   static const fixedRate = '1 (misma moneda)';
   static const noRate = 'Sin tasa';
   static const noFeeRule = 'Sin comisión configurada';
-  static const noRateWarning = 'Sin tasa no se pueden registrar remesas en esta moneda.';
+  static String noRateWarning(RemittanceType type) => switch (type) {
+    RemittanceType.delivery => 'Sin tasa no se pueden registrar entregas en esta moneda.',
+    RemittanceType.pickup => 'Sin tasa no se pueden registrar recogidas en esta moneda.',
+  };
   static const rounding = 'Redondeo';
   static String roundingValue(String step) => 'A entregar se redondea hacia abajo a múltiplos de $step';
   static const rateSaved = 'Tasa guardada';
