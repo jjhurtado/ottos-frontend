@@ -13,6 +13,7 @@ abstract final class OpsTexts {
   static const cash = 'Caja';
   static const users = 'Usuarios';
   static const roles = 'Roles y permisos';
+  static const audit = 'Auditoría';
 
   // Home
   static String greeting(String name) => 'Hola, $name';
@@ -316,6 +317,7 @@ abstract final class OpsTexts {
     Permissions.remittancesPostpone => 'Aplazar remesas',
     Permissions.remittancesReportIncident => 'Reportar incidencias de entrega (repartidor)',
     Permissions.remittancesReview => 'Revisar remesas marcadas (entregas sin conexión)',
+    Permissions.auditRead => 'Ver el registro de auditoría',
     Permissions.customersRead => 'Ver clientes y beneficiarios',
     Permissions.customersWrite => 'Crear y editar clientes y beneficiarios',
     Permissions.cashRead => 'Ver la caja del negocio y de los repartidores',
@@ -331,4 +333,94 @@ abstract final class OpsTexts {
     Permissions.rolesWrite => 'Crear, editar y eliminar roles',
     _ => permission.description ?? permission.code,
   };
+
+  // Audit log
+  static const auditSubtitle = 'Quién cambió usuarios y roles, y cuándo.';
+  static const allTargets = 'Todo';
+  static const allActions = 'Todas las acciones';
+  static const action = 'Acción';
+  static const who = 'Quién';
+  static const target = 'Sobre';
+  static const detail = 'Detalle';
+  static const when = 'Fecha';
+  static const fromDate = 'Desde';
+  static const toDate = 'Hasta';
+  static const system = 'El sistema';
+  static const noAuditEntries = 'No hay cambios registrados con estos filtros.';
+
+  static String auditTarget(String type) => switch (type) {
+    'USER' => 'Usuarios',
+    'ROLE' => 'Roles',
+    _ => type,
+  };
+
+  /// The actions of the audit log, by their stable code.
+  static const auditActions = {
+    'USER': [
+      'USER_CREATED',
+      'USER_RENAMED',
+      'USER_ROLES_CHANGED',
+      'USER_DEACTIVATED',
+      'USER_ACTIVATED',
+      'USER_PASSWORD_RESET',
+      'PASSWORD_CHANGED',
+    ],
+    'ROLE': ['ROLE_CREATED', 'ROLE_DESCRIBED', 'ROLE_PERMISSIONS_CHANGED', 'ROLE_DELETED'],
+  };
+
+  static String auditAction(String code) => switch (code) {
+    'USER_CREATED' => 'Usuario creado',
+    'USER_RENAMED' => 'Nombre cambiado',
+    'USER_ROLES_CHANGED' => 'Roles cambiados',
+    'USER_DEACTIVATED' => 'Usuario desactivado',
+    'USER_ACTIVATED' => 'Usuario reactivado',
+    'USER_PASSWORD_RESET' => 'Contraseña restablecida',
+    'PASSWORD_CHANGED' => 'Cambió su contraseña',
+    'ROLE_CREATED' => 'Rol creado',
+    'ROLE_DESCRIBED' => 'Nombre o descripción del rol cambiados',
+    'ROLE_PERMISSIONS_CHANGED' => 'Permisos cambiados',
+    'ROLE_DELETED' => 'Rol eliminado',
+    _ => code,
+  };
+
+  /// What changed, in Spanish lines: roles and permissions by their names.
+  static List<String> auditDetails(AuditEntry entry) {
+    final details = entry.details;
+    List<String> codes(Object? value) => [for (final item in value as List? ?? const []) '$item'];
+    String roles(Object? value) => codes(value).map(CoreTexts.roleCode).join(', ');
+    String permissions(Object? value) =>
+        codes(value).map((code) => permissionLabel(PermissionInfo(code: code, module: ''))).join('; ');
+    String text(Object? value) => value == null || '$value'.isEmpty ? '—' : '$value';
+    Map<String, dynamic> map(Object? value) => (value as Map<String, dynamic>?) ?? const {};
+    return switch (entry.action) {
+      'USER_CREATED' => [
+        if (details['name'] != null) 'Nombre: ${details['name']}',
+        if (details['roles'] != null) 'Roles: ${roles(details['roles'])}',
+        if (details['reason'] != null) 'Motivo: ${details['reason']}',
+      ],
+      'USER_RENAMED' => ['${text(details['before'])} → ${text(details['after'])}'],
+      'USER_ROLES_CHANGED' => ['${roles(details['before'])} → ${roles(details['after'])}'],
+      'ROLE_CREATED' => [
+        if (details['name'] != null) 'Nombre: ${details['name']}',
+        if (details['description'] != null) 'Descripción: ${details['description']}',
+        if (details['permissions'] != null) 'Permisos: ${permissions(details['permissions'])}',
+      ],
+      'ROLE_DESCRIBED' => [
+        if (map(details['before'])['name'] != map(details['after'])['name'])
+          'Nombre: ${text(map(details['before'])['name'])} → ${text(map(details['after'])['name'])}',
+        if (map(details['before'])['description'] != map(details['after'])['description'])
+          'Descripción: ${text(map(details['before'])['description'])} → '
+              '${text(map(details['after'])['description'])}',
+      ],
+      'ROLE_PERMISSIONS_CHANGED' => [
+        if (codes(details['added']).isNotEmpty) 'Añadidos: ${permissions(details['added'])}',
+        if (codes(details['removed']).isNotEmpty) 'Quitados: ${permissions(details['removed'])}',
+      ],
+      'ROLE_DELETED' => [
+        if (details['name'] != null) 'Nombre: ${details['name']}',
+        if (details['permissions'] != null) 'Tenía: ${permissions(details['permissions'])}',
+      ],
+      _ => [for (final entry in details.entries) '${entry.key}: ${entry.value}'],
+    };
+  }
 }

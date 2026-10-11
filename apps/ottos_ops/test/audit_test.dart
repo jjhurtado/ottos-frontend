@@ -1,0 +1,140 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
+import 'package:ottos_core/ottos_core.dart';
+import 'package:ottos_ops/app/ops_texts.dart';
+import 'package:ottos_ops/features/audit/view/audit_page.dart';
+
+class _MockAudit extends Mock implements AuditRepository {}
+
+AuditEntry _entry(
+  String action,
+  Map<String, dynamic> details, {
+  String type = 'USER',
+  String? actor = 'Administrator',
+}) => AuditEntry.fromJson({
+  'id': action,
+  'occurredAt': '2026-10-11T15:31:05Z',
+  'actorName': actor,
+  'action': action,
+  'targetType': type,
+  'targetLabel': type == 'ROLE' ? 'CAJEROS' : 'luis@ottos.test',
+  'details': details,
+});
+
+void main() {
+  setUpAll(() async {
+    registerFallbackValue(const AuditFilter());
+    await OttosLocalization.initialize();
+  });
+
+  group('details', () {
+    test('roles and permissions read by their Spanish names', () {
+      expect(
+        OpsTexts.auditDetails(
+          _entry('USER_ROLES_CHANGED', {
+            'before': ['DELIVERY'],
+            'after': ['SALES', 'DELIVERY'],
+          }),
+        ),
+        ['Repartidor → Ventas, Repartidor'],
+      );
+      expect(
+        OpsTexts.auditDetails(
+          _entry('ROLE_PERMISSIONS_CHANGED', {
+            'added': ['remittances:read'],
+            'removed': [],
+          }, type: 'ROLE'),
+        ),
+        ['Añadidos: Ver todas las remesas y su historial'],
+      );
+    });
+
+    test('a renamed role says what changed and what not', () {
+      expect(
+        OpsTexts.auditDetails(
+          _entry('ROLE_DESCRIBED', {
+            'before': {'name': 'Cajeros', 'description': null},
+            'after': {'name': 'Cajeros', 'description': 'Cobran en tienda'},
+          }, type: 'ROLE'),
+        ),
+        ['Descripción: — → Cobran en tienda'],
+      );
+    });
+
+    test('unknown actions keep their code and raw details', () {
+      final entry = _entry('SOMETHING_NEW', {'field': 'x'});
+      expect(OpsTexts.auditAction(entry.action), 'SOMETHING_NEW');
+      expect(OpsTexts.auditDetails(entry), ['field: x']);
+    });
+  });
+
+  group('page', () {
+    late _MockAudit audit;
+
+    setUp(() {
+      audit = _MockAudit();
+      when(
+        () => audit.search(
+          any(),
+          page: any(named: 'page'),
+          size: any(named: 'size'),
+        ),
+      ).thenAnswer(
+        (_) async => PageResult(
+          items: [
+            _entry('USER_DEACTIVATED', const {}),
+            _entry('USER_CREATED', const {
+              'name': 'Administrator',
+              'roles': ['ADMIN'],
+            }, actor: null),
+          ],
+          page: 0,
+          size: 50,
+          totalItems: 2,
+        ),
+      );
+    });
+
+    Future<void> pump(WidgetTester tester) async {
+      await tester.binding.setSurfaceSize(const Size(1400, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      await tester.pumpWidget(
+        RepositoryProvider<AuditRepository>.value(
+          value: audit,
+          child: MaterialApp(
+            localizationsDelegates: OttosLocalization.delegates,
+            supportedLocales: OttosLocalization.supportedLocales,
+            home: const Scaffold(body: AuditPage()),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('lists who did what, the system included', (tester) async {
+      await pump(tester);
+
+      expect(find.text(OpsTexts.auditAction('USER_DEACTIVATED')), findsOneWidget);
+      expect(find.text(OpsTexts.system), findsOneWidget);
+      expect(find.textContaining('Roles: Administrador'), findsOneWidget);
+    });
+
+    testWidgets('filtering by type and action asks again from the first page', (tester) async {
+      await pump(tester);
+
+      await tester.tap(find.text(OpsTexts.allTargets));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(OpsTexts.auditTarget('ROLE')).last);
+      await tester.pumpAndSettle();
+
+      verify(() => audit.search(const AuditFilter(targetType: 'ROLE'), page: 0, size: 50)).called(1);
+      await tester.tap(find.text(OpsTexts.allActions));
+      await tester.pumpAndSettle();
+      expect(find.text(OpsTexts.auditAction('ROLE_DELETED')), findsOneWidget);
+      // Only the table row: the menu offers role actions only.
+      expect(find.text(OpsTexts.auditAction('USER_CREATED')), findsOneWidget);
+    });
+  });
+}

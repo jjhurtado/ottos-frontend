@@ -124,6 +124,9 @@ abstract final class CoreTexts {
     return seed != null && name == seed.$1 ? seed.$3 : name;
   }
 
+  /// A system role's name in Spanish by its code (`SALES` → Ventas); others keep the code.
+  static String roleCode(String code) => _systemRoles[code]?.$3 ?? code;
+
   /// The role's description in Spanish while it keeps the backend's original English one.
   static String? roleDescription(String code, String? description) {
     final seed = _systemRoles[code];

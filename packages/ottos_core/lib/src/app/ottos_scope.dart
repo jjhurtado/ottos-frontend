@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../api/api_client.dart';
+import '../audit/audit_repository.dart';
 import '../auth/auth_repository.dart';
 import '../auth/bloc/auth_bloc.dart';
 import '../auth/token_storage.dart';
@@ -41,6 +42,7 @@ class _OttosScopeState extends State<OttosScope> {
   late final UserRepository _userRepository;
   late final RoleRepository _roleRepository;
   late final SyncRepository _syncRepository;
+  late final AuditRepository _auditRepository;
 
   @override
   void initState() {
@@ -61,6 +63,7 @@ class _OttosScopeState extends State<OttosScope> {
     _userRepository = UserRepository(api: _api);
     _roleRepository = RoleRepository(api: _api);
     _syncRepository = SyncRepository(api: _api);
+    _auditRepository = AuditRepository(api: _api);
   }
 
   @override
@@ -83,6 +86,7 @@ class _OttosScopeState extends State<OttosScope> {
         RepositoryProvider.value(value: _userRepository),
         RepositoryProvider.value(value: _roleRepository),
         RepositoryProvider.value(value: _syncRepository),
+        RepositoryProvider.value(value: _auditRepository),
         RepositoryProvider<AccessPolicy>.value(value: widget.accessPolicy),
       ],
       child: BlocProvider(
