@@ -1,6 +1,6 @@
 # Ottos frontend · Roadmap
 
-Actualizado: 2026-10-09
+Actualizado: 2026-10-10
 
 ## Estado actual
 
@@ -21,6 +21,27 @@ El panel de operaciones hoy es de solo lectura: login, inicio, listado y detalle
 | Usuarios y roles | «Próximamente» | — | CRUD completo + permisos |
 
 Ya corregido (pendiente de commit): sesión caducada que dejaba la app colgada, recarga de página que perdía la ruta, flecha suelta en el historial y test de plantilla roto en la app courier.
+
+## Cómo se usa: la app de día, el panel de noche
+
+Decisión del negocio (2026-10-10): durante el día, **ventas y repartidores trabajan con la misma app móvil**; por la noche, **ventas y admin entran al panel web** para revisar y tener más control. La app deja de ser solo «del repartidor»: lo que cada usuario ve depende de sus permisos, nunca del rol.
+
+- [ ] **Nueva remesa desde la app**: botón en la lista de remesas (con `remittances:create`). El mismo formulario que el panel: tipo, remitente, beneficiario, monto y moneda, con la cotización de su tipo (entrega o recogida).
+- [ ] **Asignar repartidor al crearla**, solo si el usuario tiene `remittances:assign`; si no, el campo no aparece.
+- [ ] **Caja desde la app**: entregar fondos y recibir devoluciones de un repartidor concreto (con `cash:write`). Quien no tiene el permiso ve solo su caja, como hoy.
+- [ ] Nombre y presentación de la app pensados para ventas y reparto (hoy se llama «Otto's · Repartidor»).
+- [ ] Decidir qué más de ventas necesita estar en la app de día (alta de clientes y beneficiarios, buscar remesas, reasignar) y qué se queda solo en el panel.
+
+## App sin conexión (offline-first)
+
+Prioridad para la versión 1.0 (petición del negocio, 2026-10-10): hay días en que el repartidor pasa la jornada entera sin internet. El backend lo está diseñando (sección «App del repartidor offline-first» de su ROADMAP.md) y el contrato se cierra entre los dos agentes antes de implementarlo.
+
+- [ ] Cerrar el contrato con el backend: sincronización en lote, id único por acción (UUID generado en el teléfono), hora real de cada acción (`occurredAt`), resultados por acción, descarga incremental y sesión de jornada completa.
+- [ ] Guardar en el teléfono las remesas asignadas, la caja propia y una cola de acciones pendientes (entregar con o sin PIN, aplazar, incidencia).
+- [ ] Mostrar en la app qué está pendiente de sincronizar, cuándo se sincronizó por última vez y los rechazos con su motivo en español.
+- [ ] Sincronizar al abrir la app, al recuperar la red, al volver al primer plano y a mano.
+- [ ] Qué se puede hacer sin red y qué no: crear remesas y mover caja de ventas necesitan cotización y saldos al día, en principio solo con conexión.
+- [ ] En el panel, revisar las remesas marcadas para revisión (PIN que no coincide, entrega tras una reasignación).
 
 ## Fase 1 · Flujo de remesas en el panel
 
@@ -57,8 +78,9 @@ Criterio de salida: se puede registrar un cliente nuevo con un beneficiario y us
 
 Objetivo: sustituir las pantallas «Próximamente» que quedan. Todas tienen el backend listo; el orden sigue lo que más se necesita en la operación diaria.
 
-1. ~~**Caja**~~ Hecho: saldo del negocio y movimientos, saldo por repartidor, entregar fondos y recibir devoluciones de repartidores, depósitos y retiros, y movimientos de cada remesa en su detalle. Falta el cierre y la conciliación de caja, que el backend todavía no tiene.
-2. ~~**Configuración**~~ Hecho (`/configuration`): ajustes generales (monto mínimo por remesa y días para entregar), corredores con tasa y comisión en vigor, historial de ambas, nueva tasa y nueva regla de comisión, y una calculadora. Sigue al módulo `configuration` del backend (`configuration:read` y `configuration:write`).
+1. ~~**Caja**~~ Hecho: saldo del negocio y movimientos, saldo por repartidor, entregar fondos y recibir devoluciones de repartidores, depósitos y retiros, y movimientos de cada remesa en su detalle.
+   - [ ] **Cuadre de caja del repartidor** (cierre diario): efectivo contado por moneda frente al saldo esperado, la diferencia, quién lo confirma e historial de cierres. El backend todavía no lo tiene; está en su Fase 3 («Caja y control»). Proponer adelantarlo.
+2. ~~**Configuración**~~ Hecho (`/configuration`): ajustes generales (monto mínimo por remesa y días para entregar), corredores con tasa y comisión en vigor, historial de ambas, nueva tasa y nueva regla de comisión, y una calculadora. Sigue al módulo `configuration` del backend (`configuration:read` y `configuration:write`). Las recogidas tienen su propia tasa y comisión: cada corredor muestra Entregas y Recogidas por separado, y la calculadora y «Nueva remesa» cotizan con el tipo elegido. Ojo: la tasa inicial de recogida es 1; hay que poner la real en USD-CUP.
 3. ~~**Usuarios**~~ Hecho: listado con búsqueda, alta con contraseña inicial y roles, edición de nombre y roles, restablecer contraseña, desactivar y reactivar.
 4. ~~**Roles y permisos**~~ Hecho: roles con sus permisos por área y en español, alta, edición y eliminación; el rol del sistema es de solo lectura y solo se pueden dar permisos que uno tiene.
 5. ~~**Mi cuenta**~~ Hecho: cambio de contraseña desde el menú de usuario del panel y el menú de cuenta de la app de repartidores; al cambiarla se cierra la sesión y el login explica por qué.
@@ -76,13 +98,13 @@ La app tiene lista de asignadas, detalle, entregar (con o sin PIN), posponer y s
 - [x] **Lista del repartidor**: las atrasadas y con incidencia van al final; orden «Más atrasadas primero» por días; días de atraso en la tarjeta; deslizar a la derecha para completar y a la izquierda para marcar una incidencia, siempre con confirmación; nombre del usuario en la barra; WhatsApp junto a Llamar; tras reportar una incidencia vuelve a la lista.
 - [ ] En una recogida completada el estado dice «Entregada» (nombre del estado final que manda el backend). Valorar mostrar «Recogida» en el frontend o pedir un nombre neutro al backend.
 - [ ] Tests de los cubits de asignadas, remesa y caja.
-- [ ] Llamar y abrir mapas desde el detalle (`url_launcher` ya está en las dependencias).
-- [ ] Comportamiento sin conexión: mensaje claro y reintento, sin perder lo que el repartidor escribió.
+- [x] Llamar y escribir por WhatsApp desde el detalle.
+- [ ] Abrir la dirección en mapas desde el detalle.
+- [ ] Sin conexión: ver «App sin conexión (offline-first)».
 - [ ] Builds firmados de Android e iOS y forma de distribuirlos a los repartidores.
 
 ## Calidad e infraestructura
 
-- [ ] Commitear los arreglos y tests de esta sesión.
 - [ ] Arreglar los scripts de Melos: hoy llaman a `melos`, que no está en el PATH; cambiarlos a `dart run melos` o ejecutar el comando directamente.
 - [ ] CI en GitHub Actions: `flutter analyze` y `flutter test` en cada push; los tests de integración en un job aparte con el backend en Docker.
 - [ ] Tests de widget de cada pantalla nueva y de los cubits/blocs del panel.
@@ -116,4 +138,5 @@ y cada versión publicada lleva su tag en `main`, sin prefijo (`1.0.0-beta.1`). 
 - ~~**Respuesta 401 sin cuerpo.**~~ Resuelto: 401 y 403 traen `ProblemDetail`.
 - ~~**Errores de negocio en inglés.**~~ Resuelto: todos los errores traen un `code` estable y `CoreTexts.errorCodes` traduce los del flujo de remesas y clientes. Añadir traducciones a medida que se usen más códigos.
 - **Monedas destino.** ¿Qué monedas se ofrecen al crear una remesa: se leen de los corredores (`/corridors`) o son fijas?
-- **Recogidas.** ¿Quién crea las remesas de tipo recogida y qué datos financieros debe ver cada rol?
+- **Recogidas.** ¿Quién crea las remesas de tipo recogida y qué datos financieros debe ver cada rol? Ya tienen tasa y comisión propias en el backend.
+- **Estados por tipo.** El backend pide traducir los estados por código y tipo (DELIVERED → «Entregada» o «Recogida»); `statusName` queda como respaldo.
