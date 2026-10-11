@@ -83,6 +83,7 @@ class RateRepository {
     required String targetCurrency,
     required double amount,
     RemittanceType type = RemittanceType.delivery,
+    double? rate,
   }) async => Quote.fromJson(
     await _api.post<Map<String, dynamic>>(
       '/quotes',
@@ -91,6 +92,8 @@ class RateRepository {
         'targetCurrency': targetCurrency,
         'amount': amount,
         'remittanceType': type.code,
+        // Only pickups take their own rate.
+        'rate': ?rate,
       },
     ),
   );

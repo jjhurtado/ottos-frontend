@@ -56,6 +56,7 @@ export 'src/widgets/exchange_dialog.dart';
 export 'src/widgets/incident_banner.dart';
 export 'src/widgets/info_row.dart';
 export 'src/widgets/ottos_logo.dart';
+export 'src/widgets/pickup_rate_field.dart';
 export 'src/widgets/remittance_dialogs.dart';
 export 'src/widgets/review_banner.dart';
 export 'src/widgets/remittance_status_chip.dart';

@@ -123,6 +123,7 @@ class _FormState extends State<_Form> {
               Text(CourierTexts.noRates, style: TextStyle(color: Theme.of(context).colorScheme.error)),
             ],
             const SizedBox(height: 16),
+            PickupRateField(state: state),
             _QuoteSummary(state: state),
             if (state.couriers.isNotEmpty) ...[
               const SizedBox(height: 16),
@@ -301,7 +302,13 @@ class _QuoteSummary extends StatelessWidget {
           children: [
             InfoRow(label: CourierTexts.fee, value: Formatters.money(quote!.fee, quote.sourceCurrency)),
             InfoRow(label: CourierTexts.total, value: Formatters.money(quote.total, quote.sourceCurrency)),
-            InfoRow(label: CourierTexts.rate, value: Formatters.money(quote.rate, null)),
+            InfoRow(
+              label: CourierTexts.rate,
+              value: [
+                Formatters.money(quote.rate, null),
+                if (quote.rateOverridden) CoreTexts.rateTypedByHand,
+              ].join(' · '),
+            ),
             InfoRow(
               label: state.type == RemittanceType.pickup ? CourierTexts.cashToCollect : CourierTexts.amountToDeliver,
               value: Formatters.money(quote.amountToDeliver, quote.targetCurrency),

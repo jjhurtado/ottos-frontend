@@ -55,7 +55,8 @@ void main() {
   group('auth', () {
     test('rejects wrong credentials with a user-facing message', () async {
       await expectLater(
-        auth.login(email: email, password: '$password-wrong'),
+        // Not the real email: five failures in 15 minutes lock an email out.
+        auth.login(email: 'nobody-${Random().nextInt(1 << 30)}@ottos.test', password: 'wrong'),
         throwsA(isA<ApiException>().having((e) => e.message, 'message', CoreTexts.invalidCredentials)),
       );
       expect(storage.tokens, isNull);
@@ -383,6 +384,28 @@ void main() {
       expect(preview.rejected.single.code, 'UNKNOWN_MUNICIPALITY');
       expect(preview.rejected.single.ref, 'fila 3');
       expect(await customers.search(phone.substring(5)), isEmpty, reason: 'nothing was saved');
+    });
+  }, skip: skip);
+
+  group('pickup rate', () {
+    setUp(() => auth.login(email: email, password: password));
+
+    test('a pickup is quoted with its own rate; a delivery cannot take one', () async {
+      final rates = RateRepository(api: api);
+      final own = await rates.quote(
+        sourceCurrency: 'USD',
+        targetCurrency: 'USD',
+        amount: 100,
+        type: RemittanceType.pickup,
+        rate: 1,
+      );
+      expect(own.rateOverridden, isTrue);
+      expect(own.amountToDeliver, 100);
+
+      await expectLater(
+        rates.quote(sourceCurrency: 'USD', targetCurrency: 'USD', amount: 100, rate: 1),
+        throwsA(isA<ApiException>().having((e) => e.code, 'code', 'RATE_NOT_ALLOWED')),
+      );
     });
   }, skip: skip);
 

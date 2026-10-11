@@ -82,6 +82,7 @@ void main() {
         targetCurrency: any(named: 'targetCurrency'),
         amount: any(named: 'amount'),
         type: any(named: 'type'),
+        rate: any(named: 'rate'),
       ),
     ).thenAnswer((_) async => _quote);
     cubit = NewRemittanceCubit(remittances: remittances, customers: customers, rates: rates, quoteDelay: Duration.zero);
@@ -295,6 +296,67 @@ void main() {
 
       expect(cubit.state.created, _created);
       verifyNever(() => remittances.assign(any(), courierId: any(named: 'courierId')));
+    });
+  });
+
+  group('pickup rate', () {
+    setUp(
+      () =>
+          when(() => remittances.register(any(), idempotencyKey: any(named: 'idempotencyKey')))
+              .thenAnswer((_) async => _created),
+    );
+
+    test('a pickup starts with the configured rate and may take its own', () async {
+      await fillForm();
+      cubit.targetCurrencyChanged('CUP');
+      cubit.typeChanged(RemittanceType.pickup);
+      await settle();
+      expect(cubit.configuredPickupRate, 1);
+      expect(cubit.state.pickupRate, isNull);
+
+      cubit.pickupRateChanged(1.5);
+      await settle();
+      verify(
+        () => rates.quote(
+          sourceCurrency: 'USD',
+          targetCurrency: 'CUP',
+          amount: 100,
+          type: RemittanceType.pickup,
+          rate: 1.5,
+        ),
+      ).called(1);
+
+      await cubit.submit();
+      final sent =
+          verify(() => remittances.register(captureAny(), idempotencyKey: any(named: 'idempotencyKey'))).captured.single
+              as NewRemittance;
+      expect(sent.rate, 1.5);
+      expect(sent.toJson()['rate'], 1.5);
+    });
+
+    test('typing the configured rate, or switching to a delivery, drops the own rate', () async {
+      await fillForm();
+      cubit.targetCurrencyChanged('CUP');
+      cubit.typeChanged(RemittanceType.pickup);
+      cubit.pickupRateChanged(2);
+      expect(cubit.state.pickupRate, 2);
+
+      cubit.pickupRateChanged(1);
+      expect(cubit.state.pickupRate, isNull);
+
+      cubit.pickupRateChanged(2);
+      cubit.typeChanged(RemittanceType.delivery);
+      expect(cubit.state.pickupRate, isNull);
+      expect(
+        const NewRemittance(
+          type: RemittanceType.delivery,
+          customerId: 'c',
+          beneficiaryId: 'b',
+          amount: 1,
+          targetCurrency: 'CUP',
+        ).toJson().containsKey('rate'),
+        isFalse,
+      );
     });
   });
 }

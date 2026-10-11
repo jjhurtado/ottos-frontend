@@ -137,6 +137,7 @@ class _NewRemittanceViewState extends State<_NewRemittanceView> {
                         Text(OpsTexts.noRates, style: TextStyle(color: Theme.of(context).colorScheme.error)),
                       ],
                       const SizedBox(height: 16),
+                      PickupRateField(state: state),
                       _QuoteSummary(state: state),
                       const SizedBox(height: 16),
                       TextField(
@@ -359,7 +360,13 @@ class _QuoteSummary extends StatelessWidget {
           children: [
             InfoRow(label: OpsTexts.fee, value: Formatters.money(quote!.fee, quote.sourceCurrency)),
             InfoRow(label: OpsTexts.total, value: Formatters.money(quote.total, quote.sourceCurrency)),
-            InfoRow(label: OpsTexts.rate, value: Formatters.money(quote.rate, null)),
+            InfoRow(
+              label: OpsTexts.rate,
+              value: [
+                Formatters.money(quote.rate, null),
+                if (quote.rateOverridden) CoreTexts.rateTypedByHand,
+              ].join(' · '),
+            ),
             InfoRow(
               label: state.type == RemittanceType.pickup ? OpsTexts.cashToCollect : OpsTexts.amountToDeliver,
               value: Formatters.money(quote.amountToDeliver, quote.targetCurrency),

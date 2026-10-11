@@ -47,6 +47,7 @@ abstract final class CoreTexts {
     'TRANSITION_FORBIDDEN': forbidden,
     'CUSTOMER_NOT_FOUND': 'No se encontró el remitente.',
     'BENEFICIARY_NOT_FOUND': 'No se encontró el beneficiario.',
+    'RATE_NOT_ALLOWED': 'Solo las recogidas pueden llevar su propia tasa.',
     'CUSTOMER_ALREADY_REGISTERED': 'Ya hay un cliente con ese nombre, teléfono y dirección.',
     'BENEFICIARY_INACTIVE': 'Coincide con un beneficiario borrado; restáuralo en el panel.',
     'INVALID_PHONE': 'El teléfono no es válido.',
@@ -92,6 +93,11 @@ abstract final class CoreTexts {
   static const currency = 'Moneda';
   static const noteOptional = 'Nota (opcional)';
   static const amountRequired = 'Escribe un monto mayor que 0';
+
+  // Pickup rate
+  static const pickupRate = 'Tasa de esta recogida';
+  static String pickupRateConfigured(String rate) => 'Configurada: $rate. Cámbiala si hoy es otra.';
+  static const rateTypedByHand = 'indicada a mano';
 
   // Currency exchange
   static const exchangeTitle = 'Cambiar moneda';
