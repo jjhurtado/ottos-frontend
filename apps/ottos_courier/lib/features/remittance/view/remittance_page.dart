@@ -156,6 +156,7 @@ class _Actions extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cubit = context.read<RemittanceCubit>();
+    final hasCourier = remittance.courierId != null;
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.all(12),
@@ -178,8 +179,10 @@ class _Actions extends StatelessWidget {
               const SizedBox(height: 8),
             ],
             Row(
+              // Spacing only between buttons: alone, Aplazar takes the whole width.
+              spacing: 12,
               children: [
-                if (context.canDo(Permissions.remittancesPostpone)) ...[
+                if (context.canDo(Permissions.remittancesPostpone))
                   Expanded(
                     child: OutlinedButton(
                       style: OutlinedButton.styleFrom(minimumSize: const Size(64, 48)),
@@ -192,9 +195,8 @@ class _Actions extends StatelessWidget {
                       child: const Text(CoreTexts.postpone),
                     ),
                   ),
-                  const SizedBox(width: 12),
-                ],
-                if (context.canDo(Permissions.remittancesDeliver))
+                // Delivering and failing to deliver need the courier who went.
+                if (hasCourier && context.canDo(Permissions.remittancesDeliver))
                   Expanded(
                     flex: 2,
                     child: FilledButton(
@@ -215,7 +217,7 @@ class _Actions extends StatelessWidget {
                   ),
               ],
             ),
-            if (context.canDo(Permissions.remittancesReportIncident))
+            if (hasCourier && context.canDo(Permissions.remittancesReportIncident))
               TextButton.icon(
                 style: TextButton.styleFrom(foregroundColor: OttosColors.danger, minimumSize: const Size(64, 48)),
                 onPressed: submitting

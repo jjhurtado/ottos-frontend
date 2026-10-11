@@ -253,6 +253,7 @@ void main() {
 
       await pump(tester, _sales, const RemittancePage(remittanceId: 'r1'));
       expect(find.text('Pagada'), findsOneWidget);
+      expect(find.text(CoreTexts.reportIncident), findsNothing, reason: 'no courier went yet');
 
       await tester.tap(find.text(CourierTexts.assignToCourier));
       await tester.pumpAndSettle();
