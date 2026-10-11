@@ -4,6 +4,7 @@ import 'package:ottos_core/ottos_core.dart';
 
 import '../../../app/courier_texts.dart';
 import '../../../offline/sync_bar.dart';
+import '../../../offline/sync_cubit.dart';
 import '../cubit/cash_cubit.dart';
 
 class CashPage extends StatelessWidget {
@@ -20,51 +21,54 @@ class CashPage extends StatelessWidget {
         ownCash: ownCash,
         couriersCash: couriersCash,
         // A courier's cash as of the last sync, also without network.
-        ownStatement: sync?.store.cash,
+        ownStatement: sync?.cash,
       )..load(),
-      child: BlocBuilder<CashCubit, CashState>(
-        builder: (context, state) {
-          final cubit = context.read<CashCubit>();
-          final statement = state.statement;
-          final couriers = state.couriers;
-          if (!state.loaded) {
-            return state.status == CashStatus.failure
-                ? ErrorView(message: state.error!, onRetry: cubit.load)
-                : const LoadingView();
-          }
-          return RefreshIndicator(
-            onRefresh: () async {
-              await sync?.sync();
-              await cubit.load();
-            },
-            child: ListView(
-              padding: const EdgeInsets.all(12),
-              children: [
-                if (couriers != null) ...[
-                  _SectionTitle(CourierTexts.couriersCash),
-                  if (couriers.isEmpty)
-                    const Padding(
-                      padding: EdgeInsets.all(24),
-                      child: EmptyView(message: CourierTexts.noCouriers),
-                    ),
-                  for (final courier in couriers) _CourierCashTile(courier: courier),
-                  const SizedBox(height: 12),
+      child: _ReloadOnSync(
+        sync: sync,
+        child: BlocBuilder<CashCubit, CashState>(
+          builder: (context, state) {
+            final cubit = context.read<CashCubit>();
+            final statement = state.statement;
+            final couriers = state.couriers;
+            if (!state.loaded) {
+              return state.status == CashStatus.failure
+                  ? ErrorView(message: state.error!, onRetry: cubit.load)
+                  : const LoadingView();
+            }
+            return RefreshIndicator(
+              onRefresh: () async {
+                await sync?.sync();
+                await cubit.load();
+              },
+              child: ListView(
+                padding: const EdgeInsets.all(12),
+                children: [
+                  if (couriers != null) ...[
+                    _SectionTitle(CourierTexts.couriersCash),
+                    if (couriers.isEmpty)
+                      const Padding(
+                        padding: EdgeInsets.all(24),
+                        child: EmptyView(message: CourierTexts.noCouriers),
+                      ),
+                    for (final courier in couriers) _CourierCashTile(courier: courier),
+                    const SizedBox(height: 12),
+                  ],
+                  if (statement != null) ...[
+                    _BalancesCard(cash: statement.cash),
+                    const SizedBox(height: 12),
+                    _SectionTitle(CourierTexts.movements),
+                    if (statement.movements.isEmpty)
+                      const Padding(
+                        padding: EdgeInsets.all(24),
+                        child: EmptyView(message: CourierTexts.noMovements),
+                      ),
+                    for (final movement in statement.movements) _MovementTile(movement: movement),
+                  ],
                 ],
-                if (statement != null) ...[
-                  _BalancesCard(cash: statement.cash),
-                  const SizedBox(height: 12),
-                  _SectionTitle(CourierTexts.movements),
-                  if (statement.movements.isEmpty)
-                    const Padding(
-                      padding: EdgeInsets.all(24),
-                      child: EmptyView(message: CourierTexts.noMovements),
-                    ),
-                  for (final movement in statement.movements) _MovementTile(movement: movement),
-                ],
-              ],
-            ),
-          );
-        },
+              ),
+            );
+          },
+        ),
       ),
     );
   }
@@ -123,7 +127,12 @@ class _MovementTile extends StatelessWidget {
         leading: Icon(incoming ? Icons.south_west : Icons.north_east, color: color),
         title: Text(CourierTexts.movementTitle(movement.type.code)),
         subtitle: Text(
-          [Formatters.dateTime(movement.occurredAt), if (movement.note != null) movement.note!].join(' · '),
+          [
+            Formatters.dateTime(movement.occurredAt),
+            if (movement.note != null) movement.note!,
+            // Counted already, though the server does not have it yet.
+            if (SyncCubit.isUnsent(movement)) CourierTexts.unsent,
+          ].join(' · '),
         ),
         trailing: Text(
           '${incoming ? '+' : ''}${Formatters.money(movement.signedAmount, movement.currency)}',
@@ -225,6 +234,26 @@ class _CourierCashTile extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Reloads the cash after each sync, which may bring the server's balance.
+class _ReloadOnSync extends StatelessWidget {
+  const _ReloadOnSync({required this.sync, required this.child});
+
+  final SyncCubit? sync;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final sync = this.sync;
+    if (sync == null) return child;
+    return BlocListener<SyncCubit, SyncStatus>(
+      bloc: sync,
+      listenWhen: (previous, current) => previous.revision != current.revision,
+      listener: (context, _) => context.read<CashCubit>().load(),
+      child: child,
     );
   }
 }
