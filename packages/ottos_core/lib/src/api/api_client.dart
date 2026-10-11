@@ -79,6 +79,10 @@ class ApiClient {
       return _retry(options, tokens.accessToken, handler, error);
     }
     final refreshed = tokens == null ? null : await _refresh(tokens.refreshToken);
+    if (identical(refreshed, _unreachable)) {
+      // No network: the session may still be good; keep it and fail this request.
+      return handler.next(error);
+    }
     if (refreshed == null) {
       await _tokenStorage.clear();
       _sessionExpired.add(null);
@@ -101,14 +105,20 @@ class ApiClient {
     }
   }
 
+  /// Returned by [_refresh] when the server could not be reached.
+  static const _unreachable = AuthTokens(accessToken: '', refreshToken: '');
+
+  /// New tokens; null if the server rejected the refresh token, or
+  /// [_unreachable] without network (the app keeps working offline and
+  /// retries later; the backend accepts a retry within its grace window).
   Future<AuthTokens?> _refresh(String refreshToken) async {
     try {
       final response = await _bareDio.post<Map<String, dynamic>>('/auth/refresh', data: {'refreshToken': refreshToken});
       final tokens = AuthTokens.fromJson(response.data!);
       await _tokenStorage.write(tokens);
       return tokens;
-    } on DioException {
-      return null;
+    } on DioException catch (error) {
+      return error.response == null ? _unreachable : null;
     }
   }
 

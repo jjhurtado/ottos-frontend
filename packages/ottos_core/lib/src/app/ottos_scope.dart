@@ -47,7 +47,12 @@ class _OttosScopeState extends State<OttosScope> {
     super.initState();
     final tokenStorage = SecureTokenStorage();
     _api = ApiClient(config: widget.config, tokenStorage: tokenStorage);
-    _authRepository = AuthRepository(api: _api, tokenStorage: tokenStorage, client: widget.config.client);
+    _authRepository = AuthRepository(
+      api: _api,
+      tokenStorage: tokenStorage,
+      client: widget.config.client,
+      userCache: widget.config.client == AppClient.mobile ? SecureUserCache() : null,
+    );
     _remittanceRepository = RemittanceRepository(api: _api);
     _cashRepository = CashRepository(api: _api);
     _customerRepository = CustomerRepository(api: _api);
