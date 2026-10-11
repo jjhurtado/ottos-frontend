@@ -402,6 +402,49 @@ void main() {
       expect(refreshed.feeRule?.value, rule.value);
     });
 
+    test('pickups keep their own rate, fee rule, history and quote', () async {
+      final corridor = (await rates.corridors())
+          .where((c) => c.canQuoteFor(RemittanceType.pickup) && !c.hasFixedRate && c.pickupFeeRule != null)
+          .firstOrNull;
+      if (corridor == null) {
+        markTestSkipped('Needs a corridor with a pickup rate and fee rule');
+        return;
+      }
+      final pickupRule = corridor.pickupFeeRule!;
+
+      final rate = await rates.setRate(corridor.code, corridor.pickupRate!.rate, type: RemittanceType.pickup);
+      await rates.setFeeRule(
+        corridor.code,
+        FeeRuleInput(
+          type: pickupRule.type,
+          value: pickupRule.value,
+          minFee: pickupRule.minFee,
+          maxFee: pickupRule.maxFee,
+        ),
+        type: RemittanceType.pickup,
+      );
+
+      expect(rate.remittanceType, RemittanceType.pickup);
+      final pickupHistory = await rates.rateHistory(corridor.code, type: RemittanceType.pickup);
+      expect(pickupHistory.first.id, rate.id);
+      expect(pickupHistory.map((r) => r.remittanceType), everyElement(RemittanceType.pickup));
+      expect(
+        (await rates.rateHistory(corridor.code)).map((r) => r.remittanceType),
+        everyElement(RemittanceType.delivery),
+      );
+      final refreshed = (await rates.corridors()).firstWhere((c) => c.code == corridor.code);
+      expect(refreshed.pickupRate?.id, rate.id);
+      expect(refreshed.rate?.id, corridor.rate?.id, reason: 'the delivery rate is untouched');
+
+      final quote = await rates.quote(
+        sourceCurrency: corridor.sourceCurrency,
+        targetCurrency: corridor.targetCurrency,
+        amount: 100,
+        type: RemittanceType.pickup,
+      );
+      expect(quote.rate, corridor.pickupRate!.rate);
+    });
+
     test('re-saves the settings in force', () async {
       final settings = await rates.settings();
 

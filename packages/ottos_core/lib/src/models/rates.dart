@@ -1,23 +1,32 @@
 import 'package:equatable/equatable.dart';
 
 import 'json.dart';
+import 'remittance.dart';
 
-/// An exchange rate of a corridor, valid from [validFrom] until the next one (`RateView`).
+/// An exchange rate of a corridor for deliveries or for pickups, valid from
+/// [validFrom] until the next one of the same type (`RateView`).
 class ExchangeRate extends Equatable {
-  const ExchangeRate({required this.id, required this.rate, this.validFrom});
+  const ExchangeRate({
+    required this.id,
+    required this.rate,
+    this.validFrom,
+    this.remittanceType = RemittanceType.delivery,
+  });
 
   factory ExchangeRate.fromJson(Map<String, dynamic> json) => ExchangeRate(
     id: json['id'] as String? ?? '',
     rate: parseDecimal(json['rate']) ?? 0,
     validFrom: parseDateTime(json['validFrom']),
+    remittanceType: RemittanceType.fromCode(json['remittanceType'] as String?),
   );
 
   final String id;
   final double rate;
   final DateTime? validFrom;
+  final RemittanceType remittanceType;
 
   @override
-  List<Object?> get props => [id, rate, validFrom];
+  List<Object?> get props => [id, rate, validFrom, remittanceType];
 }
 
 enum FeeType {
@@ -34,9 +43,18 @@ enum FeeType {
   static FeeType fromCode(String? code) => values.firstWhere((type) => type.code == code, orElse: () => percentage);
 }
 
-/// How the fee of a corridor is calculated, valid from [validFrom] (`FeeRuleView`).
+/// How the fee of a corridor is calculated for deliveries or for pickups,
+/// valid from [validFrom] (`FeeRuleView`).
 class FeeRule extends Equatable {
-  const FeeRule({required this.id, required this.type, required this.value, this.minFee, this.maxFee, this.validFrom});
+  const FeeRule({
+    required this.id,
+    required this.type,
+    required this.value,
+    this.minFee,
+    this.maxFee,
+    this.validFrom,
+    this.remittanceType = RemittanceType.delivery,
+  });
 
   factory FeeRule.fromJson(Map<String, dynamic> json) => FeeRule(
     id: json['id'] as String? ?? '',
@@ -45,6 +63,7 @@ class FeeRule extends Equatable {
     minFee: parseDecimal(json['minFee']),
     maxFee: parseDecimal(json['maxFee']),
     validFrom: parseDateTime(json['validFrom']),
+    remittanceType: RemittanceType.fromCode(json['remittanceType'] as String?),
   );
 
   final String id;
@@ -55,9 +74,10 @@ class FeeRule extends Equatable {
   final double? minFee;
   final double? maxFee;
   final DateTime? validFrom;
+  final RemittanceType remittanceType;
 
   @override
-  List<Object?> get props => [id, type, value, minFee, maxFee, validFrom];
+  List<Object?> get props => [id, type, value, minFee, maxFee, validFrom, remittanceType];
 }
 
 /// A new fee rule (`POST /corridors/{code}/fee-rules`).
@@ -76,7 +96,7 @@ class FeeRuleInput extends Equatable {
 }
 
 /// A currency pair the business operates, e.g. USD-CUP, with the rate and
-/// fee rule in force (`CorridorView`).
+/// fee rule in force for deliveries and, separately, for pickups (`CorridorView`).
 class Corridor extends Equatable {
   const Corridor({
     required this.code,
@@ -86,11 +106,15 @@ class Corridor extends Equatable {
     this.deliveryRounding,
     this.rate,
     this.feeRule,
+    this.pickupRate,
+    this.pickupFeeRule,
   });
 
   factory Corridor.fromJson(Map<String, dynamic> json) {
     final rate = json['currentRate'] as Map<String, dynamic>?;
     final feeRule = json['currentFeeRule'] as Map<String, dynamic>?;
+    final pickupRate = json['currentPickupRate'] as Map<String, dynamic>?;
+    final pickupFeeRule = json['currentPickupFeeRule'] as Map<String, dynamic>?;
     return Corridor(
       code: json['code'] as String,
       sourceCurrency: json['sourceCurrency'] as String? ?? '',
@@ -99,6 +123,8 @@ class Corridor extends Equatable {
       deliveryRounding: parseDecimal(json['deliveryRounding']),
       rate: rate == null ? null : ExchangeRate.fromJson(rate),
       feeRule: feeRule == null ? null : FeeRule.fromJson(feeRule),
+      pickupRate: pickupRate == null ? null : ExchangeRate.fromJson(pickupRate),
+      pickupFeeRule: pickupFeeRule == null ? null : FeeRule.fromJson(pickupFeeRule),
     );
   }
 
@@ -110,19 +136,30 @@ class Corridor extends Equatable {
   /// The amount to deliver is rounded down to a multiple of this (50 CUP; 0.01 means no rounding).
   final double? deliveryRounding;
 
-  /// Null until an administrator sets one; such a corridor cannot be quoted.
+  /// For deliveries. Null until an administrator sets one; such a corridor
+  /// cannot be quoted for deliveries.
   final ExchangeRate? rate;
   final FeeRule? feeRule;
 
+  /// For pickups, set apart from the delivery ones.
+  final ExchangeRate? pickupRate;
+  final FeeRule? pickupFeeRule;
+
   double? get currentRate => rate?.rate;
 
-  bool get canQuote => active && rate != null;
+  ExchangeRate? rateFor(RemittanceType type) => type == RemittanceType.pickup ? pickupRate : rate;
+
+  FeeRule? feeRuleFor(RemittanceType type) => type == RemittanceType.pickup ? pickupFeeRule : feeRule;
+
+  bool get canQuote => canQuoteFor(RemittanceType.delivery);
+
+  bool canQuoteFor(RemittanceType type) => active && rateFor(type) != null;
 
   /// Same-currency corridors (USD-USD) always use rate 1.
   bool get hasFixedRate => sourceCurrency == targetCurrency;
 
   @override
-  List<Object?> get props => [code, active, rate, feeRule];
+  List<Object?> get props => [code, active, rate, feeRule, pickupRate, pickupFeeRule];
 }
 
 /// What a remittance of [amount] costs and delivers today (`POST /quotes`).
