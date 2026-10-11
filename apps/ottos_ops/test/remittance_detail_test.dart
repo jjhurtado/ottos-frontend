@@ -24,7 +24,7 @@ final _workflow = Workflow.fromJson({
   ],
 });
 
-Remittance _remittance(String status, {String? courierId, Incident? incident}) => Remittance(
+Remittance _remittance(String status, {String? courierId, Incident? incident, Review? review}) => Remittance(
   id: 'r1',
   code: 'OT-1',
   type: RemittanceType.delivery,
@@ -32,6 +32,7 @@ Remittance _remittance(String status, {String? courierId, Incident? incident}) =
   statusName: _workflow.nameOf(status),
   courierId: courierId,
   incident: incident,
+  review: review,
 );
 
 CurrentUser _user(Set<String> permissions) =>
@@ -117,6 +118,45 @@ void main() {
     testWidgets('no incident without the permission', (tester) async {
       await pumpDetail(tester, _remittance('ASSIGNED', courierId: 'k1'), all);
       expect(find.text(CoreTexts.reportIncident), findsNothing);
+    });
+
+    testWidgets('a remittance under review is resolved with a note', (tester) async {
+      const review = Review(reason: ReviewReason.pinMismatch);
+      when(() => remittances.resolveReview('r1', note: 'El beneficiario confirmó la entrega'))
+          .thenAnswer((_) async => _remittance('DELIVERED', courierId: 'k1'));
+      await pumpDetail(tester, _remittance('DELIVERED', courierId: 'k1', review: review), {
+        Permissions.remittancesRead,
+        Permissions.remittancesReview,
+      });
+      expect(find.textContaining(CoreTexts.reviewReason(ReviewReason.pinMismatch)), findsOneWidget);
+
+      await tester.tap(find.text(OpsTexts.resolve));
+      await tester.pumpAndSettle();
+      await tester.tap(find.descendant(of: find.byType(AlertDialog), matching: find.text(OpsTexts.resolve)));
+      await tester.pumpAndSettle();
+      expect(find.text(CoreTexts.requiredField), findsOneWidget, reason: 'the note is required');
+
+      await tester.enterText(find.byType(TextFormField), 'El beneficiario confirmó la entrega');
+      await tester.tap(find.descendant(of: find.byType(AlertDialog), matching: find.text(OpsTexts.resolve)));
+      await tester.pumpAndSettle();
+
+      verify(() => remittances.resolveReview('r1', note: 'El beneficiario confirmó la entrega')).called(1);
+      expect(find.byType(ReviewBanner), findsNothing);
+    });
+
+    testWidgets('without the permission the review is shown but not resolved', (tester) async {
+      await pumpDetail(
+        tester,
+        _remittance(
+          'DELIVERED',
+          courierId: 'k1',
+          review: const Review(reason: ReviewReason.lateSync),
+        ),
+        {Permissions.remittancesRead},
+      );
+
+      expect(find.byType(ReviewBanner), findsOneWidget);
+      expect(find.text(OpsTexts.resolve), findsNothing);
     });
 
     testWidgets('the reported incident is shown', (tester) async {

@@ -21,6 +21,7 @@ final class HomeState extends Equatable {
     this.openByStatus = const [],
     this.late = 0,
     this.incidents = 0,
+    this.toReview = 0,
     this.error,
   });
 
@@ -28,10 +29,11 @@ final class HomeState extends Equatable {
   final List<StatusCount> openByStatus;
   final int late;
   final int incidents;
+  final int toReview;
   final String? error;
 
   @override
-  List<Object?> get props => [status, openByStatus, late, incidents, error];
+  List<Object?> get props => [status, openByStatus, late, incidents, toReview, error];
 }
 
 class HomeCubit extends Cubit<HomeState> {
@@ -48,6 +50,7 @@ class HomeCubit extends Cubit<HomeState> {
         for (final status in open) _count(RemittanceFilter(status: status.code)),
         _count(const RemittanceFilter(late: true)),
         _count(const RemittanceFilter(incident: true)),
+        _count(const RemittanceFilter(review: true)),
       ]);
       emit(
         HomeState(
@@ -55,6 +58,7 @@ class HomeCubit extends Cubit<HomeState> {
           openByStatus: [for (var i = 0; i < open.length; i++) StatusCount(open[i], counts[i])],
           late: counts[open.length],
           incidents: counts[open.length + 1],
+          toReview: counts[open.length + 2],
         ),
       );
     } on ApiException catch (error) {

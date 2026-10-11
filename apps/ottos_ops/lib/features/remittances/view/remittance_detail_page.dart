@@ -27,6 +27,7 @@ class RemittanceDetailPage extends StatelessWidget {
             RemittanceAction.completed => OpsTexts.completed,
             RemittanceAction.postponed => OpsTexts.postponed,
             RemittanceAction.incidentReported => CoreTexts.incidentReported,
+            RemittanceAction.reviewResolved => OpsTexts.reviewResolved,
             RemittanceAction.failed => state.actionError ?? CoreTexts.unexpectedError,
             RemittanceAction.none => null,
           };
@@ -84,6 +85,24 @@ class _RemittanceDetailView extends StatelessWidget {
           ],
         ),
         _ActionBar(state: state),
+        if (remittance.review case final review?) ...[
+          const SizedBox(height: 16),
+          ReviewBanner(
+            review: review,
+            action: context.canDo(Permissions.remittancesReview)
+                ? FilledButton.tonal(
+                    onPressed: state.submitting
+                        ? null
+                        : () async {
+                            final cubit = context.read<RemittanceDetailCubit>();
+                            final note = await _askResolveNote(context);
+                            if (note != null) await cubit.resolveReview(note: note);
+                          },
+                    child: const Text(OpsTexts.resolve),
+                  )
+                : null,
+          ),
+        ],
         if (remittance.incident case final incident?) ...[
           const SizedBox(height: 16),
           IncidentBanner(incident: incident),
@@ -323,6 +342,7 @@ class _HistoryCard extends StatelessWidget {
                     ].where((date) => date.isNotEmpty).join(' → '),
                   ),
                 if (event.incidentReason != null) Text(CoreTexts.incidentReason(event.incidentReason!)),
+                if (event.reviewReason != null) Text(CoreTexts.reviewReason(event.reviewReason!)),
                 if (event.note != null && event.note!.isNotEmpty) Text(event.note!),
                 Text(Formatters.dateTime(event.occurredAt), style: TextStyle(color: outline, fontSize: 12)),
               ],
@@ -369,6 +389,66 @@ class _CashMovementsCardState extends State<_CashMovementsCard> {
             if (movements.isEmpty) return const Text(OpsTexts.noMovements);
             return Column(children: [for (final movement in movements) MovementTile(movement: movement)]);
           },
+        ),
+      ],
+    );
+  }
+}
+
+/// Asks what sales checked before resolving a review; null if cancelled.
+Future<String?> _askResolveNote(BuildContext context) =>
+    showDialog<String>(context: context, builder: (_) => const _ResolveReviewDialog());
+
+class _ResolveReviewDialog extends StatefulWidget {
+  const _ResolveReviewDialog();
+
+  @override
+  State<_ResolveReviewDialog> createState() => _ResolveReviewDialogState();
+}
+
+// Stateful so the note lives as long as the dialog, closing animation included.
+class _ResolveReviewDialogState extends State<_ResolveReviewDialog> {
+  final _note = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
+
+  @override
+  void dispose() {
+    _note.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text(OpsTexts.resolveReviewTitle),
+      content: SizedBox(
+        width: 420,
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(OpsTexts.resolveReviewHelp),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _note,
+                autofocus: true,
+                maxLines: 3,
+                decoration: const InputDecoration(labelText: OpsTexts.resolveNote),
+                validator: (text) => (text ?? '').trim().isEmpty ? CoreTexts.requiredField : null,
+              ),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text(CoreTexts.cancel)),
+        FilledButton(
+          onPressed: () {
+            if (_formKey.currentState!.validate()) Navigator.of(context).pop(_note.text.trim());
+          },
+          child: const Text(OpsTexts.resolve),
         ),
       ],
     );

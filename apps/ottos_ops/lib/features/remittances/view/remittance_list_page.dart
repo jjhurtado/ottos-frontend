@@ -140,6 +140,11 @@ class _FilterBar extends StatelessWidget {
               onSelected: (selected) => change(filter.copyWith(late: selected ? true : null)),
             ),
             FilterChip(
+              label: const Text(OpsTexts.onlyToReview),
+              selected: filter.review == true,
+              onSelected: (selected) => change(filter.copyWith(review: selected ? true : null)),
+            ),
+            FilterChip(
               label: const Text(OpsTexts.onlyIncidents),
               selected: filter.incident == true,
               onSelected: (selected) => change(filter.copyWith(incident: selected ? true : null)),
@@ -327,6 +332,13 @@ class _StatusCell extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         RemittanceStatusChip(remittance: remittance),
+        if (remittance.review case final review?) ...[
+          const SizedBox(width: 6),
+          Tooltip(
+            message: '${CoreTexts.toReview}: ${CoreTexts.reviewReason(review.reason)}',
+            child: const Icon(Icons.flag_outlined, color: OttosColors.warning, size: 20),
+          ),
+        ],
         if (incident != null) ...[
           const SizedBox(width: 6),
           Tooltip(

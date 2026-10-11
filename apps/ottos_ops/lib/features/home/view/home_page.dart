@@ -69,6 +69,13 @@ class _Summary extends StatelessWidget {
               icon: Icons.error_outline,
               onTap: () => context.go('${Destinations.remittances.path}?incident=true'),
             ),
+            _CountCard(
+              label: OpsTexts.reviewRemittances,
+              count: state.toReview,
+              color: OttosColors.warning,
+              icon: Icons.flag_outlined,
+              onTap: () => context.go('${Destinations.remittances.path}?review=true'),
+            ),
           ],
         ),
       },

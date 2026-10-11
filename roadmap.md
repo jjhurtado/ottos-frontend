@@ -38,12 +38,14 @@ Decisión del negocio (2026-10-10): durante el día, **ventas y repartidores tra
 
 Prioridad para la versión 1.0 (petición del negocio, 2026-10-10): hay días en que el repartidor pasa la jornada entera sin internet. El backend lo está diseñando (sección «App del repartidor offline-first» de su ROADMAP.md) y el contrato se cierra entre los dos agentes antes de implementarlo.
 
-- [x] Contrato cerrado con el backend (2026-10-10, `ottos/docs/contracts/offline-sync.md`): `GET /sync/state?since=` y `POST /sync/actions` (lote de hasta 200, UUID por acción, `occurredAt`, resultados APPLIED/ALREADY_APPLIED/REJECTED con los mismos `code`), login con `client: MOBILE` (sesión de 14 h), `strictPin` para rechazar un PIN incorrecto cuando hay red, y revisión de remesas (`review`, `?review=true`, `POST /remittances/{id}/review/resolve`, permiso `remittances:review`). Pendiente de que el backend lo implemente.
-- [ ] Guardar en el teléfono las remesas asignadas, la caja propia y una cola de acciones pendientes (entregar con o sin PIN, aplazar, incidencia).
-- [ ] Mostrar en la app qué está pendiente de sincronizar, cuándo se sincronizó por última vez y los rechazos con su motivo en español.
-- [ ] Sincronizar al abrir la app, al recuperar la red, al volver al primer plano y a mano.
-- [ ] Qué se puede hacer sin red y qué no: crear remesas y mover caja de ventas necesitan cotización y saldos al día, en principio solo con conexión.
-- [ ] En el panel, revisar las remesas marcadas para revisión (PIN que no coincide, entrega tras una reasignación).
+- [x] Contrato cerrado con el backend (2026-10-10, `ottos/docs/contracts/offline-sync.md`): `GET /sync/state?since=` y `POST /sync/actions` (lote de hasta 200, UUID por acción, `occurredAt`, resultados APPLIED/ALREADY_APPLIED/REJECTED con los mismos `code`), login con `client: MOBILE` (sesión de 14 h), `strictPin` para rechazar un PIN incorrecto cuando hay red, y revisión de remesas (`review`, `?review=true`, `POST /remittances/{id}/review/resolve`, permiso `remittances:review`). Implementado en el backend y en la app.
+- [x] Guardar en el teléfono (SQLite) las remesas asignadas, la caja propia, el workflow y una cola de acciones pendientes (entregar con o sin PIN, aplazar, incidencia). La app abre sin red con el último usuario y no cierra la sesión si no llega al servidor.
+- [x] Barra de sincronización (sin conexión, N sin enviar, sincronizado hace X, botón), chip «Sin enviar» en la tarjeta, lista «No sincronizadas» con el motivo en español, aviso «Para revisar», y aviso al cerrar sesión con acciones sin enviar.
+- [x] Sincronizar al abrir la app, al recuperar la red, al volver al primer plano, al tirar de la lista y a mano. Con red y sin cola, la acción va directa con `strictPin` (un PIN incorrecto se rechaza al momento).
+- [x] Ventas trabaja solo con conexión (crear remesas, asignar, mover caja); el repartidor, sin ella.
+- [x] Panel: filtro y tarjeta «Para revisar», aviso en el detalle con «Resolver» (nota obligatoria, `remittances:review`) e historial con el motivo.
+- [x] Probado en el emulador: entrega sin red, app cerrada y abierta sin red, envío automático al volver la red con la hora real, y PIN incorrecto sin red marcado PIN_MISMATCH.
+- [ ] Valorar sincronización en segundo plano (hoy solo con la app abierta) y limpiar la cola si otro usuario entra en el mismo teléfono (hoy se avisa al cerrar sesión).
 
 ## Fase 1 · Flujo de remesas en el panel
 
