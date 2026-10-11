@@ -45,10 +45,13 @@ Decisión del negocio (2026-10-10): durante el día, **ventas y repartidores tra
 Pedido por el negocio (2026-10-11): avisar en el teléfono **cuando un repartidor tiene una remesa nueva** y **cuando se entrega una remesa**.
 
 - [x] Decidido (2026-10-11): la entrega de una remesa se avisa a **ventas**; la remesa nueva, al **repartidor** asignado.
-- [ ] Sin depender de Firebase/FCM ni de Google Play: pueden estar bloqueados desde Cuba (aviso de infraestructura). Propuesta: notificaciones **locales** que la app genera al sincronizar (al abrirla, al volver la red, al volver al primer plano y cada pocos minutos con la app abierta), comparando con lo que ya tenía guardado: remesas nuevas asignadas al repartidor; remesas entregadas para ventas.
-- [ ] Valorar una comprobación periódica en segundo plano (Android WorkManager, mínimo ~15 min) para avisar con la app cerrada, y qué consumo de batería y datos supone.
-- [ ] Backend: `GET /remittances/completed?since=` para ventas (todas las remesas, recogidas incluidas, decidido 2026-10-11). En curso en el backend.
-- [ ] Permiso de notificaciones en Android 13+ y ajustes para silenciarlas.
+- [x] Sin Firebase/FCM ni Google Play (pueden estar bloqueados desde Cuba): notificaciones **locales** que la app genera al consultar el servidor: al abrirla, al volver la red, al volver al primer plano y cada 2 minutos con la app abierta.
+- [x] **Repartidor: remesa nueva.** Al sincronizar, las remesas que el teléfono no tenía avisan «Nueva entrega asignada» / «Nueva recogida asignada» (código, beneficiario, municipio). No avisa en la primera descarga tras el login ni de las que creó el propio usuario. Más de 3 a la vez, un solo aviso. Al tocarla se abre la remesa. Probado en el emulador.
+- [x] **Ventas: remesa completada.** Con `remittances:read`, la app consulta `GET /remittances/completed?since=` (todas las remesas, recogidas incluidas) y avisa «Remesa entregada» / «Recogida completada» con quién la hizo; no avisa de las entregas propias. La primera consulta solo marca desde dónde empezar.
+- [ ] Probar los avisos de ventas contra el backend cuando despliegue el feed (rama `feature/completed-feed`).
+- [x] Permiso de notificaciones de Android 13+ pedido tras el login; dos canales («Remesas nuevas», «Remesas completadas») que se pueden silenciar desde los ajustes de Android.
+- [ ] Con la app cerrada no hay avisos. Valorar una comprobación en segundo plano (Android WorkManager, mínimo ~15 min) y su consumo de batería y datos.
+- [ ] Revisar `dependency_overrides: dbus` en el `pubspec.yaml` raíz cuando flutter_local_notifications acepte dbus 0.8.
 
 ## App sin conexión (offline-first)
 

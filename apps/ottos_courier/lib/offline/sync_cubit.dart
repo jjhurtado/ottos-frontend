@@ -78,10 +78,14 @@ final class SyncStatus extends Equatable {
 /// Keeps the phone and the server in step: sends the queue in order, then
 /// downloads what changed. Without network everything stays queued.
 class SyncCubit extends Cubit<SyncStatus> {
-  SyncCubit({required this._store, required this._sync}) : super(const SyncStatus());
+  SyncCubit({required this._store, required this._sync, this._onNewRemittances}) : super(const SyncStatus());
 
   final OfflineStore _store;
   final SyncRepository _sync;
+
+  /// Remittances that came in a download and the phone did not have, for the
+  /// notifications. Not on the first download: that is everything already open.
+  final void Function(List<Remittance> remittances)? _onNewRemittances;
   Future<void>? _running;
 
   OfflineStore get store => _store;
@@ -103,7 +107,15 @@ class SyncCubit extends Cubit<SyncStatus> {
     var offline = false;
     try {
       await _sendPending();
-      await _store.applyState(await _sync.state(since: await _store.serverTime()));
+      final since = await _store.serverTime();
+      final known = {for (final json in await _store.remittances()) json['id']};
+      final downloaded = await _sync.state(since: since);
+      await _store.applyState(downloaded);
+      final arrived = [
+        for (final json in downloaded.remittances)
+          if (!known.contains(json['id'])) Remittance.fromJson(json),
+      ].where((remittance) => !remittance.isCompleted).toList();
+      if (since != null && arrived.isNotEmpty) _onNewRemittances?.call(arrived);
     } on ApiException catch (error) {
       offline = error.statusCode == null;
     }

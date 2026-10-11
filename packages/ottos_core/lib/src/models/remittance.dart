@@ -259,3 +259,23 @@ class Remittance extends Equatable {
   @override
   List<Object?> get props => [id, status, courierId, expectedDate, late, postponements, incident, review, completedAt];
 }
+
+/// One page of `GET /remittances/completed`, oldest first.
+class CompletedFeed {
+  const CompletedFeed({required this.serverTime, this.hasMore = false, this.remittances = const []});
+
+  factory CompletedFeed.fromJson(Map<String, dynamic> json) => CompletedFeed(
+    serverTime: json['serverTime'] as String,
+    hasMore: json['hasMore'] as bool? ?? false,
+    remittances: [
+      for (final item in json['remittances'] as List? ?? const []) Remittance.fromJson(item as Map<String, dynamic>),
+    ],
+  );
+
+  /// The `since` of the next call; kept even when nothing came.
+  final String serverTime;
+
+  /// More are waiting: ask again right away with [serverTime].
+  final bool hasMore;
+  final List<Remittance> remittances;
+}

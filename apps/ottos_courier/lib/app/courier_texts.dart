@@ -7,6 +7,19 @@ abstract final class CourierTexts {
   static const appName = 'App de repartidores';
   static const appTitle = "Otto's · Repartidor";
 
+  // Notifications
+  static const newRemittancesChannel = 'Remesas nuevas';
+  static const newRemittancesChannelHelp = 'Remesas que te asignan';
+  static const completedChannel = 'Remesas completadas';
+  static const completedChannelHelp = 'Entregas y recogidas que terminan los repartidores';
+  static String newRemittanceTitle(Remittance remittance) =>
+      remittance.isPickup ? 'Nueva recogida asignada' : 'Nueva entrega asignada';
+  static String newRemittancesTitle(int count) => 'Tienes $count remesas nuevas';
+  static String completedTitle(Remittance remittance) =>
+      remittance.isPickup ? 'Recogida completada' : 'Remesa entregada';
+  static String completedManyTitle(int count) => '$count remesas completadas';
+  static const tapToSee = 'Toca para verlas';
+
   // Navigation
   static const account = 'Mi cuenta';
   static const myRemittances = 'Mis remesas';
