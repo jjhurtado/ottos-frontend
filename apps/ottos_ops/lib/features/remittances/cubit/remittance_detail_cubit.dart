@@ -28,7 +28,9 @@ final class RemittanceDetailState extends Equatable {
   final RemittanceAction action;
   final String? actionError;
 
-  String statusName(String? code) => code == null ? '' : workflow?.nameOf(code) ?? code;
+  /// A status of the history, named for this remittance's type.
+  String statusName(String? code) =>
+      code == null ? '' : CoreTexts.statusName(code, type: remittance?.type, fallback: workflow?.nameOf(code));
 
   /// Copies the state; [action] and [actionError] reset unless given.
   RemittanceDetailState copyWith({

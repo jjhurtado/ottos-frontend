@@ -141,6 +141,19 @@ abstract final class CoreTexts {
   static const incidentReported = 'Incidencia reportada';
   static const incident = 'Incidencia';
 
+  /// Name of a remittance status, by its code and the remittance [type]: the
+  /// final status is "Entregada" for a delivery and "Recogida" for a pickup;
+  /// without a type (filters, counts) it names both. Unknown codes show
+  /// [fallback], the backend's name, or the code itself.
+  static String statusName(String code, {RemittanceType? type, String? fallback}) => switch ((code, type)) {
+    ('PAID', _) => 'Pagada',
+    ('ASSIGNED', _) => 'Asignada',
+    ('DELIVERED', RemittanceType.delivery) => 'Entregada',
+    ('DELIVERED', RemittanceType.pickup) => 'Recogida',
+    ('DELIVERED', null) => 'Entregada o recogida',
+    _ => fallback == null || fallback.isEmpty ? code : fallback,
+  };
+
   static String incidentReason(IncidentReason reason) => switch (reason) {
     IncidentReason.notHome => 'No estaba en casa',
     IncidentReason.wrongAddress => 'Dirección errónea',

@@ -97,7 +97,7 @@ La app tiene lista de asignadas, detalle, entregar (con o sin PIN), posponer y s
 - [x] Probada en un emulador Android contra el backend local: login, lista, detalle, recoger, entregar con PIN (incorrecto y correcto), aplazar y Mi caja. Arreglos que salieron: fecha propuesta al aplazar, municipio repetido en la dirección, y entregas y recogidas diferenciadas por color e icono.
 - [x] **Incidencias de entrega**: «No se pudo entregar/recoger» con motivo (nota obligatoria en «Otro motivo») en la app y en el detalle del panel; aviso en la lista de la app, en la lista y el detalle del panel; filtro «Con incidencia», tarjeta en Inicio e historial con el motivo. Motivos traducidos por código.
 - [x] **Lista del repartidor**: las atrasadas y con incidencia van al final; orden «Más atrasadas primero» por días; días de atraso en la tarjeta; deslizar a la derecha para completar y a la izquierda para marcar una incidencia, siempre con confirmación; nombre del usuario en la barra; WhatsApp junto a Llamar; tras reportar una incidencia vuelve a la lista.
-- [ ] En una recogida completada el estado dice «Entregada» (nombre del estado final que manda el backend). Valorar mostrar «Recogida» en el frontend o pedir un nombre neutro al backend.
+- [x] Estados traducidos por código y tipo: una recogida completada dice «Recogida» y una entrega «Entregada» (en listas, detalle, historial, chips de la app); en filtros e Inicio, «Entregada o recogida». `statusName` del backend queda como respaldo.
 - [ ] Tests de los cubits de asignadas, remesa y caja.
 - [x] Llamar y escribir por WhatsApp desde el detalle.
 - [ ] Abrir la dirección en mapas desde el detalle.
@@ -140,4 +140,4 @@ y cada versión publicada lleva su tag en `main`, sin prefijo (`1.0.0-beta.1`). 
 - ~~**Errores de negocio en inglés.**~~ Resuelto: todos los errores traen un `code` estable y `CoreTexts.errorCodes` traduce los del flujo de remesas y clientes. Añadir traducciones a medida que se usen más códigos.
 - **Monedas destino.** ¿Qué monedas se ofrecen al crear una remesa: se leen de los corredores (`/corridors`) o son fijas?
 - **Recogidas.** ¿Quién crea las remesas de tipo recogida y qué datos financieros debe ver cada rol? Ya tienen tasa y comisión propias en el backend.
-- **Estados por tipo.** El backend pide traducir los estados por código y tipo (DELIVERED → «Entregada» o «Recogida»); `statusName` queda como respaldo.
+- ~~**Estados por tipo.**~~ Hecho: `CoreTexts.statusName(code, type:)`.

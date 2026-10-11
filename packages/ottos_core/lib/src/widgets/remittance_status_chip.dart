@@ -16,10 +16,10 @@ class RemittanceStatusChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (color, label) = switch (remittance) {
-      Remittance(isCompleted: true) => (OttosColors.success, remittance.statusName),
-      Remittance(late: true) => (OttosColors.danger, '${remittance.statusName} · ${CoreTexts.late}'),
-      Remittance(courierId: != null) => (OttosColors.warning, remittance.statusName),
-      _ => (OttosColors.teal, remittance.statusName),
+      Remittance(isCompleted: true) => (OttosColors.success, remittance.displayStatus),
+      Remittance(late: true) => (OttosColors.danger, '${remittance.displayStatus} · ${CoreTexts.late}'),
+      Remittance(courierId: != null) => (OttosColors.warning, remittance.displayStatus),
+      _ => (OttosColors.teal, remittance.displayStatus),
     };
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),

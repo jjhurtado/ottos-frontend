@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 
+import '../l10n/core_texts.dart';
 import 'json.dart';
 
 enum RemittanceType {
@@ -136,7 +137,12 @@ class Remittance extends Equatable {
   final String code;
   final RemittanceType type;
   final String status;
+
+  /// The backend's name of [status]; only a fallback, see [displayStatus].
   final String statusName;
+
+  /// [status] in Spanish, by code and type.
+  String get displayStatus => CoreTexts.statusName(status, type: type, fallback: statusName);
   final String? customerId;
   final String? customerName;
   final String? customerPhone;
