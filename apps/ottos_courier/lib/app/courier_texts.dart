@@ -67,6 +67,8 @@ abstract final class CourierTexts {
   static const markCollected = 'Marcar como recogida';
   static const completed = 'Remesa completada';
   static const postponed = 'Remesa aplazada';
+  static const assignToCourier = 'Asignar a repartidor';
+  static const assigned = 'Repartidor asignado';
 
   // Cash
   static const balances = 'Saldo en mano';

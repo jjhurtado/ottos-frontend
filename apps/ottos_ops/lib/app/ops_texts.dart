@@ -37,7 +37,7 @@ abstract final class OpsTexts {
   static const municipality = 'Municipio';
   static const amount = 'Monto';
   static const expectedDate = 'Fecha prevista';
-  static const courier = 'Repartidor';
+  static const courier = CoreTexts.courier;
   static String pageOf(int from, int to, int total) => '$from–$to de $total';
   static const previousPage = 'Página anterior';
   static const nextPage = 'Página siguiente';
@@ -79,11 +79,11 @@ abstract final class OpsTexts {
   static String remittanceRegistered(String code) => 'Remesa $code registrada';
 
   // Remittance actions
-  static const assignCourier = 'Asignar repartidor';
-  static const reassignCourier = 'Reasignar repartidor';
-  static const assign = 'Asignar';
-  static const noCouriers = 'No hay repartidores disponibles.';
-  static String openRemittances(int count) => count == 1 ? '1 remesa abierta' : '$count remesas abiertas';
+  static const assignCourier = CoreTexts.assignCourier;
+  static const reassignCourier = CoreTexts.reassignCourier;
+  static const assign = CoreTexts.assign;
+  static const noCouriers = CoreTexts.noCouriers;
+  static String openRemittances(int count) => CoreTexts.openRemittances(count);
   static const markDelivered = 'Marcar como entregada';
   static const markCollected = 'Marcar como recogida';
   static const assigned = 'Repartidor asignado';

@@ -7,7 +7,6 @@ import '../../../app/destinations.dart';
 import '../../../app/ops_texts.dart';
 import '../cubit/remittance_detail_cubit.dart';
 import '../../cash/view/movement_tile.dart';
-import 'assign_dialog.dart';
 
 class RemittanceDetailPage extends StatelessWidget {
   const RemittanceDetailPage({super.key, required this.remittanceId});
