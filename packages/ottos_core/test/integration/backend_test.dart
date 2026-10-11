@@ -249,6 +249,46 @@ void main() {
   }, skip: skip);
 
   // Writes to the backend: registers one customer and two beneficiaries per run.
+  group('offline sync', () {
+    late SyncRepository sync;
+
+    setUp(() async {
+      sync = SyncRepository(api: api);
+      await auth.login(email: email, password: password);
+    });
+
+    test('downloads the whole state, then only what changed', () async {
+      final first = await sync.state();
+      expect(first.full, isTrue);
+      expect(first.parsedWorkflow, isNotNull);
+
+      final next = await sync.state(since: first.serverTime);
+      expect(next.full, isFalse);
+    });
+
+    test('rejects an action on a missing remittance, and evaluates it again when resent', () async {
+      final action = SyncAction(
+        id: SyncRepository.newActionId(),
+        type: SyncActionType.reportIncident,
+        remittanceId: SyncRepository.newActionId(),
+        occurredAt: DateTime.now(),
+        payload: const {'reason': 'NOT_HOME'},
+      );
+
+      final first = await sync.send([action]);
+      final again = await sync.send([action]);
+
+      expect(first.results.single.status, SyncResultStatus.rejected);
+      expect(first.results.single.code, 'REMITTANCE_NOT_FOUND');
+      expect(again.results.single.status, SyncResultStatus.rejected, reason: 'rejections are not stored');
+    });
+
+    test('lists the remittances marked for review', () async {
+      final page = await remittances.search(const RemittanceFilter(review: true), size: 5);
+      expect(page.items.every((remittance) => remittance.review != null), isTrue);
+    });
+  }, skip: skip);
+
   group('customers', () {
     late CustomerRepository customers;
     late ZoneRepository zones;

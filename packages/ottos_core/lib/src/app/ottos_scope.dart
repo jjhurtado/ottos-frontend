@@ -11,12 +11,13 @@ import '../customers/customer_repository.dart';
 import '../customers/zone_repository.dart';
 import '../rates/rate_repository.dart';
 import '../remittances/remittance_repository.dart';
+import '../sync/sync_repository.dart';
 import '../users/role_repository.dart';
 import '../users/user_repository.dart';
 
 /// Creates the shared services and provides them to [child]: [ApiClient],
 /// [AuthRepository], [RemittanceRepository], [CashRepository], [CustomerRepository],
-/// [RateRepository], [ZoneRepository], [UserRepository], [RoleRepository], the app's [AccessPolicy] and
+/// [RateRepository], [ZoneRepository], [UserRepository], [RoleRepository], [SyncRepository], the app's [AccessPolicy] and
 /// the [AuthBloc] (already started).
 class OttosScope extends StatefulWidget {
   const OttosScope({super.key, required this.config, required this.accessPolicy, required this.child});
@@ -39,13 +40,19 @@ class _OttosScopeState extends State<OttosScope> {
   late final ZoneRepository _zoneRepository;
   late final UserRepository _userRepository;
   late final RoleRepository _roleRepository;
+  late final SyncRepository _syncRepository;
 
   @override
   void initState() {
     super.initState();
     final tokenStorage = SecureTokenStorage();
     _api = ApiClient(config: widget.config, tokenStorage: tokenStorage);
-    _authRepository = AuthRepository(api: _api, tokenStorage: tokenStorage);
+    _authRepository = AuthRepository(
+      api: _api,
+      tokenStorage: tokenStorage,
+      client: widget.config.client,
+      userCache: widget.config.client == AppClient.mobile ? SecureUserCache() : null,
+    );
     _remittanceRepository = RemittanceRepository(api: _api);
     _cashRepository = CashRepository(api: _api);
     _customerRepository = CustomerRepository(api: _api);
@@ -53,6 +60,7 @@ class _OttosScopeState extends State<OttosScope> {
     _zoneRepository = ZoneRepository(api: _api);
     _userRepository = UserRepository(api: _api);
     _roleRepository = RoleRepository(api: _api);
+    _syncRepository = SyncRepository(api: _api);
   }
 
   @override
@@ -74,6 +82,7 @@ class _OttosScopeState extends State<OttosScope> {
         RepositoryProvider.value(value: _zoneRepository),
         RepositoryProvider.value(value: _userRepository),
         RepositoryProvider.value(value: _roleRepository),
+        RepositoryProvider.value(value: _syncRepository),
         RepositoryProvider<AccessPolicy>.value(value: widget.accessPolicy),
       ],
       child: BlocProvider(

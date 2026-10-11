@@ -17,6 +17,7 @@ class RemittanceFilter extends Equatable {
     this.type,
     this.late,
     this.incident,
+    this.review,
     this.courierId,
     this.customerId,
     this.beneficiaryId,
@@ -31,6 +32,9 @@ class RemittanceFilter extends Equatable {
 
   /// true: only remittances with an open incident.
   final bool? incident;
+
+  /// true: only remittances marked for review.
+  final bool? review;
   final String? courierId;
   final String? customerId;
   final String? beneficiaryId;
@@ -46,11 +50,13 @@ class RemittanceFilter extends Equatable {
     Object? type = _keep,
     Object? late = _keep,
     Object? incident = _keep,
+    Object? review = _keep,
   }) => RemittanceFilter(
     status: status == _keep ? this.status : status as String?,
     type: type == _keep ? this.type : type as RemittanceType?,
     late: late == _keep ? this.late : late as bool?,
     incident: incident == _keep ? this.incident : incident as bool?,
+    review: review == _keep ? this.review : review as bool?,
     courierId: courierId,
     customerId: customerId,
     beneficiaryId: beneficiaryId,
@@ -80,6 +86,7 @@ class RemittanceFilter extends Equatable {
     'type': type?.code,
     'late': late,
     'incident': incident,
+    'review': review,
     'courierId': courierId,
     'customerId': customerId,
     'beneficiaryId': beneficiaryId,
@@ -203,6 +210,11 @@ class RemittanceRepository {
           body: {'reason': reason.code, 'note': note == null || note.trim().isEmpty ? null : note.trim()},
         ),
       );
+
+  /// Clears the review of a remittance, leaving [note] in its history (`remittances:review`).
+  Future<Remittance> resolveReview(String id, {required String note}) async => Remittance.fromJson(
+    await _api.post<Map<String, dynamic>>('/remittances/$id/review/resolve', body: {'note': note.trim()}),
+  );
 
   Future<Remittance> postpone(String id, {required DateTime newDate, required String reason}) async =>
       Remittance.fromJson(

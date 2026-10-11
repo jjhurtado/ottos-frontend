@@ -15,6 +15,49 @@ enum RemittanceType {
       values.firstWhere((type) => type.code == code, orElse: () => delivery);
 }
 
+/// Why a remittance was marked for sales to check (`ReviewReason`).
+enum ReviewReason {
+  /// Delivered while offline after it was reassigned to someone else.
+  deliveredAfterReassignment('DELIVERED_AFTER_REASSIGNMENT'),
+
+  /// Delivered offline with a PIN that did not match.
+  pinMismatch('PIN_MISMATCH'),
+
+  /// Two people say they delivered it.
+  duplicateDelivery('DUPLICATE_DELIVERY'),
+
+  /// Synced more than 7 days after it happened.
+  lateSync('LATE_SYNC'),
+
+  /// A reason this app does not know yet.
+  other('');
+
+  const ReviewReason(this.code);
+
+  final String code;
+
+  static ReviewReason fromCode(String? code) =>
+      values.firstWhere((reason) => reason.code == code && reason != other, orElse: () => other);
+}
+
+/// A pending review of a remittance (`ReviewView`).
+class Review extends Equatable {
+  const Review({required this.reason, this.flaggedAt, this.actionId});
+
+  factory Review.fromJson(Map<String, dynamic> json) => Review(
+    reason: ReviewReason.fromCode(json['reason'] as String?),
+    flaggedAt: parseDateTime(json['flaggedAt']),
+    actionId: json['actionId'] as String?,
+  );
+
+  final ReviewReason reason;
+  final DateTime? flaggedAt;
+  final String? actionId;
+
+  @override
+  List<Object?> get props => [reason, flaggedAt, actionId];
+}
+
 /// Why a delivery or pickup could not be done (`IncidentReason`).
 enum IncidentReason {
   notHome('NOT_HOME'),
@@ -89,6 +132,7 @@ class Remittance extends Equatable {
     this.postponements = 0,
     this.notes,
     this.incident,
+    this.review,
     this.createdAt,
     this.createdBy,
     this.completedAt,
@@ -128,6 +172,7 @@ class Remittance extends Equatable {
     postponements: json['postponements'] as int? ?? 0,
     notes: json['notes'] as String?,
     incident: json['incident'] == null ? null : Incident.fromJson(json['incident'] as Map<String, dynamic>),
+    review: json['review'] == null ? null : Review.fromJson(json['review'] as Map<String, dynamic>),
     createdAt: parseDateTime(json['createdAt']),
     createdBy: json['createdBy'] as String?,
     completedAt: parseDateTime(json['completedAt']),
@@ -191,6 +236,9 @@ class Remittance extends Equatable {
 
   /// The open incident, null when there is none.
   final Incident? incident;
+
+  /// Set while sales has to check it, e.g. after an offline delivery with a wrong PIN.
+  final Review? review;
   final DateTime? createdAt;
   final String? createdBy;
   final DateTime? completedAt;
@@ -200,5 +248,5 @@ class Remittance extends Equatable {
   bool get isPickup => type == RemittanceType.pickup;
 
   @override
-  List<Object?> get props => [id, status, courierId, expectedDate, late, postponements, incident, completedAt];
+  List<Object?> get props => [id, status, courierId, expectedDate, late, postponements, incident, review, completedAt];
 }

@@ -19,6 +19,7 @@ abstract final class OpsTexts {
   static const homeSubtitle = 'Resumen de las remesas abiertas';
   static const lateRemittances = 'Atrasadas';
   static const incidentRemittances = 'Con incidencia';
+  static const reviewRemittances = CoreTexts.toReview;
   static const viewAll = 'Ver remesas';
 
   // Remittance list
@@ -27,6 +28,7 @@ abstract final class OpsTexts {
   static const allTypes = 'Todos los tipos';
   static const onlyLate = 'Solo atrasadas';
   static const onlyIncidents = 'Con incidencia';
+  static const onlyToReview = CoreTexts.toReview;
   static const clearFilters = 'Quitar filtros';
   static const noRemittances = 'No hay remesas con estos filtros.';
   static const code = 'Código';
@@ -89,12 +91,19 @@ abstract final class OpsTexts {
   static const assigned = 'Repartidor asignado';
   static const completed = 'Remesa completada';
   static const postponed = 'Remesa aplazada';
+  static const resolve = 'Resolver';
+  static const resolveReviewTitle = 'Resolver revisión';
+  static const resolveReviewHelp = 'Cuenta qué comprobaste; la nota queda en el historial.';
+  static const resolveNote = 'Nota *';
+  static const reviewResolved = 'Revisión resuelta';
 
   static String eventTitle(String type) => switch (type) {
     'CREATED' => 'Remesa registrada',
     'STATUS_CHANGED' => 'Cambio de estado',
     'POSTPONED' => 'Aplazada',
     'INCIDENT_REPORTED' => CoreTexts.incidentReported,
+    'REVIEW_FLAGGED' => 'Marcada para revisión',
+    'REVIEW_RESOLVED' => 'Revisión resuelta',
     _ => type,
   };
 
@@ -306,6 +315,7 @@ abstract final class OpsTexts {
     Permissions.remittancesDeliver => 'Marcar como entregada o recogida (repartidor)',
     Permissions.remittancesPostpone => 'Aplazar remesas',
     Permissions.remittancesReportIncident => 'Reportar incidencias de entrega (repartidor)',
+    Permissions.remittancesReview => 'Revisar remesas marcadas (entregas sin conexión)',
     Permissions.customersRead => 'Ver clientes y beneficiarios',
     Permissions.customersWrite => 'Crear y editar clientes y beneficiarios',
     Permissions.cashRead => 'Ver la caja del negocio y de los repartidores',

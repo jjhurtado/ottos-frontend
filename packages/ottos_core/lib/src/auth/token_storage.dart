@@ -2,6 +2,8 @@ import 'dart:convert';
 
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
+import 'current_user.dart';
+
 /// Access and refresh tokens returned by `/auth/login` and `/auth/refresh`.
 class AuthTokens {
   const AuthTokens({required this.accessToken, required this.refreshToken});
@@ -51,4 +53,31 @@ class SecureTokenStorage implements TokenStorage {
     _cache = null;
     await _storage.delete(key: _key);
   }
+}
+
+/// The last user who logged in, so the mobile app can open without network.
+abstract interface class UserCache {
+  Future<CurrentUser?> read();
+  Future<void> write(CurrentUser user);
+  Future<void> clear();
+}
+
+class SecureUserCache implements UserCache {
+  SecureUserCache([FlutterSecureStorage? storage]) : _storage = storage ?? const FlutterSecureStorage();
+
+  static const _key = 'ottos.user';
+
+  final FlutterSecureStorage _storage;
+
+  @override
+  Future<CurrentUser?> read() async {
+    final raw = await _storage.read(key: _key);
+    return raw == null ? null : CurrentUser.fromJson(jsonDecode(raw) as Map<String, dynamic>);
+  }
+
+  @override
+  Future<void> write(CurrentUser user) => _storage.write(key: _key, value: jsonEncode(user.toJson()));
+
+  @override
+  Future<void> clear() => _storage.delete(key: _key);
 }

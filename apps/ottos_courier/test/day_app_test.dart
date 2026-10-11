@@ -8,6 +8,7 @@ import 'package:ottos_courier/features/assigned/view/assigned_page.dart';
 import 'package:ottos_courier/features/cash/view/cash_page.dart';
 import 'package:ottos_courier/features/new_remittance/view/new_remittance_page.dart';
 import 'package:ottos_courier/features/remittance/view/remittance_page.dart';
+import 'package:ottos_courier/offline/remittance_source.dart';
 
 class _MockRemittances extends Mock implements RemittanceRepository {}
 
@@ -92,6 +93,12 @@ void main() {
       MultiRepositoryProvider(
         providers: [
           RepositoryProvider<RemittanceRepository>.value(value: remittances),
+          RepositoryProvider<RemittanceSource>.value(
+            value: OnlineSource(
+              remittances: remittances,
+              onlyMine: permissions.contains(Permissions.remittancesReadAssigned),
+            ),
+          ),
           RepositoryProvider<CustomerRepository>.value(value: customers),
           RepositoryProvider<RateRepository>.value(value: rates),
           RepositoryProvider<CashRepository>.value(value: cash),

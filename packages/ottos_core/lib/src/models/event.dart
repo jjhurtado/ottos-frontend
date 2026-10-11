@@ -14,6 +14,7 @@ class RemittanceEvent extends Equatable {
     this.previousDate,
     this.newDate,
     this.incidentReason,
+    this.reviewReason,
     this.note,
     this.actorId,
     this.occurredAt,
@@ -28,6 +29,7 @@ class RemittanceEvent extends Equatable {
     previousDate: parseDateTime(json['previousDate']),
     newDate: parseDateTime(json['newDate']),
     incidentReason: json['incidentReason'] == null ? null : IncidentReason.fromCode(json['incidentReason'] as String?),
+    reviewReason: json['reviewReason'] == null ? null : ReviewReason.fromCode(json['reviewReason'] as String?),
     note: json['note'] as String?,
     actorId: json['actorId'] as String?,
     occurredAt: parseDateTime(json['occurredAt']),
@@ -43,6 +45,9 @@ class RemittanceEvent extends Equatable {
 
   /// Only on `INCIDENT_REPORTED` events.
   final IncidentReason? incidentReason;
+
+  /// Why it was marked, in REVIEW_FLAGGED events.
+  final ReviewReason? reviewReason;
   final String? note;
   final String? actorId;
   final DateTime? occurredAt;

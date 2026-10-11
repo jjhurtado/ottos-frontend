@@ -116,5 +116,6 @@ RemittanceFilter _filterFrom(Map<String, String> query) => RemittanceFilter(
   status: query['status'],
   late: query['late'] == 'true' ? true : null,
   incident: query['incident'] == 'true' ? true : null,
+  review: query['review'] == 'true' ? true : null,
   customerId: query['customerId'],
 );
