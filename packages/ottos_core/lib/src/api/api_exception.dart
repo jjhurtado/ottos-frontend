@@ -24,6 +24,14 @@ class ApiException implements Exception {
       final minimum = Formatters.money(parseDecimal(data['minimumAmount']), data['currency'] as String?);
       return ApiException(CoreTexts.amountBelowMinimum(minimum), statusCode: status, code: code);
     }
+    if (code == 'TOO_MANY_LOGIN_ATTEMPTS') {
+      // The body says how long; the Retry-After header too; 15 minutes otherwise.
+      final seconds =
+          (data is Map ? (data['retryAfterSeconds'] as num?)?.toInt() : null) ??
+          int.tryParse(response.headers.value('retry-after') ?? '') ??
+          900;
+      return ApiException(CoreTexts.tooManyLoginAttempts((seconds / 60).ceil()), statusCode: status, code: code);
+    }
     return ApiException(_messageFor(status, code, detail), statusCode: status, code: code);
   }
 

@@ -11,6 +11,9 @@ abstract final class CoreTexts {
   static const invalidRequest = 'Los datos enviados no son válidos.';
   static const unexpectedError = 'Ocurrió un error inesperado. Inténtalo de nuevo.';
   static const noAccessToApp = 'Tu usuario no tiene acceso a esta aplicación.';
+  static String tooManyLoginAttempts(int minutes) =>
+      'Demasiados intentos. Prueba de nuevo en ${minutes == 1 ? '1 minuto' : '$minutes minutos'}.';
+
   static String amountBelowMinimum(String minimum) => 'El monto mínimo es $minimum.';
   static const conflict = 'La operación no se pudo completar en el estado actual. Recarga e inténtalo de nuevo.';
 
