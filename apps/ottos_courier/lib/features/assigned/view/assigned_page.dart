@@ -12,15 +12,13 @@ class AssignedPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final user = context.select((AuthBloc bloc) => bloc.state.user!);
+    final onlyMine = context.canDo(Permissions.remittancesReadAssigned);
+    final canCreate = context.canDo(Permissions.remittancesCreate);
     return BlocProvider(
-      create: (context) => AssignedCubit(
-        remittances: context.read<RemittanceRepository>(),
-        onlyMine: user.can(Permissions.remittancesReadAssigned),
-      )..load(),
+      create: (context) => AssignedCubit(remittances: context.read<RemittanceRepository>(), onlyMine: onlyMine)..load(),
       child: Scaffold(
         body: const _AssignedView(),
-        floatingActionButton: user.can(Permissions.remittancesCreate) ? const _NewRemittanceButton() : null,
+        floatingActionButton: canCreate ? const _NewRemittanceButton() : null,
       ),
     );
   }
@@ -123,9 +121,8 @@ class _Swipeable extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final user = context.select((AuthBloc bloc) => bloc.state.user!);
-    final canComplete = user.can(Permissions.remittancesDeliver);
-    final canReportIncident = user.can(Permissions.remittancesReportIncident);
+    final canComplete = context.canDo(Permissions.remittancesDeliver);
+    final canReportIncident = context.canDo(Permissions.remittancesReportIncident);
     final direction = switch ((canComplete, canReportIncident)) {
       (true, true) => DismissDirection.horizontal,
       (true, false) => DismissDirection.startToEnd,

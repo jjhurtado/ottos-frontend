@@ -74,10 +74,13 @@ void main() {
     cash = _MockCash();
   });
 
+  late AuthBloc authBloc;
+
   Future<void> pump(WidgetTester tester, Set<String> permissions, Widget page) async {
     final auth = _MockAuth();
     when(() => auth.sessionExpired).thenAnswer((_) => const Stream.empty());
-    final authBloc = AuthBloc(authRepository: auth, accessPolicy: (_) => true)
+    when(auth.logout).thenAnswer((_) async {});
+    authBloc = AuthBloc(authRepository: auth, accessPolicy: (_) => true)
       ..add(
         AuthLoggedIn(
           CurrentUser(id: 'u1', email: 'u@ottos.test', name: 'U', type: '', roles: const [], permissions: permissions),
@@ -123,6 +126,16 @@ void main() {
       expect(find.text('OT-DONE'), findsNothing);
       expect(find.text(CourierTexts.newRemittance), findsOneWidget);
       verifyNever(() => remittances.assignedToMe());
+    });
+
+    testWidgets('logging out with the list open does not fail', (tester) async {
+      when(() => remittances.assignedToMe()).thenAnswer((_) async => [_remittance('OT-MINE', 'PAID')]);
+      await pump(tester, _courierPermissions, const AssignedPage());
+
+      authBloc.add(const AuthLogoutRequested());
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
     });
 
     testWidgets('a courier sees theirs and cannot register', (tester) async {

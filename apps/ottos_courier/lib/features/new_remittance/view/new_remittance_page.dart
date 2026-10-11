@@ -12,7 +12,7 @@ class NewRemittancePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final canAssign = context.select((AuthBloc bloc) => bloc.state.user!.can(Permissions.remittancesAssign));
+    final canAssign = context.canDo(Permissions.remittancesAssign);
     return BlocProvider(
       create: (context) => NewRemittanceCubit(
         remittances: context.read<RemittanceRepository>(),

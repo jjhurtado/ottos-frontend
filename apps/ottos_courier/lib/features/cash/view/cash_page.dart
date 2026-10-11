@@ -10,13 +10,11 @@ class CashPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final user = context.select((AuthBloc bloc) => bloc.state.user!);
+    final ownCash = context.canDo(Permissions.cashReadOwn);
+    final couriersCash = context.canDo(Permissions.cashRead);
     return BlocProvider(
-      create: (context) => CashCubit(
-        cash: context.read<CashRepository>(),
-        ownCash: user.can(Permissions.cashReadOwn),
-        couriersCash: user.can(Permissions.cashRead),
-      )..load(),
+      create: (context) =>
+          CashCubit(cash: context.read<CashRepository>(), ownCash: ownCash, couriersCash: couriersCash)..load(),
       child: BlocBuilder<CashCubit, CashState>(
         builder: (context, state) {
           final cubit = context.read<CashCubit>();
@@ -148,7 +146,7 @@ class _CourierCashTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final canWrite = context.select((AuthBloc bloc) => bloc.state.user!.can(Permissions.cashWrite));
+    final canWrite = context.canDo(Permissions.cashWrite);
     final cubit = context.read<CashCubit>();
     final textTheme = Theme.of(context).textTheme;
     final currencies = {'USD', 'CUP', for (final balance in courier.balances) balance.currency}.toList();

@@ -7,6 +7,7 @@ export 'src/app/ottos_scope.dart';
 export 'src/api/api_exception.dart';
 export 'src/auth/auth_repository.dart';
 export 'src/auth/bloc/auth_bloc.dart';
+export 'src/auth/can_do.dart';
 export 'src/auth/current_user.dart';
 export 'src/auth/login/login_cubit.dart';
 export 'src/auth/login/login_page.dart';
