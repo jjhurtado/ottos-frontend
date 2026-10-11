@@ -292,7 +292,13 @@ class _MoneyCard extends StatelessWidget {
         InfoRow(label: OpsTexts.amount, value: Formatters.money(remittance.amount, source)),
         InfoRow(label: OpsTexts.fee, value: Formatters.money(remittance.fee, source)),
         InfoRow(label: OpsTexts.total, value: Formatters.money(remittance.total, source)),
-        InfoRow(label: OpsTexts.rate, value: Formatters.money(remittance.rate, null)),
+        InfoRow(
+          label: OpsTexts.rate,
+          value: [
+            Formatters.money(remittance.rate, null),
+            if (remittance.rateOverridden == true) CoreTexts.rateTypedByHand,
+          ].join(' · '),
+        ),
         InfoRow(
           label: OpsTexts.amountToDeliver,
           value: Formatters.money(remittance.amountToDeliver, remittance.targetCurrency),

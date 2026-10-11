@@ -21,6 +21,21 @@ void main() {
     expect(error.statusCode, 400);
   });
 
+  test('a locked login says how many minutes to wait', () {
+    expect(
+      _from(429, {'code': 'TOO_MANY_LOGIN_ATTEMPTS', 'retryAfterSeconds': 900}).message,
+      'Demasiados intentos. Prueba de nuevo en 15 minutos.',
+    );
+    expect(
+      _from(429, {'code': 'TOO_MANY_LOGIN_ATTEMPTS', 'retryAfterSeconds': 61}).message,
+      'Demasiados intentos. Prueba de nuevo en 2 minutos.',
+    );
+    expect(
+      _from(429, {'code': 'TOO_MANY_LOGIN_ATTEMPTS', 'retryAfterSeconds': 30}).message,
+      'Demasiados intentos. Prueba de nuevo en 1 minuto.',
+    );
+  });
+
   test('says what the minimum amount is', () async {
     await OttosLocalization.initialize();
 

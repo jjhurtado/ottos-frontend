@@ -34,14 +34,14 @@ Decisión del negocio (2026-10-10): durante el día, **ventas y repartidores tra
 - [x] **Cambio de moneda del repartidor** (`cash:exchange-own`): en «Mi caja», «Cambiar moneda» con dirección, monto, tasa obtenida (siempre CUP por 1 USD) y nota; funciona sin conexión y el saldo se mueve al momento. En el panel: «Registrar cambio» en nombre de un repartidor (`cash:write`), los cambios con tasa inusual (más allá de la tolerancia de Configuración, 20 % por defecto) en «Cambios de moneda para revisar» de Caja y en Inicio, con «Resolver» y nota (`cash:review`).
 - [x] **Asignar desde el detalle en la app**: una remesa pagada sin repartidor muestra «Asignar a repartidor» a quien tiene `remittances:assign`.
 - [x] **Importar y exportar clientes en CSV** (panel, solo ADMIN): «Exportar CSV» descarga todos los clientes con sus beneficiarios (una fila por beneficiario, `;` y UTF-8 para Excel); «Importar CSV» enseña una vista previa (nuevos, ya existentes y rechazados con su fila y motivo) y guarda solo al confirmar, en lotes de 500. Un cliente con dos direcciones son dos clientes con el mismo nombre y teléfono.
-- [ ] **Tasa de cada recogida** (backend listo): campo «Tasa de esta recogida» en el alta de recogidas (panel y app) y marca «tasa indicada a mano» en el detalle. Recordar poner la comisión de recogida en 0 en Configuración › Recogidas.
+- [x] **Tasa de cada recogida**: campo «Tasa de esta recogida» en el alta de recogidas (panel y app), con la configurada de inicio; la cotización y el detalle marcan «indicada a mano». Pendiente del negocio: poner la comisión de recogida en 0 en Configuración › Recogidas si no deben dejar ganancia.
 - [ ] Decidir qué más de ventas necesita estar en la app de día (alta de clientes y beneficiarios, buscar remesas, reasignar) y qué se queda solo en el panel.
 
 ## Notificaciones de la app
 
 Pedido por el negocio (2026-10-11): avisar en el teléfono **cuando un repartidor tiene una remesa nueva** y **cuando se entrega una remesa**.
 
-- [ ] Decidir a quién avisa la entrega: a ventas (quien registró o asignó la remesa), al admin, o a todos los que usan la app de día.
+- [x] Decidido (2026-10-11): la entrega de una remesa se avisa a **ventas**; la remesa nueva, al **repartidor** asignado.
 - [ ] Sin depender de Firebase/FCM ni de Google Play: pueden estar bloqueados desde Cuba (aviso de infraestructura). Propuesta: notificaciones **locales** que la app genera al sincronizar (al abrirla, al volver la red, al volver al primer plano y cada pocos minutos con la app abierta), comparando con lo que ya tenía guardado: remesas nuevas asignadas al repartidor; remesas entregadas para ventas.
 - [ ] Valorar una comprobación periódica en segundo plano (Android WorkManager, mínimo ~15 min) para avisar con la app cerrada, y qué consumo de batería y datos supone.
 - [ ] Backend: para ventas hace falta saber qué remesas se completaron desde la última vez (p. ej. `GET /remittances?completedSince=` o eventos en `/sync/state` para quien no es repartidor). Pedírselo al backend al empezar.

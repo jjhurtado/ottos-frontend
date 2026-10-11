@@ -11,6 +11,9 @@ abstract final class CoreTexts {
   static const invalidRequest = 'Los datos enviados no son válidos.';
   static const unexpectedError = 'Ocurrió un error inesperado. Inténtalo de nuevo.';
   static const noAccessToApp = 'Tu usuario no tiene acceso a esta aplicación.';
+  static String tooManyLoginAttempts(int minutes) =>
+      'Demasiados intentos. Prueba de nuevo en ${minutes == 1 ? '1 minuto' : '$minutes minutos'}.';
+
   static String amountBelowMinimum(String minimum) => 'El monto mínimo es $minimum.';
   static const conflict = 'La operación no se pudo completar en el estado actual. Recarga e inténtalo de nuevo.';
 
@@ -47,6 +50,7 @@ abstract final class CoreTexts {
     'TRANSITION_FORBIDDEN': forbidden,
     'CUSTOMER_NOT_FOUND': 'No se encontró el remitente.',
     'BENEFICIARY_NOT_FOUND': 'No se encontró el beneficiario.',
+    'RATE_NOT_ALLOWED': 'Solo las recogidas pueden llevar su propia tasa.',
     'CUSTOMER_ALREADY_REGISTERED': 'Ya hay un cliente con ese nombre, teléfono y dirección.',
     'BENEFICIARY_INACTIVE': 'Coincide con un beneficiario borrado; restáuralo en el panel.',
     'INVALID_PHONE': 'El teléfono no es válido.',
@@ -92,6 +96,11 @@ abstract final class CoreTexts {
   static const currency = 'Moneda';
   static const noteOptional = 'Nota (opcional)';
   static const amountRequired = 'Escribe un monto mayor que 0';
+
+  // Pickup rate
+  static const pickupRate = 'Tasa de esta recogida';
+  static String pickupRateConfigured(String rate) => 'Configurada: $rate. Cámbiala si hoy es otra.';
+  static const rateTypedByHand = 'indicada a mano';
 
   // Currency exchange
   static const exchangeTitle = 'Cambiar moneda';

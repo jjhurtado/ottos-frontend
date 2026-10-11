@@ -33,6 +33,7 @@ final class NewRemittanceState extends Equatable {
     this.error,
     this.couriers = const [],
     this.courier,
+    this.pickupRate,
   });
 
   final LoadStatus corridorsStatus;
@@ -62,6 +63,9 @@ final class NewRemittanceState extends Equatable {
   /// Assigned right after registering it; optional.
   final Courier? courier;
 
+  /// The rate typed for this pickup; null keeps the configured one.
+  final double? pickupRate;
+
   bool get canSubmit =>
       customer != null && beneficiary != null && targetCurrency != null && quote != null && !submitting;
 
@@ -83,6 +87,7 @@ final class NewRemittanceState extends Equatable {
     error,
     couriers,
     courier,
+    pickupRate,
   ];
 }
 
@@ -165,6 +170,7 @@ class NewRemittanceCubit extends Cubit<NewRemittanceState> {
     final current = state.targetCurrency;
     _emit(
       type: type,
+      pickupRate: null,
       targetCurrencies: currencies,
       targetCurrency: currencies.contains(current) ? current : (currencies.isEmpty ? null : currencies.first),
     );
@@ -196,7 +202,27 @@ class NewRemittanceCubit extends Cubit<NewRemittanceState> {
       _emit(beneficiaries: [...state.beneficiaries, beneficiary], beneficiary: beneficiary);
 
   void targetCurrencyChanged(String? currency) {
-    _emit(targetCurrency: currency);
+    // Another currency has another configured rate.
+    _emit(targetCurrency: currency, pickupRate: null);
+    _scheduleQuote();
+  }
+
+  /// The configured pickup rate for the chosen currency, to prefill the field.
+  double? get configuredPickupRate {
+    final currency = state.targetCurrency;
+    return _corridors
+        .where((corridor) => corridor.sourceCurrency == sourceCurrency && corridor.targetCurrency == currency)
+        .firstOrNull
+        ?.pickupRate
+        ?.rate;
+  }
+
+  /// A pickup's own rate; the configured one (or none) clears it.
+  void pickupRateChanged(double? rate) {
+    final configured = configuredPickupRate;
+    final own = rate == null || rate <= 0 || rate == configured ? null : rate;
+    if (own == state.pickupRate) return;
+    _emit(pickupRate: own);
     _scheduleQuote();
   }
 
@@ -223,6 +249,7 @@ class NewRemittanceCubit extends Cubit<NewRemittanceState> {
           targetCurrency: currency,
           amount: amount,
           type: type,
+          rate: type == RemittanceType.pickup ? state.pickupRate : null,
         );
         if (request == _quoteRequest && !isClosed) _emit(quote: quote, quoteStatus: LoadStatus.success);
       } on ApiException catch (error) {
@@ -242,6 +269,7 @@ class NewRemittanceCubit extends Cubit<NewRemittanceState> {
           beneficiaryId: state.beneficiary!.id,
           amount: state.quote!.amount,
           targetCurrency: state.targetCurrency!,
+          rate: state.type == RemittanceType.pickup ? state.pickupRate : null,
           notes: notes == null || notes.trim().isEmpty ? null : notes.trim(),
         ),
         idempotencyKey: _idempotencyKey,
@@ -282,6 +310,7 @@ class NewRemittanceCubit extends Cubit<NewRemittanceState> {
     Object? error = _keep,
     List<Courier>? couriers,
     Object? courier = _keep,
+    Object? pickupRate = _keep,
   }) {
     final s = state;
     emit(
@@ -302,6 +331,7 @@ class NewRemittanceCubit extends Cubit<NewRemittanceState> {
         error: error == _keep ? s.error : error as String?,
         couriers: couriers ?? s.couriers,
         courier: courier == _keep ? s.courier : courier as Courier?,
+        pickupRate: pickupRate == _keep ? s.pickupRate : pickupRate as double?,
       ),
     );
   }
