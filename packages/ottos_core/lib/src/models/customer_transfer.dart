@@ -217,3 +217,52 @@ class ImportResult extends Equatable {
   @override
   List<Object?> get props => [dryRun, customersCreated, customersRejected, beneficiariesCreated, results.length];
 }
+
+/// What a beneficiaries-only import did (or, as a preview, would do).
+class BeneficiaryImportResult extends Equatable {
+  const BeneficiaryImportResult({
+    required this.dryRun,
+    this.created = 0,
+    this.existing = 0,
+    this.rejectedCount = 0,
+    this.results = const [],
+  });
+
+  factory BeneficiaryImportResult.fromJson(Map<String, dynamic> json) {
+    final summary = (json['summary'] as Map<String, dynamic>?) ?? const {};
+    int count(String key) => summary[key] as int? ?? 0;
+    return BeneficiaryImportResult(
+      dryRun: json['dryRun'] as bool? ?? false,
+      created: count('created'),
+      existing: count('existing'),
+      rejectedCount: count('rejected'),
+      results: [
+        for (final item in json['results'] as List? ?? const [])
+          ImportItemResult.fromJson(item as Map<String, dynamic>),
+      ],
+    );
+  }
+
+  final bool dryRun;
+  final int created;
+  final int existing;
+  final int rejectedCount;
+  final List<ImportItemResult> results;
+
+  /// Adds the result of another batch of the same file.
+  BeneficiaryImportResult operator +(BeneficiaryImportResult other) => BeneficiaryImportResult(
+    dryRun: dryRun,
+    created: created + other.created,
+    existing: existing + other.existing,
+    rejectedCount: rejectedCount + other.rejectedCount,
+    results: [...results, ...other.results],
+  );
+
+  List<ImportItemResult> get rejected => [
+    for (final item in results)
+      if (item.status == ImportStatus.rejected) item,
+  ];
+
+  @override
+  List<Object?> get props => [dryRun, created, existing, rejectedCount, results.length];
+}

@@ -34,6 +34,16 @@ class CustomerRepository {
     return json.map((item) => Beneficiary.fromJson(item as Map<String, dynamic>)).toList();
   }
 
+  /// Every active beneficiary whose name or phone contains [query] (at most
+  /// 50), linked to a customer or not. A remittance links them by itself.
+  Future<List<Beneficiary>> searchBeneficiaries(String query) async {
+    final json = await _api.get<List<dynamic>>(
+      '/beneficiaries',
+      query: {'q': query.trim().isEmpty ? null : query.trim()},
+    );
+    return json.map((item) => Beneficiary.fromJson(item as Map<String, dynamic>)).toList();
+  }
+
   /// Creates a beneficiary linked to [customerId].
   Future<Beneficiary> addBeneficiary(String customerId, BeneficiaryInput input) async => Beneficiary.fromJson(
     await _api.post<Map<String, dynamic>>('/customers/$customerId/beneficiaries', body: input.toJson()),
@@ -70,6 +80,30 @@ class CustomerRepository {
               body: {
                 'dryRun': dryRun,
                 'customers': [for (final customer in batch) customer.toJson()],
+              },
+            ),
+          );
+    }
+    return result;
+  }
+
+  /// Imports beneficiaries without a customer (`customers:import`), linked
+  /// later by their remittances; with [dryRun] it only says what it would do.
+  Future<BeneficiaryImportResult> importBeneficiaries(
+    List<ImportBeneficiary> beneficiaries, {
+    required bool dryRun,
+  }) async {
+    var result = BeneficiaryImportResult(dryRun: dryRun);
+    for (var start = 0; start < beneficiaries.length; start += importBatch) {
+      final batch = beneficiaries.sublist(start, (start + importBatch).clamp(0, beneficiaries.length));
+      result =
+          result +
+          BeneficiaryImportResult.fromJson(
+            await _api.post<Map<String, dynamic>>(
+              '/beneficiaries/import',
+              body: {
+                'dryRun': dryRun,
+                'beneficiaries': [for (final beneficiary in batch) beneficiary.toJson()],
               },
             ),
           );

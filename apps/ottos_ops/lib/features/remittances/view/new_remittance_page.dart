@@ -297,25 +297,38 @@ class _BeneficiaryField extends StatelessWidget {
             child: Text(OpsTexts.noBeneficiaries),
           )
         : _dropdown(context);
-    if (!canCreate) return field;
     final cubit = context.read<NewRemittanceCubit>();
-    return Row(
+    return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Expanded(child: field),
-        const SizedBox(width: 12),
-        Padding(
-          padding: const EdgeInsets.only(top: 8),
-          child: TextButton.icon(
-            onPressed: state.submitting
-                ? null
-                : () async {
-                    final created = await showBeneficiaryFormDialog(context, customerId: state.customer!.id);
-                    if (created != null) cubit.beneficiaryCreated(created);
-                  },
-            icon: const Icon(Icons.add),
-            label: const Text(OpsTexts.newBeneficiary),
-          ),
+        field,
+        const SizedBox(height: 4),
+        Wrap(
+          spacing: 8,
+          children: [
+            // Beneficiaries loaded without a customer are linked by the remittance.
+            TextButton.icon(
+              onPressed: state.submitting
+                  ? null
+                  : () async {
+                      final found = await showBeneficiarySearchDialog(context, search: cubit.searchBeneficiaries);
+                      if (found != null) cubit.beneficiaryCreated(found);
+                    },
+              icon: const Icon(Icons.person_search),
+              label: const Text(CoreTexts.searchOtherBeneficiary),
+            ),
+            if (canCreate)
+              TextButton.icon(
+                onPressed: state.submitting
+                    ? null
+                    : () async {
+                        final created = await showBeneficiaryFormDialog(context, customerId: state.customer!.id);
+                        if (created != null) cubit.beneficiaryCreated(created);
+                      },
+                icon: const Icon(Icons.add),
+                label: const Text(OpsTexts.newBeneficiary),
+              ),
+          ],
         ),
       ],
     );

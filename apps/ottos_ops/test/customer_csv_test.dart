@@ -54,12 +54,13 @@ void main() {
         'beneficiario_calle,beneficiario_municipio\n'
         'Ana Pérez,+1305,Miami,Rosa,535,Calle 1,Boyeros\n'
         'Otro,+1306,,,,,\n'
+        '\n'
         'ana  pérez,+1305,miami,Luis,536,Calle 2,Plaza\n';
 
     final customers = CustomerCsv.parse(text);
 
     expect(customers.map((c) => c.fullName), ['Ana Pérez', 'Otro']);
-    expect(customers.first.beneficiaries.map((b) => b.ref), ['fila 2', 'fila 4']);
+    expect(customers.first.beneficiaries.map((b) => b.ref), ['fila 2', 'fila 5'], reason: 'the blank row counts');
   });
 
   test('a file without the customer columns says what is missing', () {
@@ -67,5 +68,34 @@ void main() {
       () => CustomerCsv.parse('nombre;telefono\nAna;123'),
       throwsA(isA<FormatException>().having((e) => e.message, 'message', contains('cliente_nombre'))),
     );
+  });
+
+  group('beneficiaries alone', () {
+    test('one per row, with the row it came from', () {
+      const text =
+          'beneficiario_nombre;beneficiario_telefono;beneficiario_calle;beneficiario_municipio;beneficiario_notas\n'
+          'Rosa Martínez;53 5222 3344;Calle 10;Plaza de la Revolución;\n'
+          ';;;;\n'
+          'Luis;536;Calle 2;Boyeros;Llamar antes\n';
+
+      final beneficiaries = BeneficiaryCsv.parse(text);
+
+      expect(beneficiaries.map((b) => b.fullName), ['Rosa Martínez', 'Luis']);
+      expect(beneficiaries.map((b) => b.ref), ['fila 2', 'fila 4']);
+      expect(beneficiaries.first.municipality, 'Plaza de la Revolución');
+      expect(beneficiaries.last.notes, 'Llamar antes');
+    });
+
+    test('the customers export works too', () {
+      final beneficiaries = BeneficiaryCsv.parse(CustomerCsv.export(_export));
+      expect(beneficiaries.map((b) => b.fullName), containsAll(['Rosa Martínez', 'Luis Pérez']));
+    });
+
+    test('a file without the beneficiary columns says what is missing', () {
+      expect(
+        () => BeneficiaryCsv.parse('nombre;telefono\nAna;123'),
+        throwsA(isA<FormatException>().having((e) => e.message, 'message', contains('beneficiario_nombre'))),
+      );
+    });
   });
 }
