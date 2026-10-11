@@ -14,6 +14,7 @@ abstract final class OpsTexts {
   static const users = 'Usuarios';
   static const roles = 'Roles y permisos';
   static const audit = 'Auditoría';
+  static const reports = 'Reportes';
 
   // Home
   static String greeting(String name) => 'Hola, $name';
@@ -318,6 +319,7 @@ abstract final class OpsTexts {
     Permissions.remittancesReportIncident => 'Reportar incidencias de entrega (repartidor)',
     Permissions.remittancesReview => 'Revisar remesas marcadas (entregas sin conexión)',
     Permissions.auditRead => 'Ver el registro de auditoría',
+    Permissions.reportsRead => 'Ver los reportes del negocio (resumen mensual)',
     Permissions.customersRead => 'Ver clientes y beneficiarios',
     Permissions.customersWrite => 'Crear y editar clientes y beneficiarios',
     Permissions.cashRead => 'Ver la caja del negocio y de los repartidores',
@@ -423,4 +425,35 @@ abstract final class OpsTexts {
       _ => [for (final entry in details.entries) '${entry.key}: ${entry.value}'],
     };
   }
+
+  // Monthly report
+  static const monthlyReport = 'Resumen mensual';
+  static const exportPdf = 'Exportar PDF';
+  static const previousMonth = 'Mes anterior';
+  static const nextMonth = 'Mes siguiente';
+  static const reportRemittances = 'Remesas';
+  static const totalCollected = 'Total cobrado';
+  static const totalCollectedHelp = 'Monto enviado + comisión, pagado por los remitentes';
+  static const totalDelivered = 'Total entregado';
+  static const difference = 'Diferencia';
+  static const differenceHelp = 'Cobrado − entregado';
+  static const earnings = 'Ganancias (comisiones)';
+  static const byCurrency = 'Por moneda de entrega';
+  static const byType = 'Por tipo';
+  static const monthEndStatus = 'Estado al cierre del mes';
+  static const sent = 'Enviado';
+  static const fees = 'Comisiones';
+  static const collected = 'Cobrado';
+  static const delivered = 'Entregado';
+  static const deliveredUsd = 'Entregado en USD';
+  static const completedLabel = 'Completadas';
+  static const openLabel = 'Abiertas (pagadas o asignadas)';
+  static const withIncidentLabel = 'Con incidencia';
+  static const totalRow = 'Total';
+  static const noSales = 'No hay remesas registradas este mes.';
+  static String deliveriesAndPickups(int deliveries, int pickups) => '$deliveries entregas · $pickups recogidas';
+  static String roundingNote(String amount) => '+$amount por redondeo al entregar';
+  static String reportPeriod(String from, String to) => 'Del $from al $to · hora de Cuba · importes en USD';
+  static String generatedOn(String when) => 'Generado el $when';
+  static String reportFileName(String month) => 'resumen-mensual-$month.pdf';
 }

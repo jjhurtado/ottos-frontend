@@ -16,7 +16,7 @@ const _catalog = [
   PermissionInfo(code: Permissions.remittancesRead, module: 'remittances'),
   PermissionInfo(code: Permissions.remittancesCreate, module: 'remittances'),
   PermissionInfo(code: Permissions.cashAdjust, module: 'payments'),
-  PermissionInfo(code: 'reports:read', module: 'reporting', description: 'View reports'),
+  PermissionInfo(code: 'reports:export', module: 'reporting', description: 'Export reports'),
 ];
 const _admin = Role(
   id: 'r1',
@@ -49,7 +49,7 @@ void main() {
 
   test('labels permissions in Spanish, falling back to the backend description', () {
     expect(OpsTexts.permissionLabel(_catalog[0]), 'Ver todas las remesas y su historial');
-    expect(OpsTexts.permissionLabel(_catalog[3]), 'View reports');
+    expect(OpsTexts.permissionLabel(_catalog[3]), 'Export reports');
     expect(OpsTexts.permissionModule('reporting'), 'reporting');
   });
 
