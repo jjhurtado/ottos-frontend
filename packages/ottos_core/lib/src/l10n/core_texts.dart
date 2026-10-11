@@ -73,6 +73,10 @@ abstract final class CoreTexts {
   static const emailInvalid = 'Correo no válido';
   static const passwordRequired = 'Escribe tu contraseña';
   static const requiredField = 'Obligatorio';
+  static const amount = 'Monto';
+  static const currency = 'Moneda';
+  static const amountRequired = 'Escribe un monto mayor que 0';
+  static String registeredNotAssigned(String reason) => 'Remesa registrada, pero no se pudo asignar: $reason';
   static const showPassword = 'Mostrar contraseña';
   static const hidePassword = 'Ocultar contraseña';
 

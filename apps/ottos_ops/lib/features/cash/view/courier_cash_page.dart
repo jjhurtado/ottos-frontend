@@ -5,7 +5,6 @@ import 'package:ottos_core/ottos_core.dart';
 
 import '../../../app/destinations.dart';
 import '../../../app/ops_texts.dart';
-import 'cash_operation_dialog.dart';
 import 'movement_tile.dart';
 
 /// A courier's cash: balances, latest movements, and funding or returns.
