@@ -14,6 +14,8 @@ class HomePage extends StatelessWidget {
   Widget build(BuildContext context) {
     final user = context.select((AuthBloc bloc) => bloc.state.user)!;
     final canSeeRemittances = user.can(Permissions.remittancesRead);
+    // Read here: `create` runs outside build, where select is not allowed.
+    final canSeeCash = user.can(Permissions.cashRead);
     return ListView(
       padding: const EdgeInsets.all(24),
       children: [
@@ -25,7 +27,7 @@ class HomePage extends StatelessWidget {
           BlocProvider(
             create: (context) => HomeCubit(
               remittances: context.read<RemittanceRepository>(),
-              cash: context.canDo(Permissions.cashRead) ? context.read<CashRepository>() : null,
+              cash: canSeeCash ? context.read<CashRepository>() : null,
             )..load(),
             child: const _Summary(),
           ),
