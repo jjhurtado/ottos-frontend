@@ -359,7 +359,17 @@ abstract final class OpsTexts {
   static String auditTarget(String type) => switch (type) {
     'USER' => 'Usuarios',
     'ROLE' => 'Roles',
+    'CUSTOMERS' => 'Clientes',
+    'BENEFICIARIES' => 'Beneficiarios',
     _ => type,
+  };
+
+  /// Who or what an entry is about. Imports and exports have no single
+  /// target: the backend labels them "import"/"export", so the list says the
+  /// kind of records instead.
+  static String auditTargetLabel(AuditEntry entry) => switch (entry.targetType) {
+    'CUSTOMERS' || 'BENEFICIARIES' => auditTarget(entry.targetType),
+    _ => entry.targetLabel ?? '',
   };
 
   /// The actions of the audit log, by their stable code.
@@ -374,6 +384,8 @@ abstract final class OpsTexts {
       'PASSWORD_CHANGED',
     ],
     'ROLE': ['ROLE_CREATED', 'ROLE_DESCRIBED', 'ROLE_PERMISSIONS_CHANGED', 'ROLE_DELETED'],
+    'CUSTOMERS': ['CUSTOMERS_IMPORTED', 'CUSTOMERS_EXPORTED'],
+    'BENEFICIARIES': ['BENEFICIARIES_IMPORTED'],
   };
 
   static String auditAction(String code) => switch (code) {
@@ -388,6 +400,9 @@ abstract final class OpsTexts {
     'ROLE_DESCRIBED' => 'Nombre o descripción del rol cambiados',
     'ROLE_PERMISSIONS_CHANGED' => 'Permisos cambiados',
     'ROLE_DELETED' => 'Rol eliminado',
+    'CUSTOMERS_IMPORTED' => 'Clientes importados (CSV)',
+    'CUSTOMERS_EXPORTED' => 'Clientes exportados (CSV)',
+    'BENEFICIARIES_IMPORTED' => 'Beneficiarios importados (CSV)',
     _ => code,
   };
 
@@ -400,6 +415,7 @@ abstract final class OpsTexts {
         codes(value).map((code) => permissionLabel(PermissionInfo(code: code, module: ''))).join('; ');
     String text(Object? value) => value == null || '$value'.isEmpty ? '—' : '$value';
     Map<String, dynamic> map(Object? value) => (value as Map<String, dynamic>?) ?? const {};
+    int count(Object? value) => (value as num?)?.toInt() ?? 0;
     return switch (entry.action) {
       'USER_CREATED' => [
         if (details['name'] != null) 'Nombre: ${details['name']}',
@@ -428,6 +444,14 @@ abstract final class OpsTexts {
         if (details['name'] != null) 'Nombre: ${details['name']}',
         if (details['permissions'] != null) 'Tenía: ${permissions(details['permissions'])}',
       ],
+      'CUSTOMERS_IMPORTED' || 'BENEFICIARIES_IMPORTED' => [
+        if (details['customersCreated'] != null)
+          'Clientes: ${importCounts(count(details['customersCreated']), count(details['customersExisting']), count(details['customersRejected']))}',
+        if (details['beneficiariesCreated'] != null)
+          'Beneficiarios: ${importCounts(count(details['beneficiariesCreated']), count(details['beneficiariesExisting']), count(details['beneficiariesRejected']))}',
+        if (details['linksCreated'] != null) '$importLinks: ${details['linksCreated']}',
+      ],
+      'CUSTOMERS_EXPORTED' => ['${details['customers'] ?? 0} clientes'],
       _ => [for (final entry in details.entries) '${entry.key}: ${entry.value}'],
     };
   }
