@@ -104,10 +104,8 @@ class NewRemittanceCubit extends Cubit<NewRemittanceState> {
       }
     }
     try {
-      final currencies = [
-        for (final corridor in await _rates.corridors())
-          if (corridor.canQuote && corridor.sourceCurrency == sourceCurrency) corridor.targetCurrency,
-      ]..sort((a, b) => a == defaultTargetCurrency ? -1 : (b == defaultTargetCurrency ? 1 : a.compareTo(b)));
+      _corridors = await _rates.corridors();
+      final currencies = _currenciesFor(state.type);
       _emit(
         corridorsStatus: LoadStatus.success,
         targetCurrencies: currencies,
@@ -118,9 +116,28 @@ class NewRemittanceCubit extends Cubit<NewRemittanceState> {
     }
   }
 
+  List<Corridor> _corridors = const [];
+
+  /// Deliveries and pickups have their own rates, so each offers the
+  /// currencies it has a rate for.
+  List<String> _currenciesFor(RemittanceType type) => [
+    for (final corridor in _corridors)
+      if (corridor.canQuoteFor(type) && corridor.sourceCurrency == sourceCurrency) corridor.targetCurrency,
+  ]..sort((a, b) => a == defaultTargetCurrency ? -1 : (b == defaultTargetCurrency ? 1 : a.compareTo(b)));
+
   Future<List<Customer>> searchCustomers(String query) => _customers.search(query);
 
-  void typeChanged(RemittanceType type) => _emit(type: type);
+  /// Changes the rate and fee that apply, so the quote is asked again.
+  void typeChanged(RemittanceType type) {
+    final currencies = _currenciesFor(type);
+    final current = state.targetCurrency;
+    _emit(
+      type: type,
+      targetCurrencies: currencies,
+      targetCurrency: currencies.contains(current) ? current : (currencies.isEmpty ? null : currencies.first),
+    );
+    _scheduleQuote();
+  }
 
   Future<void> customerSelected(Customer? customer) async {
     _emit(customer: customer, beneficiaries: const [], beneficiary: null, error: null);
@@ -161,6 +178,7 @@ class NewRemittanceCubit extends Cubit<NewRemittanceState> {
     final request = ++_quoteRequest;
     final amount = state.amount;
     final currency = state.targetCurrency;
+    final type = state.type;
     if (amount == null || amount <= 0 || currency == null) {
       _emit(quote: null, quoteStatus: LoadStatus.success);
       return;
@@ -168,7 +186,12 @@ class NewRemittanceCubit extends Cubit<NewRemittanceState> {
     _emit(quote: null, quoteStatus: LoadStatus.loading);
     _quoteTimer = Timer(quoteDelay, () async {
       try {
-        final quote = await _rates.quote(sourceCurrency: sourceCurrency, targetCurrency: currency, amount: amount);
+        final quote = await _rates.quote(
+          sourceCurrency: sourceCurrency,
+          targetCurrency: currency,
+          amount: amount,
+          type: type,
+        );
         if (request == _quoteRequest && !isClosed) _emit(quote: quote, quoteStatus: LoadStatus.success);
       } on ApiException catch (error) {
         if (request == _quoteRequest && !isClosed) _emit(quoteStatus: LoadStatus.failure, error: error.message);

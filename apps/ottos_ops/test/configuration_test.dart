@@ -18,6 +18,8 @@ const _cup = Corridor(
   deliveryRounding: 50,
   rate: ExchangeRate(id: 'r1', rate: 410),
   feeRule: FeeRule(id: 'f1', type: FeeType.percentage, value: 10, minFee: 10),
+  pickupRate: ExchangeRate(id: 'p1', rate: 1, remittanceType: RemittanceType.pickup),
+  pickupFeeRule: FeeRule(id: 'pf1', type: FeeType.fixed, value: 3, remittanceType: RemittanceType.pickup),
 );
 const _usd = Corridor(
   code: 'USD-USD',
@@ -34,6 +36,7 @@ void main() {
 
   setUpAll(() async {
     registerFallbackValue(const FeeRuleInput(type: FeeType.fixed, value: 0));
+    registerFallbackValue(RemittanceType.delivery);
     await OttosLocalization.initialize();
   });
 
@@ -107,10 +110,12 @@ void main() {
     testWidgets('a writer can change rates, except the fixed USD-USD one', (tester) async {
       await pumpPage(tester, {Permissions.configurationRead, Permissions.configurationWrite, Permissions.ratesRead});
 
-      expect(find.text(OpsTexts.newRate), findsNWidgets(2), reason: 'USD-CUP and USD-EUR');
-      expect(find.text(OpsTexts.newFeeRule), findsNWidgets(3));
-      expect(find.text(OpsTexts.fixedRate), findsOneWidget);
-      expect(find.text(OpsTexts.noRateWarning), findsOneWidget);
+      // Deliveries and pickups of each corridor.
+      expect(find.text(OpsTexts.newRate), findsNWidgets(4), reason: 'USD-CUP and USD-EUR');
+      expect(find.text(OpsTexts.newFeeRule), findsNWidgets(6));
+      expect(find.text(OpsTexts.fixedRate), findsNWidgets(2));
+      expect(find.text(OpsTexts.noRateWarning(RemittanceType.delivery)), findsOneWidget);
+      expect(find.text(OpsTexts.noRateWarning(RemittanceType.pickup)), findsOneWidget);
       expect(find.text(OpsTexts.calculator), findsOneWidget);
     });
 
@@ -118,6 +123,7 @@ void main() {
       await pumpPage(tester, {Permissions.configurationRead, Permissions.ratesRead});
 
       expect(find.text(OpsTexts.rateValue(410, _cup, null)), findsOneWidget);
+      expect(find.text(OpsTexts.ratesFor(RemittanceType.pickup)), findsNWidgets(3));
       expect(find.text(OpsTexts.newRate), findsNothing);
       expect(find.text(OpsTexts.newFeeRule), findsNothing);
     });
@@ -135,11 +141,12 @@ void main() {
 
       expect(find.text(CoreTexts.errorCodes['FEE_PERCENTAGE_TOO_HIGH']!), findsOneWidget);
       expect(find.text(CoreTexts.errorCodes['INVALID_FEE_RANGE']!), findsOneWidget);
-      verifyNever(() => rates.setFeeRule(any(), any()));
+      verifyNever(() => rates.setFeeRule(any(), any(), type: any(named: 'type')));
     });
 
     testWidgets('saving a new rate reloads the corridors', (tester) async {
-      when(() => rates.setRate('USD-CUP', 420)).thenAnswer((_) async => const ExchangeRate(id: 'r3', rate: 420));
+      when(() => rates.setRate('USD-CUP', 420, type: RemittanceType.delivery))
+          .thenAnswer((_) async => const ExchangeRate(id: 'r3', rate: 420));
       await pumpPage(tester, {Permissions.configurationRead, Permissions.configurationWrite, Permissions.ratesRead});
       // Like the backend: the reload brings the corridor with its new rate, a
       // different object from the one the calculator had selected.
@@ -159,22 +166,66 @@ void main() {
       await tester.tap(find.text(OpsTexts.save));
       await tester.pumpAndSettle();
 
-      verify(() => rates.setRate('USD-CUP', 420)).called(1);
+      verify(() => rates.setRate('USD-CUP', 420, type: RemittanceType.delivery)).called(1);
       verify(() => rates.corridors()).called(2);
       expect(find.text(OpsTexts.rateSaved), findsOneWidget);
       expect(find.textContaining('420'), findsWidgets);
     });
 
     testWidgets('opens the history of a corridor', (tester) async {
-      when(() => rates.rateHistory('USD-CUP')).thenAnswer((_) async => const [ExchangeRate(id: 'r1', rate: 410)]);
-      when(() => rates.feeRuleHistory('USD-CUP')).thenAnswer((_) async => const []);
+      when(() => rates.rateHistory('USD-CUP', type: RemittanceType.delivery))
+          .thenAnswer((_) async => const [ExchangeRate(id: 'r1', rate: 410)]);
+      when(() => rates.feeRuleHistory('USD-CUP', type: RemittanceType.delivery)).thenAnswer((_) async => const []);
       await pumpPage(tester, {Permissions.configurationRead});
 
       await tester.tap(find.text(OpsTexts.history).first);
       await tester.pumpAndSettle();
 
-      verify(() => rates.rateHistory('USD-CUP')).called(1);
+      verify(() => rates.rateHistory('USD-CUP', type: RemittanceType.delivery)).called(1);
       expect(find.text(OpsTexts.rateHistory), findsOneWidget);
+    });
+
+    testWidgets('a pickup rate is saved apart from the delivery one', (tester) async {
+      when(() => rates.setRate('USD-CUP', 2, type: RemittanceType.pickup))
+          .thenAnswer((_) async => const ExchangeRate(id: 'p2', rate: 2, remittanceType: RemittanceType.pickup));
+      await pumpPage(tester, {Permissions.configurationRead, Permissions.configurationWrite});
+
+      // USD-CUP comes first (active), deliveries then pickups.
+      await tester.tap(find.text(OpsTexts.newRate).at(1));
+      await tester.pumpAndSettle();
+      expect(find.text(OpsTexts.newRateTitle('USD-CUP', RemittanceType.pickup)), findsOneWidget);
+      await tester.enterText(find.widgetWithText(TextFormField, '${OpsTexts.rate} *'), '2');
+      await tester.tap(find.text(OpsTexts.save));
+      await tester.pumpAndSettle();
+
+      verify(() => rates.setRate('USD-CUP', 2, type: RemittanceType.pickup)).called(1);
+      verifyNever(() => rates.setRate(any(), any(), type: RemittanceType.delivery));
+    });
+
+    testWidgets('the calculator quotes a pickup with its own rate', (tester) async {
+      when(() => rates.quote(sourceCurrency: 'USD', targetCurrency: 'CUP', amount: 100, type: RemittanceType.pickup))
+          .thenAnswer(
+            (_) async => const Quote(
+              sourceCurrency: 'USD',
+              targetCurrency: 'CUP',
+              amount: 100,
+              fee: 3,
+              total: 103,
+              rate: 1,
+              amountToDeliver: 100,
+            ),
+          );
+      await pumpPage(tester, {Permissions.configurationRead, Permissions.ratesRead});
+
+      await tester.enterText(find.widgetWithText(TextField, OpsTexts.amountToSend), '100');
+      await tester.tap(find.text(CoreTexts.delivery).first);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(CoreTexts.pickup).last);
+      await tester.pumpAndSettle();
+
+      verify(() => rates.quote(sourceCurrency: 'USD', targetCurrency: 'CUP', amount: 100, type: RemittanceType.pickup))
+          .called(1);
+      expect(find.textContaining('103'), findsWidgets);
     });
 
     testWidgets('shows the settings and hides the calculator without rates:read', (tester) async {

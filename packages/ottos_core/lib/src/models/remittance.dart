@@ -172,11 +172,14 @@ class Remittance extends Equatable {
     if (expected == null) return 0;
     final today = (now ?? DateTime.now()).toLocal();
     // UTC midnights: a daylight saving change cannot shorten a day.
-    final days = DateTime.utc(today.year, today.month, today.day)
-        .difference(DateTime.utc(expected.year, expected.month, expected.day))
-        .inDays;
+    final days = DateTime.utc(
+      today.year,
+      today.month,
+      today.day,
+    ).difference(DateTime.utc(expected.year, expected.month, expected.day)).inDays;
     return days > 0 ? days : 0;
   }
+
   final int postponements;
   final String? notes;
 

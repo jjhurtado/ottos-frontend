@@ -36,7 +36,7 @@ class _ConfigurationView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final canQuote = context.select((AuthBloc bloc) => bloc.state.user!.can(Permissions.ratesRead));
-    final quotable = state.corridors.where((corridor) => corridor.canQuote).toList();
+    final quotable = state.corridors.where((corridor) => RemittanceType.values.any(corridor.canQuoteFor)).toList();
     return ListView(
       padding: const EdgeInsets.all(24),
       children: [
@@ -112,12 +112,19 @@ class _CalculatorState extends State<_Calculator> {
   final _amount = TextEditingController();
   // The code, not the corridor: a new rate or fee rule reloads the corridors
   // as new objects, and the dropdown needs its value among them.
+  var _type = RemittanceType.delivery;
+
+  /// Those with a rate for the chosen type.
+  List<Corridor> get _corridors {
+    final quotable = widget.corridors.where((corridor) => corridor.canQuoteFor(_type)).toList();
+    return quotable.isEmpty ? widget.corridors : quotable;
+  }
+
   late String _code = widget.corridors
       .firstWhere((corridor) => corridor.targetCurrency == 'CUP', orElse: () => widget.corridors.first)
       .code;
 
-  Corridor get _corridor =>
-      widget.corridors.firstWhere((corridor) => corridor.code == _code, orElse: () => widget.corridors.first);
+  Corridor get _corridor => _corridors.firstWhere((corridor) => corridor.code == _code, orElse: () => _corridors.first);
   Future<Quote>? _quote;
 
   @override
@@ -135,6 +142,7 @@ class _CalculatorState extends State<_Calculator> {
               sourceCurrency: _corridor.sourceCurrency,
               targetCurrency: _corridor.targetCurrency,
               amount: amount,
+              type: _type,
             );
     });
   }
@@ -169,12 +177,30 @@ class _CalculatorState extends State<_Calculator> {
                   ),
                 ),
                 SizedBox(
+                  width: 160,
+                  child: DropdownButtonFormField<RemittanceType>(
+                    initialValue: _type,
+                    decoration: const InputDecoration(labelText: OpsTexts.type),
+                    items: const [
+                      DropdownMenuItem(value: RemittanceType.delivery, child: Text(CoreTexts.delivery)),
+                      DropdownMenuItem(value: RemittanceType.pickup, child: Text(CoreTexts.pickup)),
+                    ],
+                    onChanged: (type) {
+                      _type = type!;
+                      _code = _corridor.code;
+                      _calculate();
+                    },
+                  ),
+                ),
+                SizedBox(
                   width: 200,
                   child: DropdownButtonFormField<String>(
+                    // Rebuilt when the type changes the currencies on offer.
+                    key: ValueKey(_type),
                     initialValue: _corridor.code,
                     decoration: const InputDecoration(labelText: OpsTexts.targetCurrency),
                     items: [
-                      for (final corridor in widget.corridors)
+                      for (final corridor in _corridors)
                         DropdownMenuItem(value: corridor.code, child: Text(corridor.targetCurrency)),
                     ],
                     onChanged: (code) {
@@ -248,19 +274,7 @@ class _CorridorCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final canWrite = context.select((AuthBloc bloc) => bloc.state.user!.can(Permissions.configurationWrite));
-    final cubit = context.read<ConfigurationCubit>();
     final textTheme = Theme.of(context).textTheme;
-    final colors = Theme.of(context).colorScheme;
-    final rate = corridor.rate;
-    final feeRule = corridor.feeRule;
-
-    Future<void> change(Future<Object?> Function() dialog, String message) async {
-      if (await dialog() == null || !context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
-      await cubit.load();
-    }
-
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       child: Padding(
@@ -279,53 +293,15 @@ class _CorridorCard extends StatelessWidget {
                 if (!corridor.active) const Chip(label: Text(OpsTexts.inactive)),
               ],
             ),
-            const SizedBox(height: 12),
-            InfoRow(
-              label: OpsTexts.rate,
-              value: corridor.hasFixedRate
-                  ? OpsTexts.fixedRate
-                  : rate == null
-                  ? OpsTexts.noRate
-                  : OpsTexts.rateValue(rate.rate, corridor, rate.validFrom),
-            ),
-            InfoRow(
-              label: OpsTexts.fee,
-              value: feeRule == null ? OpsTexts.noFeeRule : OpsTexts.describeFee(feeRule, corridor.sourceCurrency),
-            ),
             if (corridor.deliveryRounding != null && corridor.deliveryRounding! > 0.01)
               InfoRow(
                 label: OpsTexts.rounding,
                 value: OpsTexts.roundingValue(Formatters.money(corridor.deliveryRounding, corridor.targetCurrency)),
               ),
-            if (rate == null && !corridor.hasFixedRate)
-              Padding(
-                padding: const EdgeInsets.only(top: 8),
-                child: Text(OpsTexts.noRateWarning, style: TextStyle(color: colors.error)),
-              ),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 12,
-              runSpacing: 8,
-              children: [
-                if (canWrite && !corridor.hasFixedRate)
-                  FilledButton.tonalIcon(
-                    onPressed: () => change(() => showNewRateDialog(context, corridor), OpsTexts.rateSaved),
-                    icon: const Icon(Icons.currency_exchange),
-                    label: const Text(OpsTexts.newRate),
-                  ),
-                if (canWrite)
-                  OutlinedButton.icon(
-                    onPressed: () => change(() => showNewFeeRuleDialog(context, corridor), OpsTexts.feeRuleSaved),
-                    icon: const Icon(Icons.percent),
-                    label: const Text(OpsTexts.newFeeRule),
-                  ),
-              ],
-            ),
-            _History(
-              // A new key reloads the history after a change.
-              key: ValueKey('${corridor.code}-${rate?.id}-${feeRule?.id}'),
-              corridor: corridor,
-            ),
+            for (final type in RemittanceType.values) ...[
+              const Divider(height: 32),
+              _TypeSection(corridor: corridor, type: type),
+            ],
           ],
         ),
       ),
@@ -333,11 +309,95 @@ class _CorridorCard extends StatelessWidget {
   }
 }
 
-/// Past rates and fee rules of a corridor, loaded when opened.
-class _History extends StatefulWidget {
-  const _History({super.key, required this.corridor});
+/// The rate and fee rule of a corridor for deliveries or for pickups, which
+/// are set apart.
+class _TypeSection extends StatelessWidget {
+  const _TypeSection({required this.corridor, required this.type});
 
   final Corridor corridor;
+  final RemittanceType type;
+
+  @override
+  Widget build(BuildContext context) {
+    final canWrite = context.select((AuthBloc bloc) => bloc.state.user!.can(Permissions.configurationWrite));
+    final cubit = context.read<ConfigurationCubit>();
+    final colors = Theme.of(context).colorScheme;
+    final rate = corridor.rateFor(type);
+    final feeRule = corridor.feeRuleFor(type);
+
+    Future<void> change(Future<Object?> Function() dialog, String message) async {
+      if (await dialog() == null || !context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+      await cubit.load();
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(type.icon, size: 20, color: type.color),
+            const SizedBox(width: 8),
+            Text(
+              OpsTexts.ratesFor(type),
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(color: type.color, fontWeight: FontWeight.w600),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        InfoRow(
+          label: OpsTexts.rate,
+          value: corridor.hasFixedRate
+              ? OpsTexts.fixedRate
+              : rate == null
+              ? OpsTexts.noRate
+              : OpsTexts.rateValue(rate.rate, corridor, rate.validFrom),
+        ),
+        InfoRow(
+          label: OpsTexts.fee,
+          value: feeRule == null ? OpsTexts.noFeeRule : OpsTexts.describeFee(feeRule, corridor.sourceCurrency),
+        ),
+        if (rate == null && !corridor.hasFixedRate)
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Text(OpsTexts.noRateWarning(type), style: TextStyle(color: colors.error)),
+          ),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 12,
+          runSpacing: 8,
+          children: [
+            if (canWrite && !corridor.hasFixedRate)
+              FilledButton.tonalIcon(
+                onPressed: () => change(() => showNewRateDialog(context, corridor, type), OpsTexts.rateSaved),
+                icon: const Icon(Icons.currency_exchange),
+                label: const Text(OpsTexts.newRate),
+              ),
+            if (canWrite)
+              OutlinedButton.icon(
+                onPressed: () => change(() => showNewFeeRuleDialog(context, corridor, type), OpsTexts.feeRuleSaved),
+                icon: const Icon(Icons.percent),
+                label: const Text(OpsTexts.newFeeRule),
+              ),
+          ],
+        ),
+        _History(
+          // A new key reloads the history after a change.
+          key: ValueKey('${corridor.code}-${type.code}-${rate?.id}-${feeRule?.id}'),
+          corridor: corridor,
+          type: type,
+        ),
+      ],
+    );
+  }
+}
+
+/// Past rates and fee rules of a corridor for one type, loaded when opened.
+class _History extends StatefulWidget {
+  const _History({super.key, required this.corridor, required this.type});
+
+  final Corridor corridor;
+  final RemittanceType type;
 
   @override
   State<_History> createState() => _HistoryState();
@@ -349,8 +409,9 @@ class _HistoryState extends State<_History> {
   void _load() {
     final rates = context.read<RateRepository>();
     final code = widget.corridor.code;
+    final type = widget.type;
     setState(() {
-      _history = (rates.rateHistory(code), rates.feeRuleHistory(code)).wait;
+      _history = (rates.rateHistory(code, type: type), rates.feeRuleHistory(code, type: type)).wait;
     });
   }
 
