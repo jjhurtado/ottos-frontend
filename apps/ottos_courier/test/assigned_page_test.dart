@@ -56,7 +56,11 @@ void main() {
             name: 'Repartidor',
             type: 'COURIER',
             roles: [],
-            permissions: {Permissions.remittancesDeliver, Permissions.remittancesReportIncident},
+            permissions: {
+              Permissions.remittancesReadAssigned,
+              Permissions.remittancesDeliver,
+              Permissions.remittancesReportIncident,
+            },
           ),
         ),
       );

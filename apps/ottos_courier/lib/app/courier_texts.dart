@@ -7,6 +7,40 @@ abstract final class CourierTexts {
   static const account = 'Mi cuenta';
   static const myRemittances = 'Mis remesas';
   static const myCash = 'Mi caja';
+  static const cash = 'Caja';
+
+  static const remittances = 'Remesas';
+
+  // New remittance
+  static const newRemittance = 'Nueva remesa';
+  static const customer = 'Remitente';
+  static const searchCustomer = 'Busca por nombre o teléfono';
+  static const changeCustomer = 'Cambiar remitente';
+  static const chooseCustomerFirst = 'Elige primero el remitente';
+  static const noBeneficiaries = 'Este remitente no tiene beneficiarios. Dalos de alta en el panel.';
+  static const amountToSend = 'Monto a enviar';
+  static const targetCurrency = 'Moneda';
+  static const noRates = 'No hay monedas con tasa para este tipo de remesa.';
+  static const quoteHint = 'Escribe el monto para ver la comisión y lo que se entrega.';
+  static const fee = 'Comisión';
+  static const total = 'Total a cobrar';
+  static const rate = 'Tasa';
+  static const amountToDeliver = 'Se entrega';
+  static const cashToCollect = 'Se recoge';
+  static const courier = 'Repartidor';
+  static const noCourier = 'Sin asignar';
+  static const notesOptional = 'Notas (opcional)';
+  static const register = 'Registrar';
+  static String registered(String code) => 'Remesa $code registrada';
+
+  // Cash of the couriers
+  static const couriersCash = 'Efectivo de los repartidores';
+  static const noCouriers = 'No hay repartidores con efectivo.';
+  static const fund = 'Entregar fondos';
+  static const registerReturn = 'Registrar devolución';
+  static String fundTitle(String name) => 'Entregar fondos a $name';
+  static String returnTitle(String name) => 'Devolución de $name';
+  static String movementRegistered(String amount) => 'Movimiento de $amount registrado';
 
   // Assigned list
   static const noAssigned = 'No tienes remesas pendientes.';

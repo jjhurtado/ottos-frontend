@@ -10,13 +10,19 @@ class CashPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final user = context.select((AuthBloc bloc) => bloc.state.user!);
     return BlocProvider(
-      create: (context) => CashCubit(cash: context.read<CashRepository>())..load(),
+      create: (context) => CashCubit(
+        cash: context.read<CashRepository>(),
+        ownCash: user.can(Permissions.cashReadOwn),
+        couriersCash: user.can(Permissions.cashRead),
+      )..load(),
       child: BlocBuilder<CashCubit, CashState>(
         builder: (context, state) {
           final cubit = context.read<CashCubit>();
           final statement = state.statement;
-          if (statement == null) {
+          final couriers = state.couriers;
+          if (!state.loaded) {
             return state.status == CashStatus.failure
                 ? ErrorView(message: state.error!, onRetry: cubit.load)
                 : const LoadingView();
@@ -26,18 +32,27 @@ class CashPage extends StatelessWidget {
             child: ListView(
               padding: const EdgeInsets.all(12),
               children: [
-                _BalancesCard(cash: statement.cash),
-                const SizedBox(height: 12),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-                  child: Text(CourierTexts.movements, style: Theme.of(context).textTheme.titleMedium),
-                ),
-                if (statement.movements.isEmpty)
-                  const Padding(
-                    padding: EdgeInsets.all(24),
-                    child: EmptyView(message: CourierTexts.noMovements),
-                  ),
-                for (final movement in statement.movements) _MovementTile(movement: movement),
+                if (couriers != null) ...[
+                  _SectionTitle(CourierTexts.couriersCash),
+                  if (couriers.isEmpty)
+                    const Padding(
+                      padding: EdgeInsets.all(24),
+                      child: EmptyView(message: CourierTexts.noCouriers),
+                    ),
+                  for (final courier in couriers) _CourierCashTile(courier: courier),
+                  const SizedBox(height: 12),
+                ],
+                if (statement != null) ...[
+                  _BalancesCard(cash: statement.cash),
+                  const SizedBox(height: 12),
+                  _SectionTitle(CourierTexts.movements),
+                  if (statement.movements.isEmpty)
+                    const Padding(
+                      padding: EdgeInsets.all(24),
+                      child: EmptyView(message: CourierTexts.noMovements),
+                    ),
+                  for (final movement in statement.movements) _MovementTile(movement: movement),
+                ],
               ],
             ),
           );
@@ -105,6 +120,101 @@ class _MovementTile extends StatelessWidget {
         trailing: Text(
           '${incoming ? '+' : ''}${Formatters.money(movement.signedAmount, movement.currency)}',
           style: TextStyle(color: color, fontWeight: FontWeight.w600),
+        ),
+      ),
+    );
+  }
+}
+
+class _SectionTitle extends StatelessWidget {
+  const _SectionTitle(this.text);
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+      child: Text(text, style: Theme.of(context).textTheme.titleMedium),
+    );
+  }
+}
+
+/// A courier's balances, with funding and returns for who can move cash.
+class _CourierCashTile extends StatelessWidget {
+  const _CourierCashTile({required this.courier});
+
+  final CourierCash courier;
+
+  @override
+  Widget build(BuildContext context) {
+    final canWrite = context.select((AuthBloc bloc) => bloc.state.user!.can(Permissions.cashWrite));
+    final cubit = context.read<CashCubit>();
+    final textTheme = Theme.of(context).textTheme;
+    final currencies = {'USD', 'CUP', for (final balance in courier.balances) balance.currency}.toList();
+
+    Future<void> operate(String title, String confirm, Future<CashMovement> Function(CashInput) submit) async {
+      final movement = await showCashOperationDialog(
+        context,
+        title: title,
+        confirmLabel: confirm,
+        currencies: currencies,
+        submit: submit,
+      );
+      if (movement == null || !context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(CourierTexts.movementRegistered(Formatters.money(movement.amount, movement.currency)))),
+      );
+      await cubit.load();
+    }
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 8),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 12, 8, 4),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(child: Text(courier.name, style: textTheme.titleSmall)),
+                if (courier.negative) const Icon(Icons.warning_amber, color: OttosColors.danger, size: 20),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Text(
+              courier.balances.isEmpty
+                  ? Formatters.money(0, null)
+                  : courier.balances.map((balance) => Formatters.money(balance.amount, balance.currency)).join(' · '),
+              style: textTheme.bodyMedium?.copyWith(color: courier.negative ? OttosColors.danger : null),
+            ),
+            if (canWrite)
+              Wrap(
+                spacing: 4,
+                children: [
+                  TextButton.icon(
+                    onPressed: () => operate(
+                      CourierTexts.fundTitle(courier.name),
+                      CourierTexts.fund,
+                      (input) => cubit.fund(courier, input),
+                    ),
+                    icon: const Icon(Icons.arrow_forward),
+                    label: const Text(CourierTexts.fund),
+                  ),
+                  TextButton.icon(
+                    onPressed: () => operate(
+                      CourierTexts.returnTitle(courier.name),
+                      CourierTexts.registerReturn,
+                      (input) => cubit.registerReturn(courier, input),
+                    ),
+                    icon: const Icon(Icons.arrow_back),
+                    label: const Text(CourierTexts.registerReturn),
+                  ),
+                ],
+              )
+            else
+              const SizedBox(height: 8),
+          ],
         ),
       ),
     );

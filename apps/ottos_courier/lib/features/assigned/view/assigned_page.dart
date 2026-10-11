@@ -12,9 +12,16 @@ class AssignedPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final user = context.select((AuthBloc bloc) => bloc.state.user!);
     return BlocProvider(
-      create: (context) => AssignedCubit(remittances: context.read<RemittanceRepository>())..load(),
-      child: const _AssignedView(),
+      create: (context) => AssignedCubit(
+        remittances: context.read<RemittanceRepository>(),
+        onlyMine: user.can(Permissions.remittancesReadAssigned),
+      )..load(),
+      child: Scaffold(
+        body: const _AssignedView(),
+        floatingActionButton: user.can(Permissions.remittancesCreate) ? const _NewRemittanceButton() : null,
+      ),
     );
   }
 }
@@ -65,6 +72,22 @@ class _AssignedView extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+class _NewRemittanceButton extends StatelessWidget {
+  const _NewRemittanceButton();
+
+  @override
+  Widget build(BuildContext context) {
+    return FloatingActionButton.extended(
+      onPressed: () async {
+        final created = await context.push<Remittance>(Routes.newRemittance);
+        if (created != null && context.mounted) await context.read<AssignedCubit>().load();
+      },
+      icon: const Icon(Icons.add),
+      label: const Text(CourierTexts.newRemittance),
     );
   }
 }

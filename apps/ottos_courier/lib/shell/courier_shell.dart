@@ -13,17 +13,25 @@ class CourierShell extends StatelessWidget {
   final String location;
   final Widget child;
 
+  /// Their own cash (couriers) or the couriers' cash (sales).
+  static bool canSeeCash(CurrentUser user) => user.can(Permissions.cashReadOwn) || user.can(Permissions.cashRead);
+
   @override
   Widget build(BuildContext context) {
-    final canSeeCash = context.select((AuthBloc bloc) => bloc.state.user?.can(Permissions.cashReadOwn) ?? false);
     final user = context.select((AuthBloc bloc) => bloc.state.user);
+    final canSeeCash = user != null && CourierShell.canSeeCash(user);
+    // Sales see every open remittance; couriers, theirs.
+    final remittancesTitle = user != null && !user.can(Permissions.remittancesReadAssigned)
+        ? CourierTexts.remittances
+        : CourierTexts.myRemittances;
+    final cashTitle = user != null && !user.can(Permissions.cashReadOwn) ? CourierTexts.cash : CourierTexts.myCash;
     final onCash = location == Routes.cash;
     return Scaffold(
       appBar: AppBar(
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(onCash ? CourierTexts.myCash : CourierTexts.myRemittances),
+            Text(onCash ? cashTitle : remittancesTitle),
             if (user != null)
               Text(
                 user.name,
@@ -68,16 +76,16 @@ class CourierShell extends StatelessWidget {
           ? NavigationBar(
               selectedIndex: onCash ? 1 : 0,
               onDestinationSelected: (index) => context.go(index == 1 ? Routes.cash : Routes.assigned),
-              destinations: const [
+              destinations: [
                 NavigationDestination(
-                  icon: Icon(Icons.local_shipping_outlined),
-                  selectedIcon: Icon(Icons.local_shipping),
-                  label: CourierTexts.myRemittances,
+                  icon: const Icon(Icons.local_shipping_outlined),
+                  selectedIcon: const Icon(Icons.local_shipping),
+                  label: remittancesTitle,
                 ),
                 NavigationDestination(
-                  icon: Icon(Icons.account_balance_wallet_outlined),
-                  selectedIcon: Icon(Icons.account_balance_wallet),
-                  label: CourierTexts.myCash,
+                  icon: const Icon(Icons.account_balance_wallet_outlined),
+                  selectedIcon: const Icon(Icons.account_balance_wallet),
+                  label: cashTitle,
                 ),
               ],
             )

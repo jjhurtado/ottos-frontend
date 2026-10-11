@@ -26,9 +26,10 @@ Ya corregido (pendiente de commit): sesión caducada que dejaba la app colgada, 
 
 Decisión del negocio (2026-10-10): durante el día, **ventas y repartidores trabajan con la misma app móvil**; por la noche, **ventas y admin entran al panel web** para revisar y tener más control. La app deja de ser solo «del repartidor»: lo que cada usuario ve depende de sus permisos, nunca del rol.
 
-- [ ] **Nueva remesa desde la app**: botón en la lista de remesas (con `remittances:create`). El mismo formulario que el panel: tipo, remitente, beneficiario, monto y moneda, con la cotización de su tipo (entrega o recogida).
-- [ ] **Asignar repartidor al crearla**, solo si el usuario tiene `remittances:assign`; si no, el campo no aparece.
-- [ ] **Caja desde la app**: entregar fondos y recibir devoluciones de un repartidor concreto (con `cash:write`). Quien no tiene el permiso ve solo su caja, como hoy.
+- [x] **Nueva remesa desde la app**: botón en la lista de remesas (con `remittances:create`). El mismo formulario que el panel: tipo, remitente, beneficiario, monto y moneda, con la cotización de su tipo (entrega o recogida).
+- [x] **Asignar repartidor al crearla**, solo si el usuario tiene `remittances:assign`; si no, el campo no aparece.
+- [x] **Caja desde la app**: entregar fondos y recibir devoluciones de un repartidor concreto (con `cash:write`). Quien no tiene el permiso ve solo su caja, como hoy.
+- [x] Ventas entra en la app (`remittances:read`): ve las remesas abiertas (las 100 últimas; el resto, en el panel) y la caja de los repartidores; el repartidor ve las suyas y su caja.
 - [ ] Nombre y presentación de la app pensados para ventas y reparto (hoy se llama «Otto's · Repartidor»).
 - [ ] Decidir qué más de ventas necesita estar en la app de día (alta de clientes y beneficiarios, buscar remesas, reasignar) y qué se queda solo en el panel.
 
