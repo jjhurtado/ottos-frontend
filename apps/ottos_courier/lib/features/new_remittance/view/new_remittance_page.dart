@@ -132,7 +132,12 @@ class _FormState extends State<_Form> {
                 decoration: const InputDecoration(labelText: CourierTexts.courier),
                 items: [
                   const DropdownMenuItem(value: null, child: Text(CourierTexts.noCourier)),
-                  for (final courier in state.couriers) DropdownMenuItem(value: courier, child: Text(courier.name)),
+                  for (final courier in state.couriers)
+                    DropdownMenuItem(
+                      value: courier,
+                      // The email tells apart couriers with the same name.
+                      child: Text([courier.name, ?courier.email].join(' · '), overflow: TextOverflow.ellipsis),
+                    ),
                 ],
                 onChanged: enabled ? cubit.courierSelected : null,
               ),
@@ -211,6 +216,28 @@ class _CustomerField extends StatelessWidget {
           labelText: CourierTexts.customer,
           hintText: CourierTexts.searchCustomer,
           prefixIcon: Icon(Icons.search),
+        ),
+      ),
+      // With the phone: two customers may share a name.
+      optionsViewBuilder: (context, onSelected, options) => Align(
+        alignment: Alignment.topLeft,
+        child: Material(
+          elevation: 4,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxHeight: 280, maxWidth: MediaQuery.sizeOf(context).width - 32),
+            child: ListView(
+              padding: EdgeInsets.zero,
+              shrinkWrap: true,
+              children: [
+                for (final customer in options)
+                  ListTile(
+                    title: Text(customer.fullName),
+                    subtitle: Text(customer.phone),
+                    onTap: () => onSelected(customer),
+                  ),
+              ],
+            ),
+          ),
         ),
       ),
     );
