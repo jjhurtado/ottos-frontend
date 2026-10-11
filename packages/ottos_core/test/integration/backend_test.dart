@@ -305,6 +305,59 @@ void main() {
     });
   }, skip: skip);
 
+  group('currency exchange', () {
+    setUp(() => auth.login(email: email, password: password));
+
+    test('changes cash, and an unusual rate is reviewed and resolved', () async {
+      final cash = CashRepository(api: api);
+      final rates = RateRepository(api: api);
+      final configured = (await rates.corridors()).firstWhere((c) => c.code == 'USD-CUP').rate?.rate;
+      if (configured == null) {
+        markTestSkipped('Needs a USD-CUP delivery rate');
+        return;
+      }
+
+      final usual = await cash.exchangeOwn(
+        ExchangeInput(fromCurrency: 'USD', fromAmount: 1, toCurrency: 'CUP', rate: configured),
+      );
+      expect(usual.toAmount, configured);
+      expect(usual.review, isNull);
+
+      final unusual = await cash.exchangeOwn(
+        ExchangeInput(fromCurrency: 'CUP', fromAmount: 1000, toCurrency: 'USD', rate: configured * 3, note: 'Prueba'),
+      );
+      expect(unusual.pendingReview, isTrue);
+      expect(unusual.review!.reason, ReviewReason.unusualExchangeRate);
+      expect((await cash.exchanges(review: true, size: 50)).items.map((e) => e.id), contains(unusual.id));
+
+      final resolved = await cash.resolveExchangeReview(unusual.id, note: 'Comprobado en la prueba');
+      expect(resolved.pendingReview, isFalse);
+      await expectLater(
+        cash.resolveExchangeReview(unusual.id, note: 'Otra vez'),
+        throwsA(isA<ApiException>().having((e) => e.code, 'code', 'REVIEW_NOT_PENDING')),
+      );
+
+      // Back to where it was: the opposite exchange at the same rate.
+      await cash.exchangeOwn(
+        ExchangeInput(fromCurrency: 'CUP', fromAmount: configured, toCurrency: 'USD', rate: configured),
+      );
+    });
+  }, skip: skip);
+
+  group('reports', () {
+    setUp(() => auth.login(email: email, password: password));
+
+    test('the monthly summary adds up', () async {
+      final now = DateTime.now();
+      final report = await ReportRepository(api: api).monthly(now.year, now.month);
+
+      expect(report.month, '${now.year}-${now.month.toString().padLeft(2, '0')}');
+      expect(report.remittances, report.deliveries + report.pickups);
+      expect(report.difference, closeTo(report.collected - report.deliveredUsd, 0.01));
+      expect(report.byCurrency.fold<int>(0, (sum, line) => sum + line.remittances), report.remittances);
+    });
+  }, skip: skip);
+
   group('customers', () {
     late CustomerRepository customers;
     late ZoneRepository zones;

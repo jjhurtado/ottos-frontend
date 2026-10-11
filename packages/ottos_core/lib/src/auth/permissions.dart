@@ -26,4 +26,6 @@ abstract final class Permissions {
   static const cashWrite = 'cash:write';
   static const cashReadOwn = 'cash:read-own';
   static const cashAdjust = 'cash:adjust';
+  static const cashExchangeOwn = 'cash:exchange-own';
+  static const cashReview = 'cash:review';
 }

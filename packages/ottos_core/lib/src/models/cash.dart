@@ -25,6 +25,8 @@ enum CashMovementType {
   remittanceRefund('REMITTANCE_REFUND'),
   businessDeposit('BUSINESS_DEPOSIT'),
   businessWithdrawal('BUSINESS_WITHDRAWAL'),
+  courierExchangeOut('COURIER_EXCHANGE_OUT'),
+  courierExchangeIn('COURIER_EXCHANGE_IN'),
   unknown('');
 
   const CashMovementType(this.code);
@@ -51,6 +53,8 @@ class CashMovement extends Equatable {
     this.remittanceId,
     this.note,
     this.occurredAt,
+    this.exchangeId,
+    this.rate,
   });
 
   factory CashMovement.fromJson(Map<String, dynamic> json) => CashMovement(
@@ -66,6 +70,8 @@ class CashMovement extends Equatable {
     remittanceId: json['remittanceId'] as String?,
     note: json['note'] as String?,
     occurredAt: parseDateTime(json['occurredAt']),
+    exchangeId: json['exchangeId'] as String?,
+    rate: parseDecimal(json['rate']),
   );
 
   final String id;
@@ -82,6 +88,12 @@ class CashMovement extends Equatable {
   final String? remittanceId;
   final String? note;
   final DateTime? occurredAt;
+
+  /// The two legs of a currency exchange share it.
+  final String? exchangeId;
+
+  /// The exchange's rate, CUP per 1 USD.
+  final double? rate;
 
   @override
   List<Object?> get props => [id];

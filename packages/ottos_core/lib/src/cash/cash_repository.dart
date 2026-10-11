@@ -1,5 +1,7 @@
 import '../api/api_client.dart';
 import '../models/cash.dart';
+import '../models/exchange.dart';
+import '../models/page_result.dart';
 
 class CashRepository {
   CashRepository({required this._api});
@@ -49,4 +51,32 @@ class CashRepository {
 
   static List<T> _list<T>(List<dynamic> json, T Function(Map<String, dynamic>) fromJson) =>
       json.map((item) => fromJson(item as Map<String, dynamic>)).toList();
+
+  /// The courier's own exchange (`cash:exchange-own`).
+  Future<CurrencyExchange> exchangeOwn(ExchangeInput input) async =>
+      CurrencyExchange.fromJson(await _api.post<Map<String, dynamic>>('/cash/me/exchanges', body: input.toJson()));
+
+  /// Sales or admin, on behalf of a courier (`cash:write`).
+  Future<CurrencyExchange> exchangeFor(String courierId, ExchangeInput input) async => CurrencyExchange.fromJson(
+    await _api.post<Map<String, dynamic>>('/cash/couriers/$courierId/exchanges', body: input.toJson()),
+  );
+
+  /// Newest first; [review] true lists only the ones still waiting to be checked.
+  Future<PageResult<CurrencyExchange>> exchanges({
+    String? courierId,
+    bool? review,
+    int page = 0,
+    int size = 20,
+  }) async => PageResult.fromJson(
+    await _api.get<Map<String, dynamic>>(
+      '/cash/exchanges',
+      query: {'courierId': courierId, 'review': review, 'page': page, 'size': size},
+    ),
+    CurrencyExchange.fromJson,
+  );
+
+  /// Clears the review, leaving [note] on the exchange (`cash:review`).
+  Future<CurrencyExchange> resolveExchangeReview(String id, {required String note}) async => CurrencyExchange.fromJson(
+    await _api.post<Map<String, dynamic>>('/cash/exchanges/$id/review/resolve', body: {'note': note.trim()}),
+  );
 }

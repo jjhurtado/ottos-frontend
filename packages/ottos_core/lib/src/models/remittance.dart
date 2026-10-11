@@ -29,6 +29,9 @@ enum ReviewReason {
   /// Synced more than 7 days after it happened.
   lateSync('LATE_SYNC'),
 
+  /// A courier's currency exchange far from the configured rate.
+  unusualExchangeRate('UNUSUAL_EXCHANGE_RATE'),
+
   /// A reason this app does not know yet.
   other('');
 

@@ -34,7 +34,10 @@ abstract final class CoreTexts {
     'INCORRECT_PIN': 'El PIN no es correcto.',
     'INVALID_OCCURRED_AT': 'La hora de la acción no es válida: es futura, demasiado antigua o anterior a la remesa.',
     'ACTION_ID_CONFLICT': 'Esta acción ya se registró con otros datos.',
-    'REVIEW_NOT_PENDING': 'Esta remesa ya no está pendiente de revisión.',
+    'REVIEW_NOT_PENDING': 'Ya no está pendiente de revisión.',
+    'INVALID_CURRENCY': 'Una de las dos monedas tiene que ser USD, y tienen que ser distintas.',
+    'INVALID_RATE': 'Escribe una tasa mayor que 0.',
+    'EXCHANGE_NOT_FOUND': 'No se encontró ese cambio de moneda.',
     'INVALID_POSTPONE_DATE': 'La nueva fecha debe ser posterior a la fecha prevista.',
     'REMITTANCE_NOT_FOUND': 'No se encontró la remesa.',
     'REMITTANCE_ALREADY_COMPLETED': 'La remesa ya está completada.',
@@ -86,7 +89,18 @@ abstract final class CoreTexts {
   static const noCouriers = 'No hay repartidores disponibles.';
   static String openRemittances(int count) => count == 1 ? '1 remesa abierta' : '$count remesas abiertas';
   static const currency = 'Moneda';
+  static const noteOptional = 'Nota (opcional)';
   static const amountRequired = 'Escribe un monto mayor que 0';
+
+  // Currency exchange
+  static const exchangeTitle = 'Cambiar moneda';
+  static const exchangeAmount = 'Monto que cambias';
+  static const exchangeRate = 'Tasa a la que cambiaste';
+  static const exchangeConfirm = 'Registrar cambio';
+  static const exchangeHint = 'Escribe el monto y la tasa para ver lo que recibes.';
+  static const exchange = 'Cambio de moneda';
+  static String exchangeResult(String from, String to) => 'Entregas $from y recibes $to';
+  static String exchangeRateValue(String rate) => 'a $rate CUP por USD';
   static String registeredNotAssigned(String reason) => 'Remesa registrada, pero no se pudo asignar: $reason';
   static const showPassword = 'Mostrar contraseña';
   static const hidePassword = 'Ocultar contraseña';
@@ -176,6 +190,7 @@ abstract final class CoreTexts {
     ReviewReason.pinMismatch => 'Entregada sin conexión con un PIN que no coincide',
     ReviewReason.duplicateDelivery => 'Dos personas dicen haberla entregado',
     ReviewReason.lateSync => 'Sincronizada más de 7 días después',
+    ReviewReason.unusualExchangeRate => 'Tasa de cambio lejos de la configurada',
     ReviewReason.other => 'Marcada para revisión',
   };
 

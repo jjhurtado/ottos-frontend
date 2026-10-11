@@ -198,12 +198,18 @@ class Quote extends Equatable {
 
 /// Business-wide settings (`GET /configuration/settings`).
 class Settings extends Equatable {
-  const Settings({this.minimumAmount = 0, this.minimumAmountCurrency = 'USD', this.defaultDeliveryDays = 2});
+  const Settings({
+    this.minimumAmount = 0,
+    this.minimumAmountCurrency = 'USD',
+    this.defaultDeliveryDays = 2,
+    this.exchangeRateTolerancePercent = 20,
+  });
 
   factory Settings.fromJson(Map<String, dynamic> json) => Settings(
     minimumAmount: parseDecimal(json['minimumAmount']) ?? 0,
     minimumAmountCurrency: json['minimumAmountCurrency'] as String? ?? 'USD',
     defaultDeliveryDays: json['defaultDeliveryDays'] as int? ?? 2,
+    exchangeRateTolerancePercent: parseDecimal(json['exchangeRateTolerancePercent']) ?? 20,
   );
 
   /// Smallest amount a remittance can send; 0 means no minimum.
@@ -213,6 +219,9 @@ class Settings extends Equatable {
   /// Days from registration to a new remittance's expected date.
   final int defaultDeliveryDays;
 
+  /// A courier's exchange farther than this from the delivery rate is marked for review.
+  final double exchangeRateTolerancePercent;
+
   @override
-  List<Object?> get props => [minimumAmount, minimumAmountCurrency, defaultDeliveryDays];
+  List<Object?> get props => [minimumAmount, minimumAmountCurrency, defaultDeliveryDays, exchangeRateTolerancePercent];
 }

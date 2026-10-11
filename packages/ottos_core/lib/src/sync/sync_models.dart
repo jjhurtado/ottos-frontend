@@ -48,7 +48,10 @@ enum SyncActionType {
   deliver('DELIVER'),
   deliverWithPin('DELIVER_WITH_PIN'),
   postpone('POSTPONE'),
-  reportIncident('REPORT_INCIDENT');
+  reportIncident('REPORT_INCIDENT'),
+
+  /// A courier changes cash from one currency to another; no remittance.
+  cashExchange('CASH_EXCHANGE');
 
   const SyncActionType(this.code);
 
@@ -66,7 +69,7 @@ class SyncAction extends Equatable {
   const SyncAction({
     required this.id,
     required this.type,
-    required this.remittanceId,
+    this.remittanceId,
     required this.occurredAt,
     this.payload = const {},
   });
@@ -74,14 +77,16 @@ class SyncAction extends Equatable {
   factory SyncAction.fromJson(Map<String, dynamic> json) => SyncAction(
     id: json['id'] as String,
     type: SyncActionType.fromCode(json['type'] as String),
-    remittanceId: json['remittanceId'] as String,
+    remittanceId: json['remittanceId'] as String?,
     occurredAt: DateTime.parse(json['occurredAt'] as String),
     payload: (json['payload'] as Map<String, dynamic>?) ?? const {},
   );
 
   final String id;
   final SyncActionType type;
-  final String remittanceId;
+
+  /// Null for a currency exchange.
+  final String? remittanceId;
 
   /// When it happened on the phone; the server uses it for the history and the cash.
   final DateTime occurredAt;
@@ -126,6 +131,7 @@ class SyncResult {
     this.code,
     this.message,
     this.remittance,
+    this.exchange,
     this.flaggedForReview = false,
   });
 
@@ -135,6 +141,7 @@ class SyncResult {
     code: json['code'] as String?,
     message: json['message'] as String?,
     remittance: json['remittance'] as Map<String, dynamic>?,
+    exchange: json['exchange'] as Map<String, dynamic>?,
     flaggedForReview: json['flaggedForReview'] as bool? ?? false,
   );
 
@@ -147,6 +154,9 @@ class SyncResult {
 
   /// `RemittanceView` JSON after the action, to refresh the local copy.
   final Map<String, dynamic>? remittance;
+
+  /// `ExchangeView` JSON for a currency exchange.
+  final Map<String, dynamic>? exchange;
   final bool flaggedForReview;
 
   bool get done => status != SyncResultStatus.rejected;
