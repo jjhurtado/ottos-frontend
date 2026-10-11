@@ -10,12 +10,25 @@ class _MockSync extends Mock implements SyncRepository {}
 
 const _offline = ApiException(CoreTexts.networkError);
 
-Map<String, dynamic> _json(String id, {String status = 'ASSIGNED', String? completedAt}) => {
+Map<String, dynamic> _json(String id, {String status = 'ASSIGNED', String? completedAt, String type = 'DELIVERY'}) => {
   'id': id,
   'code': 'OT-$id',
-  'type': 'DELIVERY',
+  'type': type,
   'status': status,
   'completedAt': completedAt,
+  'cashAmount': 100,
+  'cashCurrency': 'USD',
+};
+
+Map<String, dynamic> _cash(double usd) => {
+  'cash': {
+    'courierId': 'u1',
+    'name': 'Luis',
+    'balances': [
+      {'currency': 'USD', 'amount': usd},
+    ],
+  },
+  'movements': [],
 };
 
 Remittance _remittance(String id) => Remittance.fromJson(_json(id));
@@ -34,8 +47,17 @@ void main() {
   setUp(() async {
     store = await OfflineStore.open(path: inMemoryDatabasePath, factory: databaseFactoryFfiNoIsolate);
     server = _MockSync();
-    when(() => server.state(since: any(named: 'since')))
-        .thenAnswer((_) async => SyncState(serverTime: 't1', full: true, remittances: [_json('a'), _json('b')]));
+    when(() => server.state(since: any(named: 'since'))).thenAnswer(
+      (_) async => SyncState(
+        serverTime: 't1',
+        full: true,
+        remittances: [
+          _json('a'),
+          _json('b', type: 'PICKUP'),
+        ],
+        cash: _cash(500),
+      ),
+    );
     sync = SyncCubit(store: store, sync: server);
     source = OfflineSource(sync: sync);
     await sync.start('u1');
@@ -155,5 +177,68 @@ void main() {
     expect(sync.state.pending, 1);
     expect(sync.state.rejected, isEmpty);
     expect((await store.pending()).single.payload, {'newDate': '2026-10-20', 'reason': 'No estaba'});
+  });
+
+  group('cash', () {
+    double usd(CourierStatement? statement) =>
+        statement!.cash.balances.singleWhere((balance) => balance.currency == 'USD').amount;
+
+    test('a delivery or pickup done offline already moves the balance, marked unsent', () async {
+      when(() => server.send(any())).thenThrow(_offline);
+      expect(usd(await sync.cash()), 500);
+
+      await source.deliver(_remittance('a'));
+      final afterDelivery = await sync.cash();
+      expect(usd(afterDelivery), 400, reason: 'the courier paid out 100 USD');
+      expect(SyncCubit.isUnsent(afterDelivery!.movements.first), isTrue);
+      expect(afterDelivery.movements.first.note, 'OT-a');
+
+      await source.deliver(Remittance.fromJson(_json('b', type: 'PICKUP')));
+      expect(usd(await sync.cash()), 500, reason: 'and collected 100 USD on the pickup');
+    });
+
+    test('once sent, the balance is the server one, without double counting', () async {
+      when(() => server.send(any())).thenThrow(_offline);
+      await source.deliver(_remittance('a'));
+      when(() => server.send(any())).thenAnswer(
+        (invocation) async => answer(
+          invocation.positionalArguments.first as List<SyncAction>,
+          (action) => SyncResult(
+            id: action.id,
+            status: SyncResultStatus.applied,
+            remittance: _json('a', status: 'DELIVERED', completedAt: '2026-10-10T10:00:00Z'),
+          ),
+        ),
+      );
+      when(() => server.state(since: 't1'))
+          .thenAnswer((_) async => SyncState(serverTime: 't2', full: false, removedIds: const ['a'], cash: _cash(400)));
+
+      await sync.sync();
+
+      final cash = await sync.cash();
+      expect(usd(cash), 400);
+      expect(cash!.movements.where(SyncCubit.isUnsent), isEmpty);
+    });
+
+    test('with network, an applied delivery brings the new balance right away', () async {
+      when(() => server.send(any())).thenAnswer(
+        (invocation) async => answer(
+          invocation.positionalArguments.first as List<SyncAction>,
+          (action) => SyncResult(
+            id: action.id,
+            status: SyncResultStatus.applied,
+            remittance: _json('a', status: 'DELIVERED', completedAt: '2026-10-10T10:00:00Z'),
+          ),
+        ),
+      );
+      when(() => server.state(since: 't1'))
+          .thenAnswer((_) async => SyncState(serverTime: 't2', full: false, removedIds: const ['a'], cash: _cash(400)));
+
+      await source.deliver(_remittance('a'));
+      await sync.sync();
+
+      expect(usd(await sync.cash()), 400);
+      verify(() => server.state(since: 't1')).called(greaterThanOrEqualTo(1));
+    });
   });
 }

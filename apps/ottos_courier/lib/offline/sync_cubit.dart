@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:ottos_core/ottos_core.dart';
@@ -174,6 +176,8 @@ class SyncCubit extends Cubit<SyncStatus> {
     await _keep(result.remittance);
     emit(state.copyWith(offline: false));
     await _refresh(changed: true);
+    // The cash moved on the server: bring it (and anything else new) now.
+    unawaited(sync());
     final json = result.remittance;
     return Applied(json == null ? null : Remittance.fromJson(json), flaggedForReview: result.flaggedForReview);
   }
@@ -186,6 +190,64 @@ class SyncCubit extends Cubit<SyncStatus> {
     if (rejected != null) return Rejected(rejected.message ?? CoreTexts.unexpectedError);
     final json = await _store.remittance(action.remittanceId);
     return Applied(json == null ? null : Remittance.fromJson(json));
+  }
+
+  /// Prefix of the ids of [cash]'s movements that are not on the server yet.
+  static const unsentMovement = 'unsent:';
+
+  static bool isUnsent(CashMovement movement) => movement.id.startsWith(unsentMovement);
+
+  /// The courier's cash as the server last sent it, plus the deliveries and
+  /// pickups still in the queue: handing over or collecting the money already
+  /// happened, so the balance must show it before it is sent.
+  Future<CourierStatement?> cash() async {
+    final stored = await _store.cash();
+    final unsent = <CashMovement>[];
+    for (final action in await _store.pending()) {
+      if (!action.type.completes) continue;
+      final json = await _store.remittance(action.remittanceId);
+      if (json == null) continue;
+      final remittance = Remittance.fromJson(json);
+      final amount = remittance.cashAmount;
+      final currency = remittance.cashCurrency;
+      if (amount == null || currency == null) continue;
+      unsent.add(
+        CashMovement(
+          id: '$unsentMovement${action.id}',
+          type: remittance.isPickup ? CashMovementType.pickupCollection : CashMovementType.deliveryPayout,
+          amount: amount,
+          // The courier collects on a pickup and pays out on a delivery.
+          signedAmount: remittance.isPickup ? amount : -amount,
+          currency: currency,
+          remittanceId: remittance.id,
+          note: remittance.code,
+          occurredAt: action.occurredAt,
+        ),
+      );
+    }
+    if (stored == null && unsent.isEmpty) return null;
+    final base = stored?.cash;
+    final totals = {for (final balance in base?.balances ?? const <Balance>[]) balance.currency: balance.amount};
+    for (final movement in unsent) {
+      totals[movement.currency] = (totals[movement.currency] ?? 0) + movement.signedAmount;
+    }
+    final balances = [for (final entry in totals.entries) Balance(currency: entry.key, amount: entry.value)];
+    return CourierStatement(
+      cash: CourierCash(
+        courierId: base?.courierId ?? '',
+        name: base?.name ?? '',
+        balances: balances,
+        negative: balances.any((balance) => balance.amount < 0),
+      ),
+      movements: [...unsent.reversed, ...?stored?.movements],
+    );
+  }
+
+  /// Lets a sync in course finish before closing (it writes to the store).
+  @override
+  Future<void> close() async {
+    await _running;
+    return super.close();
   }
 
   Future<void> dismiss(String actionId) async {
