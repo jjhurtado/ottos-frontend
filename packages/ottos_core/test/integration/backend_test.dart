@@ -381,7 +381,7 @@ void main() {
       );
       expect(sameName.id, isNot(created.id));
       await expectLater(
-        customers.create(CustomerInput(fullName: 'prueba  frontend', phone: phone, address: 'otra 2')),
+        customers.create(CustomerInput(fullName: 'prueba frontend', phone: phone, address: 'otra 2')),
         throwsA(isA<ApiException>().having((e) => e.code, 'code', 'CUSTOMER_ALREADY_REGISTERED')),
       );
 
