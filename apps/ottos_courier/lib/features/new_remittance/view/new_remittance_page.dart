@@ -259,12 +259,33 @@ class _BeneficiaryField extends StatelessWidget {
       );
     }
     if (state.beneficiariesStatus == LoadStatus.loading) return const LinearProgressIndicator();
-    if (state.beneficiariesStatus == LoadStatus.success && state.beneficiaries.isEmpty) {
-      return const InputDecorator(
-        decoration: InputDecoration(labelText: CourierTexts.beneficiary),
-        child: Text(CourierTexts.noBeneficiaries),
-      );
-    }
+    final cubit = context.read<NewRemittanceCubit>();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (state.beneficiariesStatus == LoadStatus.success && state.beneficiaries.isEmpty)
+          const InputDecorator(
+            decoration: InputDecoration(labelText: CourierTexts.beneficiary),
+            child: Text(CourierTexts.noBeneficiaries),
+          )
+        else
+          _dropdown(context),
+        // Beneficiaries loaded without a customer are linked by the remittance.
+        TextButton.icon(
+          onPressed: state.submitting
+              ? null
+              : () async {
+                  final found = await showBeneficiarySearchDialog(context, search: cubit.searchBeneficiaries);
+                  if (found != null) cubit.beneficiaryCreated(found);
+                },
+          icon: const Icon(Icons.person_search),
+          label: const Text(CoreTexts.searchOtherBeneficiary),
+        ),
+      ],
+    );
+  }
+
+  Widget _dropdown(BuildContext context) {
     return DropdownButtonFormField<Beneficiary>(
       key: ValueKey('${state.customer!.id}-${state.beneficiaries.length}'),
       initialValue: state.beneficiary,

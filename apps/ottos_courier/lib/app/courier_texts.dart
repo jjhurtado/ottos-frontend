@@ -34,7 +34,7 @@ abstract final class CourierTexts {
   static const searchCustomer = 'Busca por nombre o teléfono';
   static const changeCustomer = 'Cambiar remitente';
   static const chooseCustomerFirst = 'Elige primero el remitente';
-  static const noBeneficiaries = 'Este remitente no tiene beneficiarios. Dalos de alta en el panel.';
+  static const noBeneficiaries = 'Este remitente no tiene beneficiarios todavía. Búscalo entre todos.';
   static const amountToSend = 'Monto a enviar';
   static const targetCurrency = 'Moneda';
   static const noRates = 'No hay monedas con tasa para este tipo de remesa.';

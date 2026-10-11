@@ -359,4 +359,32 @@ void main() {
       );
     });
   });
+
+  group('beneficiaries of other customers', () {
+    const rosa = Beneficiary(id: 'b2', fullName: 'Rosa Suelta', phone: '536');
+    const gone = Beneficiary(id: 'b3', fullName: 'Rosa Baja', phone: '537', active: false);
+
+    setUp(() {
+      cubit = NewRemittanceCubit(remittances: remittances, customers: customers, rates: rates);
+      when(() => customers.beneficiaries('c1')).thenAnswer((_) async => const [_beneficiary]);
+    });
+
+    tearDown(() => cubit.close());
+
+    test('the search offers every active beneficiary', () async {
+      when(() => customers.searchBeneficiaries('Rosa')).thenAnswer((_) async => const [rosa, gone]);
+      expect(await cubit.searchBeneficiaries('Rosa'), [rosa]);
+    });
+
+    test('one found is added and picked; one already listed is just picked', () async {
+      await cubit.customerSelected(_customer);
+      cubit.beneficiaryCreated(rosa);
+      expect(cubit.state.beneficiaries, [_beneficiary, rosa]);
+      expect(cubit.state.beneficiary, rosa);
+
+      cubit.beneficiaryCreated(_beneficiary);
+      expect(cubit.state.beneficiaries, hasLength(2));
+      expect(cubit.state.beneficiary, _beneficiary);
+    });
+  });
 }

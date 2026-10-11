@@ -54,9 +54,16 @@ abstract final class Csv {
       row.add(field.toString());
       rows.add(row);
     }
-    // Blank lines (Excel adds some at the end) are not rows.
-    return rows.where((row) => row.any((value) => value.trim().isNotEmpty)).toList();
+    // Blank lines at the end (Excel adds some) are not rows. The ones in
+    // between stay, so the row numbers match the spreadsheet's.
+    while (rows.isNotEmpty && isBlank(rows.last)) {
+      rows.removeLast();
+    }
+    return rows;
   }
+
+  /// A row with nothing written in it.
+  static bool isBlank(List<String> row) => row.every((value) => value.trim().isEmpty);
 
   /// The separator the header line uses most.
   static String _detectSeparator(String source) {

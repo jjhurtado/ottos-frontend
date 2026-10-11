@@ -19,7 +19,16 @@ void main() {
     ]);
   });
 
-  test('reads files saved with commas or tabs, and skips blank lines', () {
+  test('keeps blank lines in between, so rows keep their numbers', () {
+    expect(Csv.decode('a;b\n1;2\n\n3;4\n'), [
+      ['a', 'b'],
+      ['1', '2'],
+      [''],
+      ['3', '4'],
+    ]);
+  });
+
+  test('reads files saved with commas or tabs, and skips blank lines at the end', () {
     expect(Csv.decode('a,b\r\n1,"2,5"\r\n\r\n,\r\n'), [
       ['a', 'b'],
       ['1', '2,5'],

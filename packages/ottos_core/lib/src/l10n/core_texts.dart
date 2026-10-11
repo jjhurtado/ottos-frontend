@@ -25,7 +25,6 @@ abstract final class CoreTexts {
     'CONCURRENT_UPDATE': 'Otra persona modificó estos datos a la vez. Inténtalo de nuevo.',
     'AMOUNT_TOO_SMALL': 'El monto es demasiado pequeño: no alcanza para entregar nada.',
     'INVALID_AMOUNT': 'El monto no es válido.',
-    'BENEFICIARY_NOT_LINKED': 'El beneficiario no pertenece a este remitente.',
     'BENEFICIARY_UNAVAILABLE': 'El beneficiario no existe o está inactivo.',
     'CUSTOMER_UNAVAILABLE': 'El remitente no existe o está inactivo.',
     'NO_ACTIVE_CORRIDOR': 'No se envía dinero en esa moneda.',
@@ -159,6 +158,12 @@ abstract final class CoreTexts {
 
   // Remember me and fingerprint
   static const rememberEmail = 'Recordar mi usuario';
+  static const searchOtherBeneficiary = 'Buscar otro beneficiario';
+  static const searchBeneficiaryHint = 'Nombre o teléfono del beneficiario';
+  static const searchBeneficiaryHelp =
+      'Busca entre todos los beneficiarios. Al registrar la remesa queda vinculado a este remitente.';
+  static const noBeneficiariesFound = 'No hay beneficiarios con ese nombre o teléfono.';
+  static const typeToSearch = 'Escribe al menos 2 letras o números.';
   static const biometricLogin = 'Entrar con huella';
   static const biometricOfferTitle = '¿Entrar con huella la próxima vez?';
   static const biometricOfferBody =

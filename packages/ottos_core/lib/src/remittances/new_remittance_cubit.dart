@@ -197,9 +197,21 @@ class NewRemittanceCubit extends Cubit<NewRemittanceState> {
 
   void beneficiarySelected(Beneficiary? beneficiary) => _emit(beneficiary: beneficiary);
 
-  /// Adds a beneficiary just created for the chosen customer, and picks it.
-  void beneficiaryCreated(Beneficiary beneficiary) =>
+  /// Any beneficiary, linked to the customer or not: registering the
+  /// remittance links them.
+  Future<List<Beneficiary>> searchBeneficiaries(String query) async =>
+      (await _customers.searchBeneficiaries(query)).where((beneficiary) => beneficiary.active).toList();
+
+  /// Picks a beneficiary just created or found, adding it to the list if it
+  /// was not there.
+  void beneficiaryCreated(Beneficiary beneficiary) {
+    final known = state.beneficiaries.where((item) => item.id == beneficiary.id).firstOrNull;
+    if (known != null) {
+      _emit(beneficiary: known);
+    } else {
       _emit(beneficiaries: [...state.beneficiaries, beneficiary], beneficiary: beneficiary);
+    }
+  }
 
   void targetCurrencyChanged(String? currency) {
     // Another currency has another configured rate.

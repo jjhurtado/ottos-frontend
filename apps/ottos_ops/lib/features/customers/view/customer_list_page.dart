@@ -54,6 +54,12 @@ class _CustomerListView extends StatelessWidget {
                   label: const Text(OpsTexts.importCsv),
                 ),
                 const SizedBox(width: 8),
+                TextButton.icon(
+                  onPressed: () => importBeneficiaries(context),
+                  icon: const Icon(Icons.group_add_outlined),
+                  label: const Text(OpsTexts.importBeneficiariesCsv),
+                ),
+                const SizedBox(width: 8),
               ],
               if (canWrite)
                 FilledButton.icon(

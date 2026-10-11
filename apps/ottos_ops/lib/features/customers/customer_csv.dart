@@ -100,6 +100,7 @@ abstract final class CustomerCsv {
     final customers = <String, ({ImportCustomer customer, List<ImportBeneficiary> beneficiaries})>{};
     for (var i = 1; i < rows.length; i++) {
       final row = rows[i];
+      if (Csv.isBlank(row)) continue;
       // Row 1 is the header, as a spreadsheet numbers it.
       final ref = 'fila ${i + 1}';
       final name = cell(row, 'cliente_nombre') ?? '';
@@ -154,6 +155,51 @@ abstract final class CustomerCsv {
           notes: entry.customer.notes,
           beneficiaries: entry.beneficiaries,
         ),
+    ];
+  }
+}
+
+/// Beneficiaries without a customer: the `beneficiario_*` columns of
+/// [CustomerCsv], one row each (an export of customers also works).
+abstract final class BeneficiaryCsv {
+  static const required = ['beneficiario_nombre', 'beneficiario_telefono'];
+
+  /// Throws a [FormatException] in Spanish if the file is not this CSV.
+  static List<ImportBeneficiary> parse(String text) {
+    final rows = Csv.decode(text);
+    if (rows.isEmpty) throw const FormatException('El archivo está vacío.');
+    final header = [for (final name in rows.first) name.trim().toLowerCase()];
+    final missing = required.where((column) => !header.contains(column)).toList();
+    if (missing.isNotEmpty) {
+      throw FormatException(
+        'Faltan las columnas ${missing.join(', ')}. Columnas: ${CustomerCsv.beneficiaryColumns.join('; ')}.',
+      );
+    }
+    String? cell(List<String> row, String column) {
+      final index = header.indexOf(column);
+      if (index < 0 || index >= row.length) return null;
+      final value = row[index].trim();
+      return value.isEmpty ? null : value;
+    }
+
+    return [
+      for (var i = 1; i < rows.length; i++)
+        if (cell(rows[i], 'beneficiario_nombre') != null || cell(rows[i], 'beneficiario_telefono') != null)
+          ImportBeneficiary(
+            // Row 1 is the header, as a spreadsheet numbers it.
+            ref: 'fila ${i + 1}',
+            fullName: cell(rows[i], 'beneficiario_nombre') ?? '',
+            phone: cell(rows[i], 'beneficiario_telefono') ?? '',
+            alternatePhone: cell(rows[i], 'beneficiario_telefono_alternativo'),
+            street: cell(rows[i], 'beneficiario_calle') ?? '',
+            houseNumber: cell(rows[i], 'beneficiario_numero'),
+            betweenStreets: cell(rows[i], 'beneficiario_entre_calles'),
+            neighborhood: cell(rows[i], 'beneficiario_reparto'),
+            municipality: cell(rows[i], 'beneficiario_municipio') ?? '',
+            reference: cell(rows[i], 'beneficiario_referencia'),
+            documentNumber: cell(rows[i], 'beneficiario_documento'),
+            notes: cell(rows[i], 'beneficiario_notas'),
+          ),
     ];
   }
 }

@@ -385,6 +385,66 @@ void main() {
       expect(preview.rejected.single.ref, 'fila 3');
       expect(await customers.search(phone.substring(5)), isEmpty, reason: 'nothing was saved');
     });
+
+    test('a beneficiary imported alone is found and linked by its first remittance', () async {
+      final customers = CustomerRepository(api: api);
+      final rates = RateRepository(api: api);
+      final phone = '535${Random().nextInt(9000000) + 1000000}';
+      final beneficiary = ImportBeneficiary(
+        ref: 'fila 2',
+        fullName: 'Beneficiario Suelto',
+        phone: phone,
+        street: 'Calle 3',
+        municipality: 'Boyeros',
+      );
+      final imported = await customers.importBeneficiaries([beneficiary], dryRun: false);
+      expect(imported.created, 1);
+      expect(imported.results.single.linked, isFalse);
+      final again = await customers.importBeneficiaries([beneficiary], dryRun: true);
+      expect(again.existing, 1, reason: 'the same name, phone and address is the same beneficiary');
+
+      final found = (await customers.searchBeneficiaries(phone)).single;
+      expect(found.fullName, 'Beneficiario Suelto');
+
+      final currency = (await rates.corridors())
+          .where((corridor) => corridor.canQuote && corridor.sourceCurrency == 'USD')
+          .map((corridor) => corridor.targetCurrency)
+          .firstOrNull;
+      if (currency == null) {
+        markTestSkipped('Needs a corridor with a rate');
+        return;
+      }
+      final customer = await customers.create(
+        CustomerInput(fullName: 'Remitente Integración', phone: '+1305${Random().nextInt(9000000) + 1000000}'),
+      );
+      expect(await customers.beneficiaries(customer.id), isEmpty);
+      await remittances.register(
+        NewRemittance(
+          type: RemittanceType.delivery,
+          customerId: customer.id,
+          beneficiaryId: found.id,
+          amount: max(100.0, (await rates.settings()).minimumAmount),
+          targetCurrency: currency,
+          notes: 'Frontend integration test',
+        ),
+        idempotencyKey: RemittanceRepository.newIdempotencyKey(),
+      );
+      expect((await customers.beneficiaries(customer.id)).map((b) => b.id), [found.id]);
+    });
+  }, skip: skip);
+
+  group('completed feed', () {
+    setUp(() => auth.login(email: email, password: password));
+
+    test('without since only says where to start; with it, what completed since', () async {
+      final start = await remittances.completed();
+      expect(start.remittances, isEmpty);
+      expect(start.hasMore, isFalse);
+      expect(DateTime.parse(start.serverTime).isUtc, isTrue);
+
+      final old = await remittances.completed(since: '2020-01-01T00:00:00Z');
+      expect(old.remittances.every((remittance) => remittance.isCompleted), isTrue);
+    });
   }, skip: skip);
 
   group('pickup rate', () {

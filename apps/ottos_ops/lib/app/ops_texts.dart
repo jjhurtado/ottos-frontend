@@ -73,7 +73,7 @@ abstract final class OpsTexts {
   static const searchCustomer = 'Nombre o teléfono';
   static const changeCustomer = 'Cambiar remitente';
   static const chooseCustomerFirst = 'Elige primero el remitente';
-  static const noBeneficiaries = 'Este remitente no tiene beneficiarios todavía.';
+  static const noBeneficiaries = 'Este remitente no tiene beneficiarios todavía. Búscalo entre todos o crea uno.';
   static const amountToSend = 'Monto a enviar';
   static const targetCurrency = 'Moneda a entregar';
   static const noRates = 'No hay tasas de cambio configuradas; no se pueden registrar remesas.';
@@ -489,6 +489,10 @@ abstract final class OpsTexts {
   static const importConfirm = 'Importar';
   static const importEmpty = 'El archivo no tiene clientes.';
   static const importLinks = 'Vínculos nuevos';
+  static const importBeneficiariesCsv = 'Importar beneficiarios';
+  static const importNoBeneficiaries = 'El archivo no tiene beneficiarios.';
+  static const importBeneficiariesHelp =
+      'Se cargan sin remitente: cada uno queda vinculado a su cliente con la primera remesa que se le envíe.';
   static const importRejected = 'Rechazados';
   static const close = 'Cerrar';
   static String importCounts(int created, int existing, int rejected) =>
