@@ -324,6 +324,8 @@ abstract final class OpsTexts {
     Permissions.reportsRead => 'Ver los reportes del negocio (resumen mensual)',
     Permissions.cashExchangeOwn => 'Cambiar moneda en su propia caja (repartidor)',
     Permissions.cashReview => 'Revisar cambios de moneda marcados',
+    Permissions.customersExport => 'Exportar clientes y beneficiarios (CSV)',
+    Permissions.customersImport => 'Importar clientes y beneficiarios (CSV)',
     Permissions.customersRead => 'Ver clientes y beneficiarios',
     Permissions.customersWrite => 'Crear y editar clientes y beneficiarios',
     Permissions.cashRead => 'Ver la caja del negocio y de los repartidores',
@@ -477,4 +479,19 @@ abstract final class OpsTexts {
       'Un cambio de un repartidor que se aleje más de esto de la tasa de entrega se marca para revisar.';
   static String exchangeToleranceValue(String percent) => '$percent %';
   static const exchangeToleranceRange = 'Entre 0 y 1000';
+
+  // Customers CSV
+  static const exportCsv = 'Exportar CSV';
+  static const importCsv = 'Importar CSV';
+  static const importPreview = 'Vista previa de la importación';
+  static const importPreviewHelp = 'Todavía no se ha guardado nada. Lo que ya existe se vincula, nunca se cambia.';
+  static const importDone = 'Importación hecha';
+  static const importConfirm = 'Importar';
+  static const importEmpty = 'El archivo no tiene clientes.';
+  static const importLinks = 'Vínculos nuevos';
+  static const importRejected = 'Rechazados';
+  static const close = 'Cerrar';
+  static String importCounts(int created, int existing, int rejected) =>
+      '$created nuevos · $existing ya existían · $rejected rechazados';
+  static String customersFileName(String date) => 'clientes-$date.csv';
 }

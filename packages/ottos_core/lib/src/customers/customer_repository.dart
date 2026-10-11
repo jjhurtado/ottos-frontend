@@ -1,5 +1,6 @@
 import '../api/api_client.dart';
 import '../models/customer.dart';
+import '../models/customer_transfer.dart';
 
 class CustomerRepository {
   CustomerRepository({required this._api});
@@ -45,4 +46,34 @@ class CustomerRepository {
   /// Stops [customerId] from sending to the beneficiary; past remittances stay as they are.
   Future<void> unlinkBeneficiary(String customerId, String beneficiaryId) =>
       _api.delete<void>('/customers/$customerId/beneficiaries/$beneficiaryId');
+
+  /// Every customer with every linked beneficiary, as JSON (`customers:export`).
+  Future<List<Map<String, dynamic>>> exportAll() async {
+    final json = await _api.get<Map<String, dynamic>>('/customers/export');
+    return [for (final item in json['customers'] as List? ?? const []) item as Map<String, dynamic>];
+  }
+
+  /// The backend's limit per request: longer files go in several.
+  static const importBatch = 500;
+
+  /// Imports [customers] (`customers:import`); with [dryRun] it only says what
+  /// it would do. Existing ones are linked, never changed.
+  Future<ImportResult> import(List<ImportCustomer> customers, {required bool dryRun}) async {
+    var result = ImportResult(dryRun: dryRun);
+    for (var start = 0; start < customers.length; start += importBatch) {
+      final batch = customers.sublist(start, (start + importBatch).clamp(0, customers.length));
+      result =
+          result +
+          ImportResult.fromJson(
+            await _api.post<Map<String, dynamic>>(
+              '/customers/import',
+              body: {
+                'dryRun': dryRun,
+                'customers': [for (final customer in batch) customer.toJson()],
+              },
+            ),
+          );
+    }
+    return result;
+  }
 }

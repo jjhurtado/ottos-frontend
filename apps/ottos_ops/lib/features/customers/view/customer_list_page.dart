@@ -7,6 +7,7 @@ import '../../../app/ops_texts.dart';
 import '../../../app/router.dart';
 import '../cubit/customer_list_cubit.dart';
 import 'customer_form_dialog.dart';
+import 'customer_transfer.dart';
 
 class CustomerListPage extends StatelessWidget {
   const CustomerListPage({super.key});
@@ -35,6 +36,25 @@ class _CustomerListView extends StatelessWidget {
           Row(
             children: [
               Expanded(child: Text(OpsTexts.customers, style: Theme.of(context).textTheme.headlineMedium)),
+              if (context.canDo(Permissions.customersExport)) ...[
+                TextButton.icon(
+                  onPressed: () => exportCustomers(context),
+                  icon: const Icon(Icons.download_outlined),
+                  label: const Text(OpsTexts.exportCsv),
+                ),
+                const SizedBox(width: 8),
+              ],
+              if (context.canDo(Permissions.customersImport)) ...[
+                TextButton.icon(
+                  onPressed: () async {
+                    final cubit = context.read<CustomerListCubit>();
+                    if (await importCustomers(context)) await cubit.load();
+                  },
+                  icon: const Icon(Icons.upload_file_outlined),
+                  label: const Text(OpsTexts.importCsv),
+                ),
+                const SizedBox(width: 8),
+              ],
               if (canWrite)
                 FilledButton.icon(
                   onPressed: () async {
