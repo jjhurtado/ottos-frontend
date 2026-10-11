@@ -31,6 +31,7 @@ Decisión del negocio (2026-10-10): durante el día, **ventas y repartidores tra
 - [x] **Caja desde la app**: entregar fondos y recibir devoluciones de un repartidor concreto (con `cash:write`). Quien no tiene el permiso ve solo su caja, como hoy.
 - [x] Ventas entra en la app (`remittances:read`): ve las remesas abiertas (las 100 últimas; el resto, en el panel) y la caja de los repartidores; el repartidor ve las suyas y su caja.
 - [ ] Nombre y presentación de la app pensados para ventas y reparto (hoy se llama «Otto's · Repartidor»).
+- [x] **Asignar desde el detalle en la app**: una remesa pagada sin repartidor muestra «Asignar a repartidor» a quien tiene `remittances:assign`.
 - [ ] Decidir qué más de ventas necesita estar en la app de día (alta de clientes y beneficiarios, buscar remesas, reasignar) y qué se queda solo en el panel.
 
 ## App sin conexión (offline-first)

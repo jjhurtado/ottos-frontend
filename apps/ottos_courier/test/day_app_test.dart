@@ -7,6 +7,7 @@ import 'package:ottos_courier/app/courier_texts.dart';
 import 'package:ottos_courier/features/assigned/view/assigned_page.dart';
 import 'package:ottos_courier/features/cash/view/cash_page.dart';
 import 'package:ottos_courier/features/new_remittance/view/new_remittance_page.dart';
+import 'package:ottos_courier/features/remittance/view/remittance_page.dart';
 
 class _MockRemittances extends Mock implements RemittanceRepository {}
 
@@ -232,6 +233,51 @@ void main() {
       expect(find.text(CourierTexts.balances), findsOneWidget);
       expect(find.text(CourierTexts.couriersCash), findsNothing);
       verifyNever(() => cash.couriers());
+    });
+  });
+
+  group('detail', () {
+    Remittance withCourier(String? courierId) => Remittance(
+      id: 'r1',
+      code: 'OT-1',
+      type: RemittanceType.delivery,
+      status: courierId == null ? 'PAID' : 'ASSIGNED',
+      statusName: '',
+      courierId: courierId,
+    );
+
+    testWidgets('a paid remittance can be assigned to a courier from the app', (tester) async {
+      when(() => remittances.get('r1')).thenAnswer((_) async => withCourier(null));
+      when(() => remittances.couriers()).thenAnswer((_) async => const [Courier(id: 'k1', name: 'Luis')]);
+      when(() => remittances.assign('r1', courierId: 'k1')).thenAnswer((_) async => withCourier('k1'));
+
+      await pump(tester, _sales, const RemittancePage(remittanceId: 'r1'));
+      expect(find.text('Pagada'), findsOneWidget);
+
+      await tester.tap(find.text(CourierTexts.assignToCourier));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byType(DropdownButtonFormField<String>));
+      await tester.pumpAndSettle();
+      await tester.tap(find.textContaining('Luis').last);
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(FilledButton, CoreTexts.assign));
+      await tester.pumpAndSettle();
+
+      verify(() => remittances.assign('r1', courierId: 'k1')).called(1);
+      expect(find.text('Asignada'), findsOneWidget);
+      expect(find.text(CourierTexts.assignToCourier), findsNothing);
+    });
+
+    testWidgets('no assigning once it has a courier, or without the permission', (tester) async {
+      when(() => remittances.get('r1')).thenAnswer((_) async => withCourier('k1'));
+      await pump(tester, _sales, const RemittancePage(remittanceId: 'r1'));
+      expect(find.text(CourierTexts.assignToCourier), findsNothing);
+    });
+
+    testWidgets('a courier cannot assign', (tester) async {
+      when(() => remittances.get('r1')).thenAnswer((_) async => withCourier(null));
+      await pump(tester, _courierPermissions, const RemittancePage(remittanceId: 'r1'));
+      expect(find.text(CourierTexts.assignToCourier), findsNothing);
     });
   });
 }

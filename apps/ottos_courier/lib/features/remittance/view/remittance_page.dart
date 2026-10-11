@@ -22,6 +22,7 @@ class RemittancePage extends StatelessWidget {
             RemittanceActionResult.completed => CourierTexts.completed,
             RemittanceActionResult.postponed => CourierTexts.postponed,
             RemittanceActionResult.incidentReported => CoreTexts.incidentReported,
+            RemittanceActionResult.assigned => CourierTexts.assigned,
             RemittanceActionResult.failed => state.error!,
             RemittanceActionResult.none => null,
           };
@@ -161,6 +162,21 @@ class _Actions extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            // Registered without a courier (paid): whoever can assign gives it one here.
+            if (remittance.courierId == null && context.canDo(Permissions.remittancesAssign)) ...[
+              FilledButton.icon(
+                style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(48)),
+                onPressed: submitting
+                    ? null
+                    : () async {
+                        final result = await showAssignDialog(context);
+                        if (result != null) await cubit.assign(courierId: result.courierId, note: result.note);
+                      },
+                icon: const Icon(Icons.person_add_alt_1_outlined),
+                label: const Text(CourierTexts.assignToCourier),
+              ),
+              const SizedBox(height: 8),
+            ],
             Row(
               children: [
                 if (context.canDo(Permissions.remittancesPostpone)) ...[

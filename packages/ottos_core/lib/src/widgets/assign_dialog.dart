@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:ottos_core/ottos_core.dart';
 
-import '../../../app/ops_texts.dart';
+import '../api/api_exception.dart';
+import '../l10n/core_texts.dart';
+import '../models/courier.dart';
+import '../remittances/remittance_repository.dart';
+import 'async_view.dart';
 
 typedef AssignInput = ({String courierId, String? note});
 
@@ -40,7 +43,7 @@ class _AssignDialogState extends State<_AssignDialog> {
   Widget build(BuildContext context) {
     final canSubmit = _courierId != null && _courierId != widget.currentCourierId;
     return AlertDialog(
-      title: Text(widget.currentCourierId == null ? OpsTexts.assignCourier : OpsTexts.reassignCourier),
+      title: Text(widget.currentCourierId == null ? CoreTexts.assignCourier : CoreTexts.reassignCourier),
       content: SizedBox(
         width: 420,
         child: FutureBuilder<List<Courier>>(
@@ -57,19 +60,27 @@ class _AssignDialogState extends State<_AssignDialog> {
             }
             final couriers = snapshot.data;
             if (couriers == null) return const SizedBox(height: 120, child: LoadingView());
-            if (couriers.isEmpty) return const EmptyView(message: OpsTexts.noCouriers);
+            if (couriers.isEmpty) return const EmptyView(message: CoreTexts.noCouriers);
             return Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 DropdownButtonFormField<String>(
                   initialValue: couriers.any((courier) => courier.id == _courierId) ? _courierId : null,
                   isExpanded: true,
-                  decoration: const InputDecoration(labelText: OpsTexts.courier),
+                  decoration: const InputDecoration(labelText: CoreTexts.courier),
                   items: [
                     for (final courier in couriers)
                       DropdownMenuItem(
                         value: courier.id,
-                        child: Text('${courier.displayName} · ${OpsTexts.openRemittances(courier.openRemittances)}'),
+                        // The email tells apart couriers with the same name.
+                        child: Text(
+                          [
+                            courier.displayName,
+                            ?courier.email,
+                            CoreTexts.openRemittances(courier.openRemittances),
+                          ].join(' · '),
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
                   ],
                   onChanged: (id) => setState(() => _courierId = id),
@@ -93,7 +104,7 @@ class _AssignDialogState extends State<_AssignDialog> {
                     Navigator.of(context)
                         .pop((courierId: _courierId!, note: _note.text.trim().isEmpty ? null : _note.text.trim()))
               : null,
-          child: const Text(OpsTexts.assign),
+          child: const Text(CoreTexts.assign),
         ),
       ],
     );

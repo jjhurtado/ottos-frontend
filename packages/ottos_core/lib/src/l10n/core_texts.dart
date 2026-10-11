@@ -74,6 +74,14 @@ abstract final class CoreTexts {
   static const passwordRequired = 'Escribe tu contraseña';
   static const requiredField = 'Obligatorio';
   static const amount = 'Monto';
+
+  // Assigning
+  static const courier = 'Repartidor';
+  static const assignCourier = 'Asignar repartidor';
+  static const reassignCourier = 'Reasignar repartidor';
+  static const assign = 'Asignar';
+  static const noCouriers = 'No hay repartidores disponibles.';
+  static String openRemittances(int count) => count == 1 ? '1 remesa abierta' : '$count remesas abiertas';
   static const currency = 'Moneda';
   static const amountRequired = 'Escribe un monto mayor que 0';
   static String registeredNotAssigned(String reason) => 'Remesa registrada, pero no se pudo asignar: $reason';
