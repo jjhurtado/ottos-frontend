@@ -188,8 +188,46 @@ class SyncCubit extends Cubit<SyncStatus> {
     if ((await _store.pending()).any((queued) => queued.id == action.id)) return const Queued();
     final rejected = (await _store.rejected()).where((item) => item.action.id == action.id).firstOrNull;
     if (rejected != null) return Rejected(rejected.message ?? CoreTexts.unexpectedError);
-    final json = await _store.remittance(action.remittanceId);
+    final remittanceId = action.remittanceId;
+    final json = remittanceId == null ? null : await _store.remittance(remittanceId);
     return Applied(json == null ? null : Remittance.fromJson(json));
+  }
+
+  /// A currency exchange of the courier's own cash; works offline like the rest.
+  Future<ActionOutcome> exchange(ExchangeInput input) => perform(
+    SyncAction(
+      id: SyncRepository.newActionId(),
+      type: SyncActionType.cashExchange,
+      occurredAt: DateTime.now(),
+      payload: input.toJson(),
+    ),
+  );
+
+  /// The two movements of a queued exchange: one currency out, the other in.
+  static List<CashMovement> _exchangeLegs(SyncAction action) {
+    final payload = action.payload;
+    final input = ExchangeInput(
+      fromCurrency: payload['fromCurrency'] as String,
+      fromAmount: (payload['fromAmount'] as num).toDouble(),
+      toCurrency: payload['toCurrency'] as String,
+      rate: (payload['rate'] as num).toDouble(),
+      note: payload['note'] as String?,
+    );
+    CashMovement leg(String side, CashMovementType type, double signed, String currency) => CashMovement(
+      id: '$unsentMovement${action.id}:$side',
+      type: type,
+      amount: signed.abs(),
+      signedAmount: signed,
+      currency: currency,
+      note: input.note,
+      occurredAt: action.occurredAt,
+      exchangeId: action.id,
+      rate: input.rate,
+    );
+    return [
+      leg('out', CashMovementType.courierExchangeOut, -input.fromAmount, input.fromCurrency),
+      leg('in', CashMovementType.courierExchangeIn, input.toAmount, input.toCurrency),
+    ];
   }
 
   /// Prefix of the ids of [cash]'s movements that are not on the server yet.
@@ -204,8 +242,13 @@ class SyncCubit extends Cubit<SyncStatus> {
     final stored = await _store.cash();
     final unsent = <CashMovement>[];
     for (final action in await _store.pending()) {
-      if (!action.type.completes) continue;
-      final json = await _store.remittance(action.remittanceId);
+      if (action.type == SyncActionType.cashExchange) {
+        unsent.addAll(_exchangeLegs(action));
+        continue;
+      }
+      final remittanceId = action.remittanceId;
+      if (!action.type.completes || remittanceId == null) continue;
+      final json = await _store.remittance(remittanceId);
       if (json == null) continue;
       final remittance = Remittance.fromJson(json);
       final amount = remittance.cashAmount;

@@ -55,6 +55,10 @@ class CashPage extends StatelessWidget {
                   ],
                   if (statement != null) ...[
                     _BalancesCard(cash: statement.cash),
+                    if (context.canDo(Permissions.cashExchangeOwn)) ...[
+                      const SizedBox(height: 8),
+                      _ExchangeButton(sync: sync),
+                    ],
                     const SizedBox(height: 12),
                     _SectionTitle(CourierTexts.movements),
                     if (statement.movements.isEmpty)
@@ -129,6 +133,7 @@ class _MovementTile extends StatelessWidget {
         subtitle: Text(
           [
             Formatters.dateTime(movement.occurredAt),
+            if (movement.rate != null) CoreTexts.exchangeRateValue(Formatters.money(movement.rate, null)),
             if (movement.note != null) movement.note!,
             // Counted already, though the server does not have it yet.
             if (SyncCubit.isUnsent(movement)) CourierTexts.unsent,
@@ -255,5 +260,50 @@ class _ReloadOnSync extends StatelessWidget {
       listener: (context, _) => context.read<CashCubit>().load(),
       child: child,
     );
+  }
+}
+
+/// Records a currency exchange of the courier's own cash; offline it waits in
+/// the queue and the balance already shows it.
+class _ExchangeButton extends StatelessWidget {
+  const _ExchangeButton({required this.sync});
+
+  final SyncCubit? sync;
+
+  @override
+  Widget build(BuildContext context) {
+    final cubit = context.read<CashCubit>();
+    final cash = context.read<CashRepository>();
+    return OutlinedButton.icon(
+      style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(48)),
+      onPressed: () async {
+        final messenger = ScaffoldMessenger.of(context);
+        final input = await showExchangeDialog(context);
+        if (input == null) return;
+        final sync = this.sync;
+        final outcome = sync != null ? await sync.exchange(input) : await _online(cash, input);
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text(switch (outcome) {
+              Applied(flaggedForReview: true) => CourierTexts.exchangeFlagged,
+              _ => CourierTexts.outcome(outcome, done: CourierTexts.exchangeDone),
+            }),
+          ),
+        );
+        await cubit.load();
+      },
+      icon: const Icon(Icons.currency_exchange),
+      label: const Text(CoreTexts.exchangeTitle),
+    );
+  }
+
+  /// Without sync (tests, or a user who works online) it goes straight to the server.
+  static Future<ActionOutcome> _online(CashRepository cash, ExchangeInput input) async {
+    try {
+      final exchange = await cash.exchangeOwn(input);
+      return Applied(null, flaggedForReview: exchange.pendingReview);
+    } on ApiException catch (error) {
+      return Rejected(error.message);
+    }
   }
 }

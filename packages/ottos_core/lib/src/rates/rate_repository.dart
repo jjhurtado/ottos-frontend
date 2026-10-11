@@ -62,10 +62,18 @@ class RateRepository {
       Settings.fromJson(await _api.get<Map<String, dynamic>>('/configuration/settings'));
 
   /// Changes the settings given; the others keep their value.
-  Future<Settings> updateSettings({double? minimumAmount, int? defaultDeliveryDays}) async => Settings.fromJson(
+  Future<Settings> updateSettings({
+    double? minimumAmount,
+    int? defaultDeliveryDays,
+    double? exchangeRateTolerancePercent,
+  }) async => Settings.fromJson(
     await _api.put<Map<String, dynamic>>(
       '/configuration/settings',
-      body: {'minimumAmount': ?minimumAmount, 'defaultDeliveryDays': ?defaultDeliveryDays},
+      body: {
+        'minimumAmount': ?minimumAmount,
+        'defaultDeliveryDays': ?defaultDeliveryDays,
+        'exchangeRateTolerancePercent': ?exchangeRateTolerancePercent,
+      },
     ),
   );
 

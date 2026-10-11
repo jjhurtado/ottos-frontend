@@ -94,7 +94,7 @@ class OfflineSource implements RemittanceSource {
     // A completed one is gone for the courier even before it is sent.
     final completed = {
       for (final action in pending)
-        if (action.type.completes) action.remittanceId,
+        if (action.type.completes) ?action.remittanceId,
     };
     return [
       for (final json in await _sync.store.remittances())
@@ -110,7 +110,7 @@ class OfflineSource implements RemittanceSource {
   }
 
   @override
-  Future<Set<String>> pendingIds() async => {for (final action in await _sync.store.pending()) action.remittanceId};
+  Future<Set<String>> pendingIds() async => {for (final action in await _sync.store.pending()) ?action.remittanceId};
 
   @override
   Future<void> refresh() => _sync.sync();

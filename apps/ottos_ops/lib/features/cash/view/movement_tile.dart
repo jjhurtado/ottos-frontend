@@ -34,6 +34,7 @@ class MovementTile extends StatelessWidget {
       subtitle: Text(
         [
           Formatters.dateTime(movement.occurredAt),
+          if (movement.rate != null) CoreTexts.exchangeRateValue(Formatters.money(movement.rate, null)),
           movement.note,
         ].whereType<String>().where((s) => s.isNotEmpty).join(' · '),
       ),

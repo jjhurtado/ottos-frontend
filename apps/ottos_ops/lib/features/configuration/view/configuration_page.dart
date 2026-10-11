@@ -79,6 +79,10 @@ class _SettingsCard extends StatelessWidget {
                   : Formatters.money(settings.minimumAmount, settings.minimumAmountCurrency),
             ),
             InfoRow(label: OpsTexts.deliveryDays, value: OpsTexts.deliveryDaysValue(settings.defaultDeliveryDays)),
+            InfoRow(
+              label: OpsTexts.exchangeTolerance,
+              value: OpsTexts.exchangeToleranceValue(Formatters.money(settings.exchangeRateTolerancePercent, null)),
+            ),
             if (canWrite) ...[
               const SizedBox(height: 8),
               OutlinedButton.icon(
