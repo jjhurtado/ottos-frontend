@@ -26,9 +26,10 @@ Ya corregido (pendiente de commit): sesión caducada que dejaba la app colgada, 
 
 Decisión del negocio (2026-10-10): durante el día, **ventas y repartidores trabajan con la misma app móvil**; por la noche, **ventas y admin entran al panel web** para revisar y tener más control. La app deja de ser solo «del repartidor»: lo que cada usuario ve depende de sus permisos, nunca del rol.
 
-- [ ] **Nueva remesa desde la app**: botón en la lista de remesas (con `remittances:create`). El mismo formulario que el panel: tipo, remitente, beneficiario, monto y moneda, con la cotización de su tipo (entrega o recogida).
-- [ ] **Asignar repartidor al crearla**, solo si el usuario tiene `remittances:assign`; si no, el campo no aparece.
-- [ ] **Caja desde la app**: entregar fondos y recibir devoluciones de un repartidor concreto (con `cash:write`). Quien no tiene el permiso ve solo su caja, como hoy.
+- [x] **Nueva remesa desde la app**: botón en la lista de remesas (con `remittances:create`). El mismo formulario que el panel: tipo, remitente, beneficiario, monto y moneda, con la cotización de su tipo (entrega o recogida).
+- [x] **Asignar repartidor al crearla**, solo si el usuario tiene `remittances:assign`; si no, el campo no aparece.
+- [x] **Caja desde la app**: entregar fondos y recibir devoluciones de un repartidor concreto (con `cash:write`). Quien no tiene el permiso ve solo su caja, como hoy.
+- [x] Ventas entra en la app (`remittances:read`): ve las remesas abiertas (las 100 últimas; el resto, en el panel) y la caja de los repartidores; el repartidor ve las suyas y su caja.
 - [ ] Nombre y presentación de la app pensados para ventas y reparto (hoy se llama «Otto's · Repartidor»).
 - [ ] Decidir qué más de ventas necesita estar en la app de día (alta de clientes y beneficiarios, buscar remesas, reasignar) y qué se queda solo en el panel.
 
@@ -36,7 +37,7 @@ Decisión del negocio (2026-10-10): durante el día, **ventas y repartidores tra
 
 Prioridad para la versión 1.0 (petición del negocio, 2026-10-10): hay días en que el repartidor pasa la jornada entera sin internet. El backend lo está diseñando (sección «App del repartidor offline-first» de su ROADMAP.md) y el contrato se cierra entre los dos agentes antes de implementarlo.
 
-- [ ] Cerrar el contrato con el backend: sincronización en lote, id único por acción (UUID generado en el teléfono), hora real de cada acción (`occurredAt`), resultados por acción, descarga incremental y sesión de jornada completa.
+- [x] Contrato cerrado con el backend (2026-10-10, `ottos/docs/contracts/offline-sync.md`): `GET /sync/state?since=` y `POST /sync/actions` (lote de hasta 200, UUID por acción, `occurredAt`, resultados APPLIED/ALREADY_APPLIED/REJECTED con los mismos `code`), login con `client: MOBILE` (sesión de 14 h), `strictPin` para rechazar un PIN incorrecto cuando hay red, y revisión de remesas (`review`, `?review=true`, `POST /remittances/{id}/review/resolve`, permiso `remittances:review`). Pendiente de que el backend lo implemente.
 - [ ] Guardar en el teléfono las remesas asignadas, la caja propia y una cola de acciones pendientes (entregar con o sin PIN, aplazar, incidencia).
 - [ ] Mostrar en la app qué está pendiente de sincronizar, cuándo se sincronizó por última vez y los rechazos con su motivo en español.
 - [ ] Sincronizar al abrir la app, al recuperar la red, al volver al primer plano y a mano.

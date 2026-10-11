@@ -1,7 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:ottos_core/ottos_core.dart';
-import 'package:ottos_ops/features/remittances/cubit/new_remittance_cubit.dart';
 
 class _MockRemittances extends Mock implements RemittanceRepository {}
 
@@ -236,5 +235,66 @@ void main() {
         notes: 'Llamar antes',
       ),
     );
+  });
+
+  group('assigning on registering', () {
+    const courier = Courier(id: 'k1', name: 'Luis');
+
+    setUp(() {
+      when(() => remittances.couriers()).thenAnswer((_) async => const [courier]);
+      when(() => remittances.register(any(), idempotencyKey: any(named: 'idempotencyKey')))
+          .thenAnswer((_) async => _created);
+    });
+
+    test('offers the couriers only to who can assign', () async {
+      await cubit.load();
+      await settle();
+      expect(cubit.state.couriers, isEmpty);
+      verifyNever(() => remittances.couriers());
+
+      await cubit.load(canAssign: true);
+      await settle();
+      expect(cubit.state.couriers, [courier]);
+    });
+
+    test('assigns the chosen courier right after registering', () async {
+      const assigned = Remittance(
+        id: 'r1',
+        code: 'OT-1',
+        type: RemittanceType.delivery,
+        status: 'ASSIGNED',
+        statusName: 'Asignada',
+        courierId: 'k1',
+      );
+      when(() => remittances.assign('r1', courierId: 'k1')).thenAnswer((_) async => assigned);
+      await fillForm();
+      cubit.courierSelected(courier);
+
+      await cubit.submit();
+
+      expect(cubit.state.created, assigned);
+      expect(cubit.state.error, isNull);
+    });
+
+    test('a failed assignment keeps the registered remittance and says so', () async {
+      when(() => remittances.assign('r1', courierId: 'k1'))
+          .thenThrow(const ApiException('Not allowed', statusCode: 403));
+      await fillForm();
+      cubit.courierSelected(courier);
+
+      await cubit.submit();
+
+      expect(cubit.state.created, _created);
+      expect(cubit.state.error, CoreTexts.registeredNotAssigned('Not allowed'));
+    });
+
+    test('without a courier it is only registered', () async {
+      await fillForm();
+
+      await cubit.submit();
+
+      expect(cubit.state.created, _created);
+      verifyNever(() => remittances.assign(any(), courierId: any(named: 'courierId')));
+    });
   });
 }

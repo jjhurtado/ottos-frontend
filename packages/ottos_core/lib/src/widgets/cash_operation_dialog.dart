@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:ottos_core/ottos_core.dart';
 
-import '../../../app/ops_texts.dart';
+import '../api/api_exception.dart';
+import '../l10n/core_texts.dart';
+import '../models/cash.dart';
 
 /// Asks for amount, currency and note, then runs [submit]; returns the movement
 /// registered, or null if cancelled. Errors from the API stay in the dialog.
@@ -111,8 +112,8 @@ class _CashOperationDialogState extends State<_CashOperationDialog> {
                       autofocus: true,
                       keyboardType: const TextInputType.numberWithOptions(decimal: true),
                       inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d*[.,]?\d{0,2}'))],
-                      decoration: const InputDecoration(labelText: '${OpsTexts.amount} *'),
-                      validator: (text) => (_parse(text ?? '') ?? 0) > 0 ? null : OpsTexts.amountRequired,
+                      decoration: const InputDecoration(labelText: '${CoreTexts.amount} *'),
+                      validator: (text) => (_parse(text ?? '') ?? 0) > 0 ? null : CoreTexts.amountRequired,
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -120,7 +121,7 @@ class _CashOperationDialogState extends State<_CashOperationDialog> {
                     width: 120,
                     child: DropdownButtonFormField<String>(
                       initialValue: _currency,
-                      decoration: const InputDecoration(labelText: OpsTexts.currency),
+                      decoration: const InputDecoration(labelText: CoreTexts.currency),
                       items: [
                         for (final currency in widget.currencies)
                           DropdownMenuItem(value: currency, child: Text(currency)),
@@ -136,7 +137,8 @@ class _CashOperationDialogState extends State<_CashOperationDialog> {
                 enabled: !_saving,
                 maxLines: 2,
                 decoration: InputDecoration(labelText: widget.noteRequired ? '${CoreTexts.reason} *' : CoreTexts.note),
-                validator: (text) => widget.noteRequired && (text ?? '').trim().isEmpty ? OpsTexts.requiredField : null,
+                validator: (text) =>
+                    widget.noteRequired && (text ?? '').trim().isEmpty ? CoreTexts.requiredField : null,
               ),
               if (_error != null) ...[
                 const SizedBox(height: 12),

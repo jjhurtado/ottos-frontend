@@ -2,7 +2,16 @@ import 'dart:async';
 
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:ottos_core/ottos_core.dart';
+
+import '../api/api_exception.dart';
+import '../customers/customer_repository.dart';
+import '../l10n/core_texts.dart';
+import '../models/courier.dart';
+import '../models/customer.dart';
+import '../models/rates.dart';
+import '../models/remittance.dart';
+import '../rates/rate_repository.dart';
+import 'remittance_repository.dart';
 
 enum LoadStatus { loading, success, failure }
 
@@ -22,6 +31,8 @@ final class NewRemittanceState extends Equatable {
     this.submitting = false,
     this.created,
     this.error,
+    this.couriers = const [],
+    this.courier,
   });
 
   final LoadStatus corridorsStatus;
@@ -45,6 +56,12 @@ final class NewRemittanceState extends Equatable {
   final Remittance? created;
   final String? error;
 
+  /// Who it can be assigned to on registering; empty when the user cannot assign.
+  final List<Courier> couriers;
+
+  /// Assigned right after registering it; optional.
+  final Courier? courier;
+
   bool get canSubmit =>
       customer != null && beneficiary != null && targetCurrency != null && quote != null && !submitting;
 
@@ -64,6 +81,8 @@ final class NewRemittanceState extends Equatable {
     submitting,
     created,
     error,
+    couriers,
+    courier,
   ];
 }
 
@@ -92,8 +111,10 @@ class NewRemittanceCubit extends Cubit<NewRemittanceState> {
   Timer? _quoteTimer;
   int _quoteRequest = 0;
 
-  /// Loads the currencies and, with [customerId], starts with that customer chosen.
-  Future<void> load({String? customerId}) async {
+  /// Loads the currencies and, with [customerId], starts with that customer
+  /// chosen. With [canAssign] it also offers the couriers to assign it to.
+  Future<void> load({String? customerId, bool canAssign = false}) async {
+    if (canAssign) unawaited(_loadCouriers());
     _emit(corridorsStatus: LoadStatus.loading, error: null);
     if (customerId != null && state.customer == null) {
       try {
@@ -124,6 +145,17 @@ class NewRemittanceCubit extends Cubit<NewRemittanceState> {
     for (final corridor in _corridors)
       if (corridor.canQuoteFor(type) && corridor.sourceCurrency == sourceCurrency) corridor.targetCurrency,
   ]..sort((a, b) => a == defaultTargetCurrency ? -1 : (b == defaultTargetCurrency ? 1 : a.compareTo(b)));
+
+  Future<void> _loadCouriers() async {
+    try {
+      final couriers = await _remittances.couriers();
+      if (!isClosed) _emit(couriers: couriers);
+    } on ApiException {
+      // Without the list the remittance is still registered, just not assigned.
+    }
+  }
+
+  void courierSelected(Courier? courier) => _emit(courier: courier);
 
   Future<List<Customer>> searchCustomers(String query) => _customers.search(query);
 
@@ -214,7 +246,17 @@ class NewRemittanceCubit extends Cubit<NewRemittanceState> {
         ),
         idempotencyKey: _idempotencyKey,
       );
-      _emit(submitting: false, created: remittance);
+      final courier = state.courier;
+      if (courier == null) {
+        _emit(submitting: false, created: remittance);
+        return;
+      }
+      try {
+        _emit(submitting: false, created: await _remittances.assign(remittance.id, courierId: courier.id));
+      } on ApiException catch (error) {
+        // Registered all the same: say so, and open it so it can be assigned from there.
+        _emit(submitting: false, created: remittance, error: CoreTexts.registeredNotAssigned(error.message));
+      }
     } on ApiException catch (error) {
       _emit(submitting: false, error: error.message);
     }
@@ -238,6 +280,8 @@ class NewRemittanceCubit extends Cubit<NewRemittanceState> {
     bool? submitting,
     Object? created = _keep,
     Object? error = _keep,
+    List<Courier>? couriers,
+    Object? courier = _keep,
   }) {
     final s = state;
     emit(
@@ -256,6 +300,8 @@ class NewRemittanceCubit extends Cubit<NewRemittanceState> {
         submitting: submitting ?? s.submitting,
         created: created == _keep ? s.created : created as Remittance?,
         error: error == _keep ? s.error : error as String?,
+        couriers: couriers ?? s.couriers,
+        courier: courier == _keep ? s.courier : courier as Courier?,
       ),
     );
   }

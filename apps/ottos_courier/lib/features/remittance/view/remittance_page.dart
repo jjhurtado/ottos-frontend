@@ -154,7 +154,6 @@ class _Actions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final user = context.select((AuthBloc bloc) => bloc.state.user!);
     final cubit = context.read<RemittanceCubit>();
     return SafeArea(
       child: Padding(
@@ -164,7 +163,7 @@ class _Actions extends StatelessWidget {
           children: [
             Row(
               children: [
-                if (user.can(Permissions.remittancesPostpone)) ...[
+                if (context.canDo(Permissions.remittancesPostpone)) ...[
                   Expanded(
                     child: OutlinedButton(
                       style: OutlinedButton.styleFrom(minimumSize: const Size(64, 48)),
@@ -179,7 +178,7 @@ class _Actions extends StatelessWidget {
                   ),
                   const SizedBox(width: 12),
                 ],
-                if (user.can(Permissions.remittancesDeliver))
+                if (context.canDo(Permissions.remittancesDeliver))
                   Expanded(
                     flex: 2,
                     child: FilledButton(
@@ -200,7 +199,7 @@ class _Actions extends StatelessWidget {
                   ),
               ],
             ),
-            if (user.can(Permissions.remittancesReportIncident))
+            if (context.canDo(Permissions.remittancesReportIncident))
               TextButton.icon(
                 style: TextButton.styleFrom(foregroundColor: OttosColors.danger, minimumSize: const Size(64, 48)),
                 onPressed: submitting

@@ -61,17 +61,31 @@ final class AssignedState extends Equatable {
   List<Object?> get props => [status, items, sort, error];
 }
 
-/// The courier's open remittances, and the actions on them from the list.
+/// The open remittances of the courier, or all of them for who sees every
+/// remittance (sales), and the actions on them from the list.
 class AssignedCubit extends Cubit<AssignedState> {
-  AssignedCubit({required this._remittances}) : super(const AssignedState());
+  AssignedCubit({required this._remittances, this.onlyMine = true}) : super(const AssignedState());
 
   final RemittanceRepository _remittances;
+
+  /// The ones assigned to the user; false lists every open remittance.
+  final bool onlyMine;
+
+  /// How many of the latest remittances sales sees; the panel has the rest.
+  static const openPageSize = 100;
+
+  Future<List<Remittance>> _fetch() async {
+    if (onlyMine) return _remittances.assignedToMe();
+    final workflow = await _remittances.workflow();
+    final page = await _remittances.search(const RemittanceFilter(), size: openPageSize);
+    return page.items.where((remittance) => !workflow.isFinal(remittance.status)).toList();
+  }
 
   /// Loads the list; keeps the current items visible while refreshing.
   Future<void> load() async {
     if (state.items.isEmpty) emit(AssignedState(sort: state.sort));
     try {
-      emit(state.copyWith(status: AssignedStatus.success, items: await _remittances.assignedToMe()));
+      emit(state.copyWith(status: AssignedStatus.success, items: await _fetch()));
     } on ApiException catch (error) {
       emit(state.copyWith(status: AssignedStatus.failure, error: error.message));
     }

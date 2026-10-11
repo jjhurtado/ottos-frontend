@@ -12,9 +12,14 @@ class AssignedPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final onlyMine = context.canDo(Permissions.remittancesReadAssigned);
+    final canCreate = context.canDo(Permissions.remittancesCreate);
     return BlocProvider(
-      create: (context) => AssignedCubit(remittances: context.read<RemittanceRepository>())..load(),
-      child: const _AssignedView(),
+      create: (context) => AssignedCubit(remittances: context.read<RemittanceRepository>(), onlyMine: onlyMine)..load(),
+      child: Scaffold(
+        body: const _AssignedView(),
+        floatingActionButton: canCreate ? const _NewRemittanceButton() : null,
+      ),
     );
   }
 }
@@ -69,6 +74,22 @@ class _AssignedView extends StatelessWidget {
   }
 }
 
+class _NewRemittanceButton extends StatelessWidget {
+  const _NewRemittanceButton();
+
+  @override
+  Widget build(BuildContext context) {
+    return FloatingActionButton.extended(
+      onPressed: () async {
+        final created = await context.push<Remittance>(Routes.newRemittance);
+        if (created != null && context.mounted) await context.read<AssignedCubit>().load();
+      },
+      icon: const Icon(Icons.add),
+      label: const Text(CourierTexts.newRemittance),
+    );
+  }
+}
+
 class _SortSelector extends StatelessWidget {
   const _SortSelector({required this.sort, required this.onChanged});
 
@@ -100,9 +121,8 @@ class _Swipeable extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final user = context.select((AuthBloc bloc) => bloc.state.user!);
-    final canComplete = user.can(Permissions.remittancesDeliver);
-    final canReportIncident = user.can(Permissions.remittancesReportIncident);
+    final canComplete = context.canDo(Permissions.remittancesDeliver);
+    final canReportIncident = context.canDo(Permissions.remittancesReportIncident);
     final direction = switch ((canComplete, canReportIncident)) {
       (true, true) => DismissDirection.horizontal,
       (true, false) => DismissDirection.startToEnd,

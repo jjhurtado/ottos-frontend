@@ -19,9 +19,11 @@ CurrentUser _user(Set<String> permissions) => CurrentUser(
 
 void main() {
   group('access policy', () {
-    test('lets in users who can read their assigned remittances', () {
+    test('lets in couriers and sales', () {
       expect(CourierApp.canUseApp(_user({Permissions.remittancesReadAssigned})), isTrue);
-      expect(CourierApp.canUseApp(_user({Permissions.remittancesRead})), isFalse);
+      // Sales use the app during the day too.
+      expect(CourierApp.canUseApp(_user({Permissions.remittancesRead})), isTrue);
+      expect(CourierApp.canUseApp(_user({Permissions.usersRead, Permissions.rolesRead})), isFalse);
     });
   });
 
@@ -109,7 +111,7 @@ void main() {
           email: any(named: 'email'),
           password: any(named: 'password'),
         ),
-      ).thenAnswer((_) async => _user({Permissions.remittancesRead}));
+      ).thenAnswer((_) async => _user({Permissions.usersRead}));
       await pumpLogin(tester);
 
       await submit(tester, email: 'sales@ottos.test', password: 'secret');

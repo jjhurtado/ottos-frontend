@@ -6,7 +6,6 @@ import 'package:ottos_core/ottos_core.dart';
 import '../../../app/ops_texts.dart';
 import '../../../app/router.dart';
 import '../cubit/cash_overview_cubit.dart';
-import 'cash_operation_dialog.dart';
 import 'movement_tile.dart';
 
 class CashPage extends StatelessWidget {

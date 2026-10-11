@@ -11,7 +11,10 @@ class CourierApp extends StatelessWidget {
 
   final AppConfig config;
 
-  static bool canUseApp(CurrentUser user) => user.can(Permissions.remittancesReadAssigned);
+  /// Couriers and, during the day, sales: whoever sees their assigned
+  /// remittances or every remittance.
+  static bool canUseApp(CurrentUser user) =>
+      user.can(Permissions.remittancesReadAssigned) || user.can(Permissions.remittancesRead);
 
   @override
   Widget build(BuildContext context) {
