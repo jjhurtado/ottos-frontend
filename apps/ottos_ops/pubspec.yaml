@@ -19,6 +19,8 @@ dependencies:
   intl: ^0.20.3
   ottos_core:
     path: ../../packages/ottos_core
+  pdf: ^3.13.1
+  printing: ^5.15.1
 
 dev_dependencies:
   flutter_test:
