@@ -240,5 +240,49 @@ void main() {
       expect(usd(await sync.cash()), 400);
       verify(() => server.state(since: 't1')).called(greaterThanOrEqualTo(1));
     });
+
+    test('an exchange done offline moves both currencies at once', () async {
+      when(() => server.send(any())).thenThrow(_offline);
+
+      final outcome = await sync.exchange(
+        const ExchangeInput(fromCurrency: 'USD', fromAmount: 100, toCurrency: 'CUP', rate: 480, note: 'Agro'),
+      );
+
+      expect(outcome, isA<Queued>());
+      final cash = await sync.cash();
+      expect(usd(cash), 400);
+      expect(cash!.cash.balances.singleWhere((b) => b.currency == 'CUP').amount, 48000);
+      final legs = cash.movements.where(SyncCubit.isUnsent).toList();
+      expect(legs.map((m) => m.type), [CashMovementType.courierExchangeIn, CashMovementType.courierExchangeOut]);
+      expect(legs.every((m) => m.rate == 480 && m.note == 'Agro'), isTrue);
+      final queued = (await store.pending()).single;
+      expect(queued.type, SyncActionType.cashExchange);
+      expect(queued.remittanceId, isNull);
+    });
+
+    test('with network an exchange goes straight to the server and may be flagged', () async {
+      late List<SyncAction> sent;
+      when(() => server.send(any())).thenAnswer((invocation) async {
+        sent = invocation.positionalArguments.first as List<SyncAction>;
+        return answer(
+          sent,
+          (action) => SyncResult(id: action.id, status: SyncResultStatus.applied, flaggedForReview: true),
+        );
+      });
+
+      final outcome = await sync.exchange(
+        const ExchangeInput(fromCurrency: 'CUP', fromAmount: 1000, toCurrency: 'USD', rate: 2000),
+      );
+
+      expect((outcome as Applied).flaggedForReview, isTrue);
+      expect(sent.single.payload, {
+        'fromCurrency': 'CUP',
+        'fromAmount': 1000.0,
+        'toCurrency': 'USD',
+        'rate': 2000.0,
+        'note': null,
+      });
+      expect(sync.state.pending, 0);
+    });
   });
 }

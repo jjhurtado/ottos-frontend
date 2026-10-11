@@ -141,7 +141,8 @@ class OfflineStore {
 
   Future<void> enqueue(SyncAction action) => _db.insert('actions', {
     'id': action.id,
-    'remittance_id': action.remittanceId,
+    // An exchange has no remittance.
+    'remittance_id': action.remittanceId ?? '',
     'json': jsonEncode(action.toJson()),
   });
 

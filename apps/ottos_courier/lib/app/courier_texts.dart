@@ -77,6 +77,8 @@ abstract final class CourierTexts {
   static const unsent = 'Sin enviar';
   static const queued = 'Guardada en el teléfono. Se enviará cuando haya conexión.';
   static const flagged = 'Hecho. Queda marcada para que ventas la revise.';
+  static const exchangeDone = 'Cambio registrado';
+  static const exchangeFlagged = 'Cambio registrado. Ventas lo revisará: la tasa se aleja de la configurada.';
   static const syncNow = 'Sincronizar';
   static const dismiss = 'Descartar';
   static const notSyncedTitle = 'No sincronizadas';
@@ -93,6 +95,7 @@ abstract final class CourierTexts {
     SyncActionType.deliver || SyncActionType.deliverWithPin => 'Completar remesa',
     SyncActionType.postpone => 'Aplazar remesa',
     SyncActionType.reportIncident => 'Reportar incidencia',
+    SyncActionType.cashExchange => CoreTexts.exchange,
   };
 
   /// "Sin conexión · 2 sin enviar", "Sincronizado hace 5 min"…
@@ -133,6 +136,8 @@ abstract final class CourierTexts {
     'PICKUP_COLLECTION' => 'Recogida de remesa',
     'COURIER_RETURN' => 'Devolución al negocio',
     'COURIER_SURPLUS' => 'Sobrante en cierre',
+    'COURIER_EXCHANGE_OUT' => 'Cambio de moneda: entregado',
+    'COURIER_EXCHANGE_IN' => 'Cambio de moneda: recibido',
     _ => 'Movimiento',
   };
 }
