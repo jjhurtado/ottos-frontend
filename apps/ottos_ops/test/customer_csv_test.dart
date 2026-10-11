@@ -1,5 +1,4 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ottos_core/ottos_core.dart';
 import 'package:ottos_ops/features/customers/customer_csv.dart';
 
 final _export = [
