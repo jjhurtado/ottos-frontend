@@ -26,3 +26,9 @@ melos:
     courier:
       run: cd apps/ottos_courier && flutter run
       description: Run the courier app on a connected device or emulator.
+
+dependency_overrides:
+  # flutter_local_notifications 22 pulls a Linux implementation that asks for
+  # dbus 0.7, while connectivity_plus asks for 0.8. The apps never run on
+  # Linux and that code builds with 0.8. Drop this once the plugin allows 0.8.
+  dbus: ^0.8.0

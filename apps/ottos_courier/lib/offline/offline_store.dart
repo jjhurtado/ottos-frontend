@@ -129,6 +129,12 @@ class OfflineStore {
     });
   }
 
+  /// A value of this user's that is not part of the sync, e.g. where the
+  /// completed remittances feed goes. Forgotten when another user logs in.
+  Future<String?> setting(String key) => _get('app.$key');
+
+  Future<void> saveSetting(String key, String value) => _set(_db, 'app.$key', value);
+
   Future<String?> _get(String key) async {
     final rows = await _db.query('settings', where: 'key = ?', whereArgs: [key]);
     return rows.isEmpty ? null : rows.single['value']! as String;

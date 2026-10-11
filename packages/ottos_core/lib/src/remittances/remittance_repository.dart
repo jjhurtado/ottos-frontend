@@ -190,6 +190,13 @@ class RemittanceRepository {
         throw error;
       });
 
+  /// Remittances the server recorded as completed after [since] (its own
+  /// clock, the `serverTime` of the previous call). Without [since] it only
+  /// says where to start.
+  Future<CompletedFeed> completed({String? since}) async => CompletedFeed.fromJson(
+    await _api.get<Map<String, dynamic>>('/remittances/completed', query: {'since': since}),
+  );
+
   /// Open remittances assigned to the logged-in courier.
   Future<List<Remittance>> assignedToMe() async {
     final json = await _api.get<List<dynamic>>('/remittances/assigned');
