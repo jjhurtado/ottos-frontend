@@ -100,6 +100,12 @@ class AssignedCubit extends Cubit<AssignedState> {
     }
   }
 
+  /// Pull to refresh: syncs first when the courier works offline.
+  Future<void> refresh() async {
+    await _source.refresh();
+    await load();
+  }
+
   void sortBy(AssignedSort sort) => emit(state.copyWith(sort: sort));
 
   /// Completes a remittance, checking [pin] when one was typed.

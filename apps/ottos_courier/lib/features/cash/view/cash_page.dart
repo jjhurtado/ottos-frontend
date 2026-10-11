@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:ottos_core/ottos_core.dart';
 
 import '../../../app/courier_texts.dart';
+import '../../../offline/sync_bar.dart';
 import '../cubit/cash_cubit.dart';
 
 class CashPage extends StatelessWidget {
@@ -12,9 +13,15 @@ class CashPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final ownCash = context.canDo(Permissions.cashReadOwn);
     final couriersCash = context.canDo(Permissions.cashRead);
+    final sync = context.syncCubit;
     return BlocProvider(
-      create: (context) =>
-          CashCubit(cash: context.read<CashRepository>(), ownCash: ownCash, couriersCash: couriersCash)..load(),
+      create: (context) => CashCubit(
+        cash: context.read<CashRepository>(),
+        ownCash: ownCash,
+        couriersCash: couriersCash,
+        // A courier's cash as of the last sync, also without network.
+        ownStatement: sync?.store.cash,
+      )..load(),
       child: BlocBuilder<CashCubit, CashState>(
         builder: (context, state) {
           final cubit = context.read<CashCubit>();
@@ -26,7 +33,10 @@ class CashPage extends StatelessWidget {
                 : const LoadingView();
           }
           return RefreshIndicator(
-            onRefresh: cubit.load,
+            onRefresh: () async {
+              await sync?.sync();
+              await cubit.load();
+            },
             child: ListView(
               padding: const EdgeInsets.all(12),
               children: [

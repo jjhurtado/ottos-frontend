@@ -40,7 +40,7 @@ class _AssignedView extends StatelessWidget {
             AssignedStatus.loading => const LoadingView(),
             AssignedStatus.failure => ErrorView(message: state.error!, onRetry: cubit.load),
             AssignedStatus.success => RefreshIndicator(
-              onRefresh: cubit.load,
+              onRefresh: cubit.refresh,
               child: ListView(
                 children: const [SizedBox(height: 200, child: EmptyView(message: CourierTexts.noAssigned))],
               ),
@@ -48,7 +48,7 @@ class _AssignedView extends StatelessWidget {
           };
         }
         return RefreshIndicator(
-          onRefresh: cubit.load,
+          onRefresh: cubit.refresh,
           child: ListView.separated(
             padding: const EdgeInsets.all(12),
             itemCount: state.items.length + 1,
@@ -249,6 +249,7 @@ class _AssignedCard extends StatelessWidget {
                           RemittanceTypeBadge(type: type),
                           if (remittance.incident case final incident?) IncidentBadge(incident: incident),
                           if (unsent) const _UnsentBadge(),
+                          if (remittance.review != null) const ReviewBadge(),
                         ],
                       ),
                       const SizedBox(height: 8),

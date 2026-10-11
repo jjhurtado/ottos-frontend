@@ -71,6 +71,7 @@ class _RemittanceView extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
+        if (remittance.review case final review?) ...[ReviewBanner(review: review), const SizedBox(height: 12)],
         if (incident != null) ...[IncidentBanner(incident: incident), const SizedBox(height: 12)],
         Card(
           // Colored by type, as in the list: delivery and pickup never look alike.

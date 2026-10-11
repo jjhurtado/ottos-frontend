@@ -5,6 +5,8 @@ import 'package:ottos_core/ottos_core.dart';
 
 import '../app/courier_texts.dart';
 import '../app/router.dart';
+import '../offline/sync_bar.dart';
+import '../offline/sync_cubit.dart';
 
 /// App bar with the account menu and bottom navigation between the courier's sections.
 class CourierShell extends StatelessWidget {
@@ -26,6 +28,7 @@ class CourierShell extends StatelessWidget {
         : CourierTexts.myRemittances;
     final cashTitle = user != null && !user.can(Permissions.cashReadOwn) ? CourierTexts.cash : CourierTexts.myCash;
     final onCash = location == Routes.cash;
+    final sync = context.syncCubit;
     return Scaffold(
       appBar: AppBar(
         title: Column(
@@ -60,7 +63,7 @@ class CourierShell extends StatelessWidget {
                 ),
               ),
               PopupMenuItem(
-                value: () => context.read<AuthBloc>().add(const AuthLogoutRequested()),
+                value: () => _logout(context, sync),
                 child: const ListTile(
                   contentPadding: EdgeInsets.zero,
                   leading: Icon(Icons.logout),
@@ -71,7 +74,12 @@ class CourierShell extends StatelessWidget {
           ),
         ],
       ),
-      body: child,
+      body: Column(
+        children: [
+          if (sync != null) SyncBar(sync: sync),
+          Expanded(child: child),
+        ],
+      ),
       bottomNavigationBar: canSeeCash
           ? NavigationBar(
               selectedIndex: onCash ? 1 : 0,
@@ -91,5 +99,30 @@ class CourierShell extends StatelessWidget {
             )
           : null,
     );
+  }
+
+  /// Unsent actions are lost on logout (only this user can send them): warn first.
+  static Future<void> _logout(BuildContext context, SyncCubit? sync) async {
+    final auth = context.read<AuthBloc>();
+    final pending = sync?.state.pending ?? 0;
+    if (pending > 0) {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text(CoreTexts.logout),
+          content: Text(CourierTexts.unsentOnLogout(pending)),
+          actions: [
+            TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text(CoreTexts.cancel)),
+            TextButton(
+              style: TextButton.styleFrom(foregroundColor: OttosColors.danger),
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text(CourierTexts.logoutAnyway),
+            ),
+          ],
+        ),
+      );
+      if (confirmed != true) return;
+    }
+    auth.add(const AuthLogoutRequested());
   }
 }

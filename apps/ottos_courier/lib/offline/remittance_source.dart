@@ -15,6 +15,9 @@ abstract interface class RemittanceSource {
   /// Emits when the data changed on its own (a sync), to reload.
   Stream<void> get changes;
 
+  /// Brings the latest (pull to refresh): a sync, or nothing online.
+  Future<void> refresh();
+
   Future<ActionOutcome> deliver(Remittance remittance, {String? pin, String? note});
 
   Future<ActionOutcome> postpone(Remittance remittance, {required DateTime newDate, required String reason});
@@ -50,6 +53,9 @@ class OnlineSource implements RemittanceSource {
 
   @override
   Stream<void> get changes => const Stream.empty();
+
+  @override
+  Future<void> refresh() async {}
 
   @override
   Future<ActionOutcome> deliver(Remittance remittance, {String? pin, String? note}) => _run(
@@ -105,6 +111,9 @@ class OfflineSource implements RemittanceSource {
 
   @override
   Future<Set<String>> pendingIds() async => {for (final action in await _sync.store.pending()) action.remittanceId};
+
+  @override
+  Future<void> refresh() => _sync.sync();
 
   @override
   Stream<void> get changes => _sync.stream.map((status) => status.revision).distinct().map((_) {});

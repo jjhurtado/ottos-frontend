@@ -1,3 +1,5 @@
+import 'package:ottos_core/ottos_core.dart';
+
 import '../offline/sync_cubit.dart';
 
 /// User-facing texts of the courier app.
@@ -75,6 +77,40 @@ abstract final class CourierTexts {
   static const unsent = 'Sin enviar';
   static const queued = 'Guardada en el teléfono. Se enviará cuando haya conexión.';
   static const flagged = 'Hecho. Queda marcada para que ventas la revise.';
+  static const syncNow = 'Sincronizar';
+  static const dismiss = 'Descartar';
+  static const notSyncedTitle = 'No sincronizadas';
+  static const notSyncedHelp = 'El servidor no aceptó estas acciones. Revisa la remesa o avisa a ventas.';
+  static const nothingRejected = 'No hay acciones rechazadas.';
+  static String notSynced(int count) => count == 1 ? '1 acción no sincronizada' : '$count acciones no sincronizadas';
+  static String pendingActions(int count) => count == 1 ? '1 sin enviar' : '$count sin enviar';
+  static String unsentOnLogout(int count) =>
+      'Tienes ${pendingActions(count)} en el teléfono. Si cierras sesión ahora se perderán. '
+      'Conéctate y sincroniza antes de salir.';
+  static const logoutAnyway = 'Cerrar sesión igualmente';
+
+  static String actionName(SyncActionType type) => switch (type) {
+    SyncActionType.deliver || SyncActionType.deliverWithPin => 'Completar remesa',
+    SyncActionType.postpone => 'Aplazar remesa',
+    SyncActionType.reportIncident => 'Reportar incidencia',
+  };
+
+  /// "Sin conexión · 2 sin enviar", "Sincronizado hace 5 min"…
+  static String syncSummary(SyncStatus status, {required DateTime now}) {
+    final parts = <String>[
+      if (status.syncing) 'Sincronizando…' else if (status.offline) 'Sin conexión' else _since(status.lastSync, now),
+      if (status.pending > 0) pendingActions(status.pending),
+    ];
+    return parts.join(' · ');
+  }
+
+  static String _since(DateTime? lastSync, DateTime now) {
+    if (lastSync == null) return 'Sin sincronizar todavía';
+    final minutes = now.difference(lastSync).inMinutes;
+    if (minutes < 1) return 'Sincronizado ahora';
+    if (minutes < 60) return 'Sincronizado hace $minutes min';
+    return 'Sincronizado a las ${Formatters.time(lastSync)}';
+  }
 
   /// What to tell after an action: [done] if it went through.
   static String outcome(ActionOutcome outcome, {required String done}) => switch (outcome) {

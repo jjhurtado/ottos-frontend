@@ -24,15 +24,19 @@ final class CashState extends Equatable {
 
 /// The user's own cash and, for who manages it, the couriers' cash.
 class CashCubit extends Cubit<CashState> {
-  CashCubit({required this._cash, required this.ownCash, required this.couriersCash}) : super(const CashState());
+  CashCubit({required this._cash, required this.ownCash, required this.couriersCash, this._ownStatement})
+    : super(const CashState());
 
   final CashRepository _cash;
+
+  /// Where the own cash comes from: the phone for couriers, who work offline.
+  final Future<CourierStatement?> Function()? _ownStatement;
   final bool ownCash;
   final bool couriersCash;
 
   Future<void> load() async {
     try {
-      final statement = ownCash ? await _cash.myStatement() : null;
+      final statement = !ownCash ? null : await (_ownStatement ?? _cash.myStatement)();
       final couriers = couriersCash
           ? ([...await _cash.couriers()]..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase())))
           : null;
