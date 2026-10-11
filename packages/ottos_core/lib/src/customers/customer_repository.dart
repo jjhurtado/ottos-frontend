@@ -14,7 +14,9 @@ class CustomerRepository {
 
   Future<Customer> get(String id) async => Customer.fromJson(await _api.get<Map<String, dynamic>>('/customers/$id'));
 
-  /// Registers a customer; the phone must not belong to another one (`PHONE_ALREADY_REGISTERED`).
+  /// Registers a customer. Phone and document may repeat (a person with two
+  /// addresses is two customers); only an identical name, phone and address is
+  /// refused (`CUSTOMER_ALREADY_REGISTERED`).
   Future<Customer> create(CustomerInput input) async =>
       Customer.fromJson(await _api.post<Map<String, dynamic>>('/customers', body: input.toJson()));
 

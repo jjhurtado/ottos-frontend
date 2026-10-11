@@ -110,6 +110,7 @@ class _CustomerTable extends StatelessWidget {
           columns: const [
             DataColumn(label: Text(OpsTexts.fullName)),
             DataColumn(label: Text(OpsTexts.phone)),
+            DataColumn(label: Text(OpsTexts.address)),
             DataColumn(label: Text(OpsTexts.document)),
             DataColumn(label: Text(OpsTexts.createdAt)),
           ],
@@ -130,6 +131,8 @@ class _CustomerTable extends StatelessWidget {
                     ),
                   ),
                   DataCell(Text(customer.phone)),
+                  // Two customers may share name and phone: the address tells them apart.
+                  DataCell(Text(customer.address ?? '', overflow: TextOverflow.ellipsis)),
                   DataCell(Text([customer.documentType, customer.documentNumber].whereType<String>().join(' '))),
                   DataCell(Text(Formatters.date(customer.createdAt))),
                 ],
