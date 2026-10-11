@@ -105,12 +105,17 @@ class _FilterBar extends StatelessWidget {
             SizedBox(
               width: 220,
               child: DropdownButtonFormField<String?>(
-                key: ValueKey('status-${filter.status}'),
+                // Rebuilt with the type too: it names the final status.
+                key: ValueKey('status-${filter.status}-${filter.type}'),
                 initialValue: filter.status,
                 decoration: const InputDecoration(labelText: OpsTexts.status, isDense: true),
                 items: [
                   const DropdownMenuItem(value: null, child: Text(OpsTexts.allStatuses)),
-                  for (final status in state.statuses) DropdownMenuItem(value: status.code, child: Text(status.name)),
+                  for (final status in state.statuses)
+                    DropdownMenuItem(
+                      value: status.code,
+                      child: Text(CoreTexts.statusName(status.code, type: filter.type, fallback: status.name)),
+                    ),
                 ],
                 onChanged: (status) => change(filter.copyWith(status: status)),
               ),

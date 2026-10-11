@@ -47,7 +47,7 @@ class _Summary extends StatelessWidget {
           children: [
             for (final item in state.openByStatus)
               _CountCard(
-                label: item.status.name,
+                label: CoreTexts.statusName(item.status.code, fallback: item.status.name),
                 count: item.count,
                 color: OttosColors.teal,
                 icon: Icons.send_outlined,
