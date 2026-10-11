@@ -37,6 +37,10 @@ class Customer extends Equatable {
   final String? documentType;
   final String? documentNumber;
   final String? address;
+
+  /// Phone and, when there is one, address: what tells apart customers who
+  /// share a name and phone.
+  String get contactLine => [phone, if (address != null && address!.trim().isNotEmpty) address!.trim()].join(' · ');
   final String? notes;
   final bool active;
   final DateTime? createdAt;

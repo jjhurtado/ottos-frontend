@@ -375,9 +375,14 @@ void main() {
       expect(created.email, isNull);
       expect((await customers.search(phone.substring(4))).map((c) => c.id), contains(created.id));
 
+      // The same person at another address is another customer; only an identical one is refused.
+      final sameName = await customers.create(
+        CustomerInput(fullName: 'Prueba Frontend', phone: phone, address: 'Otra 2'),
+      );
+      expect(sameName.id, isNot(created.id));
       await expectLater(
-        customers.create(CustomerInput(fullName: 'Duplicado', phone: phone)),
-        throwsA(isA<ApiException>().having((e) => e.code, 'code', 'PHONE_ALREADY_REGISTERED')),
+        customers.create(CustomerInput(fullName: 'prueba  frontend', phone: phone, address: 'otra 2')),
+        throwsA(isA<ApiException>().having((e) => e.code, 'code', 'CUSTOMER_ALREADY_REGISTERED')),
       );
 
       final updated = await customers.update(

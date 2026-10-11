@@ -47,7 +47,7 @@ abstract final class CoreTexts {
     'TRANSITION_FORBIDDEN': forbidden,
     'CUSTOMER_NOT_FOUND': 'No se encontró el remitente.',
     'BENEFICIARY_NOT_FOUND': 'No se encontró el beneficiario.',
-    'PHONE_ALREADY_REGISTERED': 'Ya hay un cliente con ese teléfono.',
+    'CUSTOMER_ALREADY_REGISTERED': 'Ya hay un cliente con ese nombre, teléfono y dirección.',
     'INVALID_PHONE': 'El teléfono no es válido.',
     'UNKNOWN_MUNICIPALITY': 'El municipio no existe.',
     'INCORRECT_CURRENT_PASSWORD': 'La contraseña actual no es correcta.',

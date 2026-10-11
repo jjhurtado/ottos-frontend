@@ -197,7 +197,7 @@ class _CustomerField extends StatelessWidget {
         decoration: const InputDecoration(labelText: OpsTexts.customer),
         child: Row(
           children: [
-            Expanded(child: Text('${selected.fullName} · ${selected.phone}')),
+            Expanded(child: Text('${selected.fullName} · ${selected.contactLine}')),
             IconButton(
               tooltip: OpsTexts.changeCustomer,
               onPressed: enabled ? () => cubit.customerSelected(null) : null,
@@ -242,7 +242,7 @@ class _CustomerField extends StatelessWidget {
                 for (final customer in options)
                   ListTile(
                     title: Text(customer.fullName),
-                    subtitle: Text(customer.phone),
+                    subtitle: Text(customer.contactLine),
                     onTap: () => onSelected(customer),
                   ),
               ],
