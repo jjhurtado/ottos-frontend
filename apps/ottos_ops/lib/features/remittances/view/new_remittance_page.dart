@@ -371,7 +371,9 @@ class _QuoteSummary extends StatelessWidget {
       child: switch (state.quoteStatus) {
         LoadStatus.loading => const Center(child: CircularProgressIndicator()),
         LoadStatus.failure => Text(state.error ?? CoreTexts.unexpectedError, style: TextStyle(color: colors.error)),
-        LoadStatus.success when quote == null => const Text(OpsTexts.quoteHint),
+        LoadStatus.success when quote == null => Text(
+          state.type == RemittanceType.pickup ? OpsTexts.pickupQuoteHint : OpsTexts.quoteHint,
+        ),
         LoadStatus.success => Column(
           children: [
             // A pickup hands nothing over: the courier collects the amount and

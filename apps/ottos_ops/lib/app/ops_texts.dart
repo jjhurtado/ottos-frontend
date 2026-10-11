@@ -79,6 +79,7 @@ abstract final class OpsTexts {
   static const targetCurrency = 'Moneda a entregar';
   static const noRates = 'No hay tasas de cambio configuradas; no se pueden registrar remesas.';
   static const quoteHint = 'Escribe el monto para ver la comisión y lo que se entrega.';
+  static const pickupQuoteHint = 'Escribe el monto para ver la comisión.';
   static const notesOptional = 'Notas (opcional)';
   static const register = 'Registrar remesa';
   static String remittanceRegistered(String code) => 'Remesa $code registrada';
