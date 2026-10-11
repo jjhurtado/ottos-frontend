@@ -180,6 +180,8 @@ abstract final class OpsTexts {
     CashMovementType.remittanceRefund => 'Reembolso de remesa',
     CashMovementType.businessDeposit => 'Depósito',
     CashMovementType.businessWithdrawal => 'Retiro',
+    CashMovementType.courierExchangeOut => 'Cambio de moneda: entregado',
+    CashMovementType.courierExchangeIn => 'Cambio de moneda: recibido',
     CashMovementType.unknown => 'Movimiento',
   };
 
@@ -320,6 +322,8 @@ abstract final class OpsTexts {
     Permissions.remittancesReview => 'Revisar remesas marcadas (entregas sin conexión)',
     Permissions.auditRead => 'Ver el registro de auditoría',
     Permissions.reportsRead => 'Ver los reportes del negocio (resumen mensual)',
+    Permissions.cashExchangeOwn => 'Cambiar moneda en su propia caja (repartidor)',
+    Permissions.cashReview => 'Revisar cambios de moneda marcados',
     Permissions.customersRead => 'Ver clientes y beneficiarios',
     Permissions.customersWrite => 'Crear y editar clientes y beneficiarios',
     Permissions.cashRead => 'Ver la caja del negocio y de los repartidores',
@@ -456,4 +460,21 @@ abstract final class OpsTexts {
   static String reportPeriod(String from, String to) => 'Del $from al $to · hora de Cuba · importes en USD';
   static String generatedOn(String when) => 'Generado el $when';
   static String reportFileName(String month) => 'resumen-mensual-$month.pdf';
+
+  // Currency exchanges
+  static const registerExchange = 'Registrar cambio';
+  static String exchangeForTitle(String name) => 'Cambio de moneda de $name';
+  static const exchangeRegistered = 'Cambio registrado';
+  static const exchangeFlagged = 'Cambio registrado y marcado para revisar: la tasa se aleja de la configurada.';
+  static const exchangesToReview = 'Cambios de moneda para revisar';
+  static const exchangeReviewResolved = 'Revisión del cambio resuelta';
+  static String exchangeLine(String from, String to) => '$from → $to';
+  static String exchangeRates(String rate, String? configured, String? deviation) => configured == null
+      ? 'Tasa $rate CUP/USD'
+      : 'Tasa $rate CUP/USD · configurada $configured · se aleja $deviation %';
+  static const exchangeTolerance = 'Tolerancia de la tasa de cambio';
+  static const exchangeToleranceHint =
+      'Un cambio de un repartidor que se aleje más de esto de la tasa de entrega se marca para revisar.';
+  static String exchangeToleranceValue(String percent) => '$percent %';
+  static const exchangeToleranceRange = 'Entre 0 y 1000';
 }

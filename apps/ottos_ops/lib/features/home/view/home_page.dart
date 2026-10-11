@@ -23,7 +23,10 @@ class HomePage extends StatelessWidget {
           Text(OpsTexts.homeSubtitle, style: TextStyle(color: Theme.of(context).colorScheme.outline)),
           const SizedBox(height: 24),
           BlocProvider(
-            create: (context) => HomeCubit(remittances: context.read<RemittanceRepository>())..load(),
+            create: (context) => HomeCubit(
+              remittances: context.read<RemittanceRepository>(),
+              cash: context.canDo(Permissions.cashRead) ? context.read<CashRepository>() : null,
+            )..load(),
             child: const _Summary(),
           ),
         ],
@@ -76,6 +79,14 @@ class _Summary extends StatelessWidget {
               icon: Icons.flag_outlined,
               onTap: () => context.go('${Destinations.remittances.path}?review=true'),
             ),
+            if (state.exchangesToReview > 0)
+              _CountCard(
+                label: OpsTexts.exchangesToReview,
+                count: state.exchangesToReview,
+                color: OttosColors.warning,
+                icon: Icons.currency_exchange,
+                onTap: () => context.go(Destinations.cash.path),
+              ),
           ],
         ),
       },

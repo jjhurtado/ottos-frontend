@@ -51,6 +51,14 @@ void main() {
     when(() => cash.businessBalances()).thenAnswer((_) async => _balances);
     when(() => cash.couriers()).thenAnswer((_) async => _couriers);
     when(() => cash.businessMovements()).thenAnswer((_) async => _movements);
+    when(
+      () => cash.exchanges(
+        courierId: any(named: 'courierId'),
+        review: any(named: 'review'),
+        page: any(named: 'page'),
+        size: any(named: 'size'),
+      ),
+    ).thenAnswer((_) async => const PageResult(items: [], page: 0, size: 50, totalItems: 0));
   });
 
   group('cubit', () {

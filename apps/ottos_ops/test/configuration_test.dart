@@ -238,7 +238,7 @@ void main() {
     });
 
     testWidgets('the settings dialog checks the days and saves both values', (tester) async {
-      when(() => rates.updateSettings(minimumAmount: 20, defaultDeliveryDays: 3))
+      when(() => rates.updateSettings(minimumAmount: 20, defaultDeliveryDays: 3, exchangeRateTolerancePercent: 20))
           .thenAnswer((_) async => const Settings(minimumAmount: 20, defaultDeliveryDays: 3));
       await pumpPage(tester, {Permissions.configurationRead, Permissions.configurationWrite});
 
@@ -253,7 +253,8 @@ void main() {
       await tester.enterText(find.widgetWithText(TextFormField, '${OpsTexts.deliveryDays} *'), '3');
       await tester.tap(find.text(OpsTexts.save));
       await tester.pumpAndSettle();
-      verify(() => rates.updateSettings(minimumAmount: 20, defaultDeliveryDays: 3)).called(1);
+      verify(() => rates.updateSettings(minimumAmount: 20, defaultDeliveryDays: 3, exchangeRateTolerancePercent: 20))
+          .called(1);
       expect(find.text(OpsTexts.settingsSaved), findsOneWidget);
     });
   });

@@ -160,10 +160,28 @@ Future<Settings?> showSettingsDialog(BuildContext context, Settings settings) {
             return days == null || days < 1 || days > 60 ? OpsTexts.deliveryDaysRange : null;
           },
         ),
+        const SizedBox(height: 12),
+        TextFormField(
+          controller: state.controller('tolerance', _plain(settings.exchangeRateTolerancePercent)),
+          enabled: !state.saving,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d*[.,]?\d{0,2}'))],
+          decoration: const InputDecoration(
+            labelText: '${OpsTexts.exchangeTolerance} *',
+            suffixText: '%',
+            helperText: OpsTexts.exchangeToleranceHint,
+            helperMaxLines: 3,
+          ),
+          validator: (text) {
+            final percent = _parse(text);
+            return percent == null || percent <= 0 || percent > 1000 ? OpsTexts.exchangeToleranceRange : null;
+          },
+        ),
       ],
       save: (state) => rates.updateSettings(
         minimumAmount: _parse(state.text('minimum')),
         defaultDeliveryDays: int.parse(state.text('days')),
+        exchangeRateTolerancePercent: _parse(state.text('tolerance')),
       ),
     ),
   );

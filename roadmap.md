@@ -31,6 +31,7 @@ Decisión del negocio (2026-10-10): durante el día, **ventas y repartidores tra
 - [x] **Caja desde la app**: entregar fondos y recibir devoluciones de un repartidor concreto (con `cash:write`). Quien no tiene el permiso ve solo su caja, como hoy.
 - [x] Ventas entra en la app (`remittances:read`): ve las remesas abiertas (las 100 últimas; el resto, en el panel) y la caja de los repartidores; el repartidor ve las suyas y su caja.
 - [ ] Nombre y presentación de la app pensados para ventas y reparto (hoy se llama «Otto's · Repartidor»).
+- [x] **Cambio de moneda del repartidor** (`cash:exchange-own`): en «Mi caja», «Cambiar moneda» con dirección, monto, tasa obtenida (siempre CUP por 1 USD) y nota; funciona sin conexión y el saldo se mueve al momento. En el panel: «Registrar cambio» en nombre de un repartidor (`cash:write`), los cambios con tasa inusual (más allá de la tolerancia de Configuración, 20 % por defecto) en «Cambios de moneda para revisar» de Caja y en Inicio, con «Resolver» y nota (`cash:review`).
 - [x] **Asignar desde el detalle en la app**: una remesa pagada sin repartidor muestra «Asignar a repartidor» a quien tiene `remittances:assign`.
 - [ ] Decidir qué más de ventas necesita estar en la app de día (alta de clientes y beneficiarios, buscar remesas, reasignar) y qué se queda solo en el panel.
 
@@ -89,7 +90,7 @@ Objetivo: sustituir las pantallas «Próximamente» que quedan. Todas tienen el 
 4. ~~**Roles y permisos**~~ Hecho: roles con sus permisos por área y en español, alta, edición y eliminación; el rol del sistema es de solo lectura y solo se pueden dar permisos que uno tiene.
 5. ~~**Mi cuenta**~~ Hecho: cambio de contraseña desde el menú de usuario del panel y el menú de cuenta de la app de repartidores; al cambiarla se cierra la sesión y el login explica por qué.
 6. ~~**Registro de auditoría**~~ Hecho (`/audit`, `audit:read`, solo ADMIN): quién cambió qué y cuándo en usuarios y roles, filtros por tipo, acción y fechas, acciones, roles y permisos en español por su código, y «El sistema» para la creación del primer admin.
-7. **Resumen mensual de ventas** (`/reports`, `reports:read`, ADMIN y SALES): remesas, total cobrado, total entregado (por moneda y en USD), diferencia y ganancias (comisiones), por moneda de entrega y por tipo, y estado al cierre; exportable a PDF A4 generado en el panel. Diseño aprobado en el canvas. Pantalla y PDF hechos con el contrato acordado (`ottos/docs/contracts/monthly-report.md`); falta que el backend implemente `GET /reports/monthly` para probarlo con datos reales.
+7. **Resumen mensual de ventas** (`/reports`, `reports:read`, ADMIN y SALES): remesas, total cobrado, total entregado (por moneda y en USD), diferencia y ganancias (comisiones), por moneda de entrega y por tipo, y estado al cierre; exportable a PDF A4 generado en el panel. Diseño aprobado en el canvas. Pantalla y PDF hechos con el contrato acordado (`ottos/docs/contracts/monthly-report.md`); probado contra el backend local con datos reales.
 
 Los roles del sistema (ADMIN, SALES, DELIVERY) y los permisos se muestran en español, traducidos por su código; el backend los guarda en inglés.
 

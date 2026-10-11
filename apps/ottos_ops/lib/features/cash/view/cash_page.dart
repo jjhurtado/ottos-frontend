@@ -6,6 +6,7 @@ import 'package:ottos_core/ottos_core.dart';
 import '../../../app/ops_texts.dart';
 import '../../../app/router.dart';
 import '../cubit/cash_overview_cubit.dart';
+import 'exchanges_to_review.dart';
 import 'movement_tile.dart';
 
 class CashPage extends StatelessWidget {
@@ -76,6 +77,8 @@ class _CashView extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
+          // A new key reloads it with the page (pull to refresh, after an operation).
+          ExchangesToReview(key: ValueKey(state.movements.firstOrNull?.id)),
           _Section(
             title: OpsTexts.businessCash,
             actions: [

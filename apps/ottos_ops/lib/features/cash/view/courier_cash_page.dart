@@ -124,6 +124,26 @@ class _CourierCashView extends StatelessWidget {
                 icon: const Icon(Icons.arrow_back),
                 label: const Text(OpsTexts.registerReturn),
               ),
+              OutlinedButton.icon(
+                onPressed: () async {
+                  final messenger = ScaffoldMessenger.of(context);
+                  final input = await showExchangeDialog(context, title: OpsTexts.exchangeForTitle(cash.name));
+                  if (input == null) return;
+                  try {
+                    final exchange = await repository.exchangeFor(cash.courierId, input);
+                    messenger.showSnackBar(
+                      SnackBar(
+                        content: Text(exchange.pendingReview ? OpsTexts.exchangeFlagged : OpsTexts.exchangeRegistered),
+                      ),
+                    );
+                    onChanged();
+                  } on ApiException catch (error) {
+                    messenger.showSnackBar(SnackBar(content: Text(error.message)));
+                  }
+                },
+                icon: const Icon(Icons.currency_exchange),
+                label: const Text(OpsTexts.registerExchange),
+              ),
             ],
           ),
         const SizedBox(height: 16),
