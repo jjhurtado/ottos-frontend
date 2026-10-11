@@ -69,7 +69,15 @@ abstract final class Destinations {
     permissions: [Permissions.rolesRead],
   );
 
-  static const all = [home, remittances, customers, configuration, cash, users, roles];
+  static const audit = Destination(
+    path: '/audit',
+    label: OpsTexts.audit,
+    icon: Icons.history_outlined,
+    selectedIcon: Icons.history,
+    permissions: [Permissions.auditRead],
+  );
+
+  static const all = [home, remittances, customers, configuration, cash, users, roles, audit];
 
   /// Who may use the panel at all: anyone who can see a section besides home.
   static bool canUsePanel(CurrentUser user) => all.skip(1).any((destination) => destination.isVisibleTo(user));

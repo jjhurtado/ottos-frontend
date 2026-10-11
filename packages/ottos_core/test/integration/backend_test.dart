@@ -289,6 +289,22 @@ void main() {
     });
   }, skip: skip);
 
+  group('audit', () {
+    setUp(() => auth.login(email: email, password: password));
+
+    test('lists the changes to users and roles, newest first and filtered', () async {
+      final audit = AuditRepository(api: api);
+
+      final all = await audit.search(const AuditFilter(), size: 20);
+      final roles = await audit.search(const AuditFilter(targetType: 'ROLE'), size: 20);
+
+      expect(all.items, isNotEmpty, reason: 'creating the first admin is always logged');
+      final times = all.items.map((entry) => entry.occurredAt!).toList();
+      expect(times, orderedEquals([...times]..sort((a, b) => b.compareTo(a))));
+      expect(roles.items.every((entry) => entry.targetType == 'ROLE'), isTrue);
+    });
+  }, skip: skip);
+
   group('customers', () {
     late CustomerRepository customers;
     late ZoneRepository zones;
