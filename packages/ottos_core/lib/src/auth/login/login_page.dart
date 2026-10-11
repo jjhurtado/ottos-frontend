@@ -7,14 +7,18 @@ import '../../widgets/ottos_logo.dart';
 import '../auth_repository.dart';
 import '../bloc/auth_bloc.dart';
 import 'login_cubit.dart';
+import 'login_memory.dart';
 
 /// Login screen shared by every app. Expects an [AuthRepository], an
 /// [AuthBloc] and an [AccessPolicy] above it.
 class LoginPage extends StatelessWidget {
-  const LoginPage({super.key, required this.appName});
+  const LoginPage({super.key, required this.appName, this.biometrics});
 
   /// Shown under the logo, e.g. "Panel de operaciones".
   final String appName;
+
+  /// The fingerprint, where the app offers it (the mobile app).
+  final BiometricAuth? biometrics;
 
   @override
   Widget build(BuildContext context) {
@@ -23,7 +27,9 @@ class LoginPage extends StatelessWidget {
         authRepository: context.read<AuthRepository>(),
         authBloc: context.read<AuthBloc>(),
         accessPolicy: context.read<AccessPolicy>(),
-      ),
+        memory: _memoryOf(context),
+        biometrics: biometrics,
+      )..start(),
       child: Scaffold(
         backgroundColor: OttosColors.navy,
         body: SafeArea(
@@ -46,6 +52,15 @@ class LoginPage extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+/// The device's login memory, when the app provides one (tests may not).
+LoginMemory? _memoryOf(BuildContext context) {
+  try {
+    return context.read<LoginMemory>();
+  } catch (_) {
+    return null;
   }
 }
 
@@ -81,7 +96,37 @@ class _LoginFormState extends State<_LoginForm> {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(24),
-        child: BlocBuilder<LoginCubit, LoginState>(
+        child: BlocConsumer<LoginCubit, LoginState>(
+          listenWhen: (previous, current) =>
+              previous.rememberedEmail != current.rememberedEmail ||
+              (current.offerBiometrics && !previous.offerBiometrics),
+          listener: (context, state) async {
+            final remembered = state.rememberedEmail;
+            if (remembered != null && _email.text.isEmpty) _email.text = remembered;
+            if (state.offerBiometrics) {
+              final cubit = context.read<LoginCubit>();
+              final use = await showDialog<bool>(
+                context: context,
+                barrierDismissible: false,
+                builder: (context) => AlertDialog(
+                  icon: const Icon(Icons.fingerprint, size: 40),
+                  title: const Text(CoreTexts.biometricOfferTitle),
+                  content: const Text(CoreTexts.biometricOfferBody),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(false),
+                      child: const Text(CoreTexts.biometricNo),
+                    ),
+                    FilledButton(
+                      onPressed: () => Navigator.of(context).pop(true),
+                      child: const Text(CoreTexts.biometricYes),
+                    ),
+                  ],
+                ),
+              );
+              await cubit.answerBiometrics(use: use ?? false);
+            }
+          },
           builder: (context, state) {
             final error = state.error ?? (sessionExpired ? CoreTexts.sessionExpired : null);
             return Form(
@@ -135,7 +180,18 @@ class _LoginFormState extends State<_LoginForm> {
                       const SizedBox(height: 16),
                       Text(CoreTexts.passwordChanged, style: TextStyle(color: Theme.of(context).colorScheme.primary)),
                     ],
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 8),
+                    CheckboxListTile(
+                      value: state.rememberEmail,
+                      onChanged: state.isSubmitting
+                          ? null
+                          : (value) => context.read<LoginCubit>().rememberChanged(value ?? false),
+                      title: const Text(CoreTexts.rememberEmail),
+                      controlAffinity: ListTileControlAffinity.leading,
+                      contentPadding: EdgeInsets.zero,
+                      dense: true,
+                    ),
+                    const SizedBox(height: 16),
                     FilledButton(
                       onPressed: state.isSubmitting ? null : _submit,
                       child: state.isSubmitting
@@ -145,6 +201,15 @@ class _LoginFormState extends State<_LoginForm> {
                             )
                           : const Text(CoreTexts.enter),
                     ),
+                    if (state.biometricsReady) ...[
+                      const SizedBox(height: 12),
+                      OutlinedButton.icon(
+                        style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(48)),
+                        onPressed: state.isSubmitting ? null : context.read<LoginCubit>().submitWithBiometrics,
+                        icon: const Icon(Icons.fingerprint),
+                        label: const Text(CoreTexts.biometricLogin),
+                      ),
+                    ],
                   ],
                 ),
               ),

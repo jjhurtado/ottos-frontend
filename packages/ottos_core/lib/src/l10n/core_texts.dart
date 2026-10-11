@@ -157,6 +157,18 @@ abstract final class CoreTexts {
     return seed != null && description == seed.$2 ? seed.$4 : description;
   }
 
+  // Remember me and fingerprint
+  static const rememberEmail = 'Recordar mi usuario';
+  static const biometricLogin = 'Entrar con huella';
+  static const biometricOfferTitle = '¿Entrar con huella la próxima vez?';
+  static const biometricOfferBody =
+      'Tu acceso se guarda protegido en este teléfono y solo se usa después de comprobar tu huella o tu cara.';
+  static const biometricYes = 'Usar huella';
+  static const biometricNo = 'Ahora no';
+  static const biometricEnableReason = 'Confirma tu huella para entrar con ella la próxima vez';
+  static const biometricLoginReason = 'Entra en Ottos con tu huella';
+  static const biometricOutdated = 'Tu contraseña cambió. Escríbela una vez para volver a entrar con huella.';
+
   // Common
   static const retry = 'Reintentar';
   static const logout = 'Cerrar sesión';

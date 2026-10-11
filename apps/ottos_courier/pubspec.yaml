@@ -17,6 +17,7 @@ dependencies:
     sdk: flutter
   go_router: ^18.0.2
   intl: ^0.20.3
+  local_auth: ^3.0.2
   ottos_core:
     path: ../../packages/ottos_core
   path: ^1.9.1

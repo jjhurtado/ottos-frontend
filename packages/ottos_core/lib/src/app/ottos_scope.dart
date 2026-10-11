@@ -5,6 +5,7 @@ import '../api/api_client.dart';
 import '../audit/audit_repository.dart';
 import '../auth/auth_repository.dart';
 import '../auth/bloc/auth_bloc.dart';
+import '../auth/login/login_memory.dart';
 import '../auth/token_storage.dart';
 import '../cash/cash_repository.dart';
 import '../config/app_config.dart';
@@ -45,6 +46,7 @@ class _OttosScopeState extends State<OttosScope> {
   late final SyncRepository _syncRepository;
   late final AuditRepository _auditRepository;
   late final ReportRepository _reportRepository;
+  final LoginMemory _loginMemory = SecureLoginMemory();
 
   @override
   void initState() {
@@ -91,6 +93,7 @@ class _OttosScopeState extends State<OttosScope> {
         RepositoryProvider.value(value: _syncRepository),
         RepositoryProvider.value(value: _auditRepository),
         RepositoryProvider.value(value: _reportRepository),
+        RepositoryProvider<LoginMemory>.value(value: _loginMemory),
         RepositoryProvider<AccessPolicy>.value(value: widget.accessPolicy),
       ],
       child: BlocProvider(

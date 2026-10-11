@@ -7,6 +7,7 @@ import '../features/new_remittance/view/new_remittance_page.dart';
 import '../features/remittance/view/remittance_page.dart';
 import '../shell/courier_shell.dart';
 import 'courier_texts.dart';
+import 'device_biometrics.dart';
 
 abstract final class Routes {
   static const splash = '/splash';
@@ -44,7 +45,7 @@ GoRouter buildRouter(AuthBloc authBloc) {
       GoRoute(path: Routes.splash, builder: (_, _) => const SplashPage()),
       GoRoute(
         path: Routes.login,
-        builder: (_, _) => const LoginPage(appName: CourierTexts.appName),
+        builder: (_, _) => LoginPage(appName: CourierTexts.appName, biometrics: DeviceBiometrics()),
       ),
       ShellRoute(
         builder: (context, state, child) => CourierShell(location: state.matchedLocation, child: child),

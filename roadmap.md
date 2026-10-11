@@ -35,6 +35,9 @@ Decisión del negocio (2026-10-10): durante el día, **ventas y repartidores tra
 - [x] **Asignar desde el detalle en la app**: una remesa pagada sin repartidor muestra «Asignar a repartidor» a quien tiene `remittances:assign`.
 - [x] **Importar y exportar clientes en CSV** (panel, solo ADMIN): «Exportar CSV» descarga todos los clientes con sus beneficiarios (una fila por beneficiario, `;` y UTF-8 para Excel); «Importar CSV» enseña una vista previa (nuevos, ya existentes y rechazados con su fila y motivo) y guarda solo al confirmar, en lotes de 500. Un cliente con dos direcciones son dos clientes con el mismo nombre y teléfono.
 - [x] **Tasa de cada recogida**: campo «Tasa de esta recogida» en el alta de recogidas (panel y app), con la configurada de inicio; la cotización y el detalle marcan «indicada a mano». Pendiente del negocio: poner la comisión de recogida en 0 en Configuración › Recogidas si no deben dejar ganancia.
+- [x] **Recordar usuario** en el login (app y panel): casilla «Recordar mi usuario», marcada por defecto; el correo se guarda en el almacenamiento seguro del dispositivo.
+- [x] **Entrar con huella** (app): tras entrar con contraseña, la app pregunta si usar la huella la próxima vez; si se acepta, guarda las credenciales en el almacenamiento seguro (Keystore) y muestra «Entrar con huella». Si la contraseña cambia, las olvida y pide la nueva. Sin huella registrada en el teléfono no se ofrece. Probado en emulador sin huella; falta probar con huella en un teléfono real.
+- [ ] Ajuste para dejar de usar la huella en un dispositivo (hoy: «Ahora no» al preguntar; se vuelve a preguntar en el siguiente login con contraseña).
 - [ ] Decidir qué más de ventas necesita estar en la app de día (alta de clientes y beneficiarios, buscar remesas, reasignar) y qué se queda solo en el panel.
 
 ## Notificaciones de la app
@@ -44,7 +47,7 @@ Pedido por el negocio (2026-10-11): avisar en el teléfono **cuando un repartido
 - [x] Decidido (2026-10-11): la entrega de una remesa se avisa a **ventas**; la remesa nueva, al **repartidor** asignado.
 - [ ] Sin depender de Firebase/FCM ni de Google Play: pueden estar bloqueados desde Cuba (aviso de infraestructura). Propuesta: notificaciones **locales** que la app genera al sincronizar (al abrirla, al volver la red, al volver al primer plano y cada pocos minutos con la app abierta), comparando con lo que ya tenía guardado: remesas nuevas asignadas al repartidor; remesas entregadas para ventas.
 - [ ] Valorar una comprobación periódica en segundo plano (Android WorkManager, mínimo ~15 min) para avisar con la app cerrada, y qué consumo de batería y datos supone.
-- [ ] Backend: para ventas hace falta saber qué remesas se completaron desde la última vez (p. ej. `GET /remittances?completedSince=` o eventos en `/sync/state` para quien no es repartidor). Pedírselo al backend al empezar.
+- [ ] Backend: `GET /remittances/completed?since=` para ventas (todas las remesas, recogidas incluidas, decidido 2026-10-11). En curso en el backend.
 - [ ] Permiso de notificaciones en Android 13+ y ajustes para silenciarlas.
 
 ## App sin conexión (offline-first)
