@@ -59,7 +59,7 @@ abstract final class OpsTexts {
   static const total = 'Total cobrado';
   static const rate = 'Tasa';
   static const amountToDeliver = 'A entregar';
-  static const cashToCollect = 'Efectivo a recoger';
+  static const cashToCollect = 'Se recoge';
   static const pin = 'PIN';
   static const postponements = 'Aplazamientos';
   static const notes = 'Notas';
@@ -75,6 +75,7 @@ abstract final class OpsTexts {
   static const chooseCustomerFirst = 'Elige primero el remitente';
   static const noBeneficiaries = 'Este remitente no tiene beneficiarios todavía. Búscalo entre todos o crea uno.';
   static const amountToSend = 'Monto a enviar';
+  static const amountToCollect = 'Monto a recoger';
   static const targetCurrency = 'Moneda a entregar';
   static const noRates = 'No hay tasas de cambio configuradas; no se pueden registrar remesas.';
   static const quoteHint = 'Escribe el monto para ver la comisión y lo que se entrega.';
@@ -463,12 +464,17 @@ abstract final class OpsTexts {
   static const nextMonth = 'Mes siguiente';
   static const reportRemittances = 'Remesas';
   static const totalCollected = 'Total cobrado';
-  static const totalCollectedHelp = 'Monto enviado + comisión, pagado por los remitentes';
+  static const totalCollectedHelp = 'Entregas: monto enviado + comisión, pagado por los remitentes';
+  static const pickupsCollected = 'Recogido por los repartidores';
+  static String pickupsHelp(int count, String fees) => '$count recogidas · $fees de comisiones';
+  static String earningsHelp(String deliveries, String pickups, String rounding) =>
+      'Entregas $deliveries · recogidas $pickups · además $rounding por redondeo al entregar';
+  static const collectedOrPicked = 'Cobrado o recogido';
   static const totalDelivered = 'Total entregado';
   static const difference = 'Diferencia';
-  static const differenceHelp = 'Cobrado − entregado';
+  static const differenceHelp = 'Cobrado − entregado, solo entregas';
   static const earnings = 'Ganancias (comisiones)';
-  static const byCurrency = 'Por moneda de entrega';
+  static const byCurrency = 'Entregas por moneda';
   static const byType = 'Por tipo';
   static const monthEndStatus = 'Estado al cierre del mes';
   static const sent = 'Enviado';
@@ -482,7 +488,6 @@ abstract final class OpsTexts {
   static const totalRow = 'Total';
   static const noSales = 'No hay remesas registradas este mes.';
   static String deliveriesAndPickups(int deliveries, int pickups) => '$deliveries entregas · $pickups recogidas';
-  static String roundingNote(String amount) => '+$amount por redondeo al entregar';
   static String reportPeriod(String from, String to) => 'Del $from al $to · hora de Cuba · importes en USD';
   static String generatedOn(String when) => 'Generado el $when';
   static String reportFileName(String month) => 'resumen-mensual-$month.pdf';

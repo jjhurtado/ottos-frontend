@@ -83,6 +83,7 @@ void main() {
         amount: any(named: 'amount'),
         type: any(named: 'type'),
         rate: any(named: 'rate'),
+        fee: any(named: 'fee'),
       ),
     ).thenAnswer((_) async => _quote);
     cubit = NewRemittanceCubit(remittances: remittances, customers: customers, rates: rates, quoteDelay: Duration.zero);
@@ -332,6 +333,30 @@ void main() {
               as NewRemittance;
       expect(sent.rate, 1.5);
       expect(sent.toJson()['rate'], 1.5);
+    });
+
+    test('a pickup may take its own fee, 0 included; a delivery never sends one', () async {
+      await fillForm();
+      cubit.targetCurrencyChanged('CUP');
+      cubit.typeChanged(RemittanceType.pickup);
+      cubit.pickupFeeChanged(0);
+      await settle();
+      verify(
+        () =>
+            rates.quote(sourceCurrency: 'USD', targetCurrency: 'CUP', amount: 100, type: RemittanceType.pickup, fee: 0),
+      ).called(1);
+
+      await cubit.submit();
+      final sent =
+          verify(() => remittances.register(captureAny(), idempotencyKey: any(named: 'idempotencyKey'))).captured.single
+              as NewRemittance;
+      expect(sent.toJson()['fee'], 0);
+
+      cubit.pickupFeeChanged(null);
+      expect(cubit.state.pickupFee, isNull, reason: 'empty goes back to the configured fee');
+      cubit.pickupFeeChanged(5);
+      cubit.typeChanged(RemittanceType.delivery);
+      expect(cubit.state.pickupFee, isNull);
     });
 
     test('typing the configured rate, or switching to a delivery, drops the own rate', () async {

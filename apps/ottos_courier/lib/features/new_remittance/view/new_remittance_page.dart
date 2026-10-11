@@ -94,8 +94,10 @@ class _FormState extends State<_Form> {
                     enabled: enabled,
                     keyboardType: const TextInputType.numberWithOptions(decimal: true),
                     inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d*[.,]?\d{0,2}'))],
-                    decoration: const InputDecoration(
-                      labelText: CourierTexts.amountToSend,
+                    decoration: InputDecoration(
+                      labelText: state.type == RemittanceType.pickup
+                          ? CourierTexts.amountToCollect
+                          : CourierTexts.amountToSend,
                       suffixText: NewRemittanceCubit.sourceCurrency,
                     ),
                     onChanged: (text) => cubit.amountChanged(double.tryParse(text.replaceAll(',', '.'))),
@@ -124,6 +126,7 @@ class _FormState extends State<_Form> {
             ],
             const SizedBox(height: 16),
             PickupRateField(state: state),
+            PickupFeeField(state: state),
             _QuoteSummary(state: state),
             if (state.couriers.isNotEmpty) ...[
               const SizedBox(height: 16),
@@ -321,19 +324,40 @@ class _QuoteSummary extends StatelessWidget {
         LoadStatus.success when quote == null => const Text(CourierTexts.quoteHint),
         LoadStatus.success => Column(
           children: [
-            InfoRow(label: CourierTexts.fee, value: Formatters.money(quote!.fee, quote.sourceCurrency)),
-            InfoRow(label: CourierTexts.total, value: Formatters.money(quote.total, quote.sourceCurrency)),
-            InfoRow(
-              label: CourierTexts.rate,
-              value: [
-                Formatters.money(quote.rate, null),
-                if (quote.rateOverridden) CoreTexts.rateTypedByHand,
-              ].join(' · '),
-            ),
-            InfoRow(
-              label: state.type == RemittanceType.pickup ? CourierTexts.cashToCollect : CourierTexts.amountToDeliver,
-              value: Formatters.money(quote.amountToDeliver, quote.targetCurrency),
-            ),
+            // A pickup hands nothing over: the courier collects the amount and
+            // the fee is the business's, so there is no total or amount to deliver.
+            if (state.type == RemittanceType.pickup) ...[
+              InfoRow(label: CourierTexts.cashToCollect, value: Formatters.money(quote!.amount, quote.sourceCurrency)),
+              InfoRow(
+                label: CourierTexts.fee,
+                value: [
+                  Formatters.money(quote.fee, quote.sourceCurrency),
+                  if (quote.feeOverridden) CoreTexts.rateTypedByHand,
+                ].join(' · '),
+              ),
+              InfoRow(
+                label: CourierTexts.rate,
+                value: [
+                  Formatters.money(quote.rate, null),
+                  if (quote.rateOverridden) CoreTexts.rateTypedByHand,
+                  CoreTexts.rateInformative,
+                ].join(' · '),
+              ),
+            ] else ...[
+              InfoRow(label: CourierTexts.fee, value: Formatters.money(quote!.fee, quote.sourceCurrency)),
+              InfoRow(label: CourierTexts.total, value: Formatters.money(quote.total, quote.sourceCurrency)),
+              InfoRow(
+                label: CourierTexts.rate,
+                value: [
+                  Formatters.money(quote.rate, null),
+                  if (quote.rateOverridden) CoreTexts.rateTypedByHand,
+                ].join(' · '),
+              ),
+              InfoRow(
+                label: CourierTexts.amountToDeliver,
+                value: Formatters.money(quote.amountToDeliver, quote.targetCurrency),
+              ),
+            ],
           ],
         ),
       },

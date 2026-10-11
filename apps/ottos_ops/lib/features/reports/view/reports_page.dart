@@ -132,9 +132,18 @@ class _ReportView extends StatelessWidget {
               dark: true,
             ),
             _Total(
+              label: OpsTexts.pickupsCollected,
+              value: usd(report.pickupsCollected),
+              help: OpsTexts.pickupsHelp(report.pickups, usd(report.pickupsFees)),
+            ),
+            _Total(
               label: OpsTexts.earnings,
               value: usd(report.fees),
-              help: OpsTexts.roundingNote(usd(report.rounding)),
+              help: OpsTexts.earningsHelp(
+                usd(report.deliveryFees),
+                usd(report.pickupsFees),
+                usd(report.roundingMargin),
+              ),
               highlight: true,
             ),
           ],
@@ -193,32 +202,35 @@ class _ReportView extends StatelessWidget {
           runSpacing: 16,
           children: [
             SizedBox(
-              width: 520,
+              width: 560,
               child: _Section(
                 title: OpsTexts.byType,
-                child: DataTable(
-                  columns: const [
-                    DataColumn(label: Text(OpsTexts.type)),
-                    DataColumn(label: Text(OpsTexts.reportRemittances), numeric: true),
-                    DataColumn(label: Text(OpsTexts.collected), numeric: true),
-                    DataColumn(label: Text(OpsTexts.fees), numeric: true),
-                  ],
-                  rows: [
-                    for (final line in report.byType)
-                      DataRow(
-                        cells: [
-                          DataCell(
-                            Text(
-                              line.type == RemittanceType.pickup ? 'Recogidas' : 'Entregas',
-                              style: TextStyle(color: line.type.color, fontWeight: FontWeight.w500),
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: DataTable(
+                    columns: const [
+                      DataColumn(label: Text(OpsTexts.type)),
+                      DataColumn(label: Text(OpsTexts.reportRemittances), numeric: true),
+                      DataColumn(label: Text(OpsTexts.collectedOrPicked), numeric: true),
+                      DataColumn(label: Text(OpsTexts.fees), numeric: true),
+                    ],
+                    rows: [
+                      for (final line in report.byType)
+                        DataRow(
+                          cells: [
+                            DataCell(
+                              Text(
+                                line.type == RemittanceType.pickup ? 'Recogidas' : 'Entregas',
+                                style: TextStyle(color: line.type.color, fontWeight: FontWeight.w500),
+                              ),
                             ),
-                          ),
-                          DataCell(Text('${line.remittances}')),
-                          DataCell(Text(usd(line.collected))),
-                          DataCell(Text(usd(line.fees))),
-                        ],
-                      ),
-                  ],
+                            DataCell(Text('${line.remittances}')),
+                            DataCell(Text(usd(line.collected))),
+                            DataCell(Text(usd(line.fees))),
+                          ],
+                        ),
+                    ],
+                  ),
                 ),
               ),
             ),

@@ -36,6 +36,7 @@ abstract final class CourierTexts {
   static const chooseCustomerFirst = 'Elige primero el remitente';
   static const noBeneficiaries = 'Este remitente no tiene beneficiarios todavía. Búscalo entre todos.';
   static const amountToSend = 'Monto a enviar';
+  static const amountToCollect = 'Monto a recoger';
   static const targetCurrency = 'Moneda';
   static const noRates = 'No hay monedas con tasa para este tipo de remesa.';
   static const quoteHint = 'Escribe el monto para ver la comisión y lo que se entrega.';

@@ -173,6 +173,7 @@ class Quote extends Equatable {
     required this.rate,
     required this.amountToDeliver,
     this.rateOverridden = false,
+    this.feeOverridden = false,
   });
 
   factory Quote.fromJson(Map<String, dynamic> json) => Quote(
@@ -184,6 +185,7 @@ class Quote extends Equatable {
     rate: parseDecimal(json['rate']) ?? 0,
     amountToDeliver: parseDecimal(json['amountToDeliver']) ?? 0,
     rateOverridden: json['rateOverridden'] as bool? ?? false,
+    feeOverridden: json['feeOverridden'] as bool? ?? false,
   );
 
   final String sourceCurrency;
@@ -196,6 +198,9 @@ class Quote extends Equatable {
 
   /// Quoted with a rate typed for this pickup, not the configured one.
   final bool rateOverridden;
+
+  /// Quoted with a fee typed for this pickup, not the configured rule.
+  final bool feeOverridden;
 
   @override
   List<Object?> get props => [sourceCurrency, targetCurrency, amount, fee, total, rate, amountToDeliver];

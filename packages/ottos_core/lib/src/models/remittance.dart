@@ -125,6 +125,7 @@ class Remittance extends Equatable {
     this.total,
     this.rate,
     this.rateOverridden,
+    this.feeOverridden,
     this.amountToDeliver,
     this.cashAmount,
     this.cashCurrency,
@@ -166,6 +167,7 @@ class Remittance extends Equatable {
     total: parseDecimal(json['total']),
     rate: parseDecimal(json['rate']),
     rateOverridden: json['rateOverridden'] as bool?,
+    feeOverridden: json['feeOverridden'] as bool?,
     amountToDeliver: parseDecimal(json['amountToDeliver']),
     cashAmount: parseDecimal(json['cashAmount']),
     cashCurrency: json['cashCurrency'] as String?,
@@ -214,6 +216,9 @@ class Remittance extends Equatable {
   /// A pickup whose rate was typed when registering it; null for who does not
   /// see the financial data.
   final bool? rateOverridden;
+
+  /// A pickup whose fee was typed when registering it (financials only).
+  final bool? feeOverridden;
   final double? amountToDeliver;
 
   /// Cash the courier hands over (delivery) or collects (pickup).

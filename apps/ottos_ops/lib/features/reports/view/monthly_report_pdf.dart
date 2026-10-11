@@ -139,7 +139,7 @@ Future<Uint8List> buildMonthlyReportPdf(MonthlyReport report, {required DateTime
                 ),
               ),
               pw.SizedBox(width: 8),
-              pw.Expanded(child: box(OpsTexts.totalCollected, _usd(report.collected), 'Enviado + comisión')),
+              pw.Expanded(child: box(OpsTexts.totalCollected, _usd(report.collected), 'Entregas: enviado + comisión')),
               pw.SizedBox(width: 8),
               pw.Expanded(child: box(OpsTexts.totalDelivered, _usd(report.deliveredUsd), delivered)),
             ],
@@ -148,14 +148,27 @@ Future<Uint8List> buildMonthlyReportPdf(MonthlyReport report, {required DateTime
           pw.Row(
             crossAxisAlignment: pw.CrossAxisAlignment.start,
             children: [
-              pw.Expanded(child: box(OpsTexts.difference, _usd(report.difference), 'Cobrado - entregado')),
+              pw.Expanded(
+                child: box(OpsTexts.difference, _usd(report.difference), 'Cobrado - entregado, solo entregas'),
+              ),
               pw.SizedBox(width: 8),
               pw.Expanded(
-                flex: 2,
+                child: box(
+                  OpsTexts.pickupsCollected,
+                  _usd(report.pickupsCollected),
+                  OpsTexts.pickupsHelp(report.pickups, _usd(report.pickupsFees)),
+                ),
+              ),
+              pw.SizedBox(width: 8),
+              pw.Expanded(
                 child: box(
                   OpsTexts.earnings,
                   _usd(report.fees),
-                  'La diferencia incluye además ${_usd(report.rounding)} por redondeo al entregar',
+                  OpsTexts.earningsHelp(
+                    _usd(report.deliveryFees),
+                    _usd(report.pickupsFees),
+                    _usd(report.roundingMargin),
+                  ),
                   highlight: true,
                 ),
               ),
@@ -199,7 +212,7 @@ Future<Uint8List> buildMonthlyReportPdf(MonthlyReport report, {required DateTime
                     heading(OpsTexts.byType),
                     pw.SizedBox(height: 6),
                     table(
-                      ['Tipo', 'Remesas', OpsTexts.collected, OpsTexts.fees],
+                      ['Tipo', 'Remesas', OpsTexts.collectedOrPicked, OpsTexts.fees],
                       [
                         for (final line in report.byType)
                           [
