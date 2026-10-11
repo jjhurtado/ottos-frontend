@@ -50,6 +50,7 @@ export 'src/utils/formatters.dart';
 export 'src/utils/go_router_refresh_stream.dart';
 export 'src/utils/phones.dart';
 export 'src/widgets/assign_dialog.dart';
+export 'src/widgets/balances_text.dart';
 export 'src/widgets/beneficiary_search_dialog.dart';
 export 'src/widgets/async_view.dart';
 export 'src/widgets/cash_operation_dialog.dart';

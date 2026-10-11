@@ -59,7 +59,7 @@ abstract final class OpsTexts {
   static const total = 'Total cobrado';
   static const rate = 'Tasa';
   static const amountToDeliver = 'A entregar';
-  static const cashToCollect = 'Efectivo a recoger';
+  static const cashToCollect = 'Se recoge';
   static const pin = 'PIN';
   static const postponements = 'Aplazamientos';
   static const notes = 'Notas';
@@ -75,9 +75,11 @@ abstract final class OpsTexts {
   static const chooseCustomerFirst = 'Elige primero el remitente';
   static const noBeneficiaries = 'Este remitente no tiene beneficiarios todavía. Búscalo entre todos o crea uno.';
   static const amountToSend = 'Monto a enviar';
+  static const amountToCollect = 'Monto a recoger';
   static const targetCurrency = 'Moneda a entregar';
   static const noRates = 'No hay tasas de cambio configuradas; no se pueden registrar remesas.';
   static const quoteHint = 'Escribe el monto para ver la comisión y lo que se entrega.';
+  static const pickupQuoteHint = 'Escribe el monto para ver la comisión.';
   static const notesOptional = 'Notas (opcional)';
   static const register = 'Registrar remesa';
   static String remittanceRegistered(String code) => 'Remesa $code registrada';
@@ -359,7 +361,17 @@ abstract final class OpsTexts {
   static String auditTarget(String type) => switch (type) {
     'USER' => 'Usuarios',
     'ROLE' => 'Roles',
+    'CUSTOMERS' => 'Clientes',
+    'BENEFICIARIES' => 'Beneficiarios',
     _ => type,
+  };
+
+  /// Who or what an entry is about. Imports and exports have no single
+  /// target: the backend labels them "import"/"export", so the list says the
+  /// kind of records instead.
+  static String auditTargetLabel(AuditEntry entry) => switch (entry.targetType) {
+    'CUSTOMERS' || 'BENEFICIARIES' => auditTarget(entry.targetType),
+    _ => entry.targetLabel ?? '',
   };
 
   /// The actions of the audit log, by their stable code.
@@ -374,6 +386,8 @@ abstract final class OpsTexts {
       'PASSWORD_CHANGED',
     ],
     'ROLE': ['ROLE_CREATED', 'ROLE_DESCRIBED', 'ROLE_PERMISSIONS_CHANGED', 'ROLE_DELETED'],
+    'CUSTOMERS': ['CUSTOMERS_IMPORTED', 'CUSTOMERS_EXPORTED'],
+    'BENEFICIARIES': ['BENEFICIARIES_IMPORTED'],
   };
 
   static String auditAction(String code) => switch (code) {
@@ -388,6 +402,9 @@ abstract final class OpsTexts {
     'ROLE_DESCRIBED' => 'Nombre o descripción del rol cambiados',
     'ROLE_PERMISSIONS_CHANGED' => 'Permisos cambiados',
     'ROLE_DELETED' => 'Rol eliminado',
+    'CUSTOMERS_IMPORTED' => 'Clientes importados (CSV)',
+    'CUSTOMERS_EXPORTED' => 'Clientes exportados (CSV)',
+    'BENEFICIARIES_IMPORTED' => 'Beneficiarios importados (CSV)',
     _ => code,
   };
 
@@ -400,6 +417,7 @@ abstract final class OpsTexts {
         codes(value).map((code) => permissionLabel(PermissionInfo(code: code, module: ''))).join('; ');
     String text(Object? value) => value == null || '$value'.isEmpty ? '—' : '$value';
     Map<String, dynamic> map(Object? value) => (value as Map<String, dynamic>?) ?? const {};
+    int count(Object? value) => (value as num?)?.toInt() ?? 0;
     return switch (entry.action) {
       'USER_CREATED' => [
         if (details['name'] != null) 'Nombre: ${details['name']}',
@@ -428,6 +446,14 @@ abstract final class OpsTexts {
         if (details['name'] != null) 'Nombre: ${details['name']}',
         if (details['permissions'] != null) 'Tenía: ${permissions(details['permissions'])}',
       ],
+      'CUSTOMERS_IMPORTED' || 'BENEFICIARIES_IMPORTED' => [
+        if (details['customersCreated'] != null)
+          'Clientes: ${importCounts(count(details['customersCreated']), count(details['customersExisting']), count(details['customersRejected']))}',
+        if (details['beneficiariesCreated'] != null)
+          'Beneficiarios: ${importCounts(count(details['beneficiariesCreated']), count(details['beneficiariesExisting']), count(details['beneficiariesRejected']))}',
+        if (details['linksCreated'] != null) '$importLinks: ${details['linksCreated']}',
+      ],
+      'CUSTOMERS_EXPORTED' => ['${details['customers'] ?? 0} clientes'],
       _ => [for (final entry in details.entries) '${entry.key}: ${entry.value}'],
     };
   }
@@ -439,12 +465,17 @@ abstract final class OpsTexts {
   static const nextMonth = 'Mes siguiente';
   static const reportRemittances = 'Remesas';
   static const totalCollected = 'Total cobrado';
-  static const totalCollectedHelp = 'Monto enviado + comisión, pagado por los remitentes';
+  static const totalCollectedHelp = 'Entregas: monto enviado + comisión, pagado por los remitentes';
+  static const pickupsCollected = 'Recogido por los repartidores';
+  static String pickupsHelp(int count, String fees) => '$count recogidas · $fees de comisiones';
+  static String earningsHelp(String deliveries, String pickups, String rounding) =>
+      'Entregas $deliveries · recogidas $pickups · además $rounding por redondeo al entregar';
+  static const collectedOrPicked = 'Cobrado o recogido';
   static const totalDelivered = 'Total entregado';
   static const difference = 'Diferencia';
-  static const differenceHelp = 'Cobrado − entregado';
+  static const differenceHelp = 'Cobrado − entregado, solo entregas';
   static const earnings = 'Ganancias (comisiones)';
-  static const byCurrency = 'Por moneda de entrega';
+  static const byCurrency = 'Entregas por moneda';
   static const byType = 'Por tipo';
   static const monthEndStatus = 'Estado al cierre del mes';
   static const sent = 'Enviado';
@@ -458,7 +489,6 @@ abstract final class OpsTexts {
   static const totalRow = 'Total';
   static const noSales = 'No hay remesas registradas este mes.';
   static String deliveriesAndPickups(int deliveries, int pickups) => '$deliveries entregas · $pickups recogidas';
-  static String roundingNote(String amount) => '+$amount por redondeo al entregar';
   static String reportPeriod(String from, String to) => 'Del $from al $to · hora de Cuba · importes en USD';
   static String generatedOn(String when) => 'Generado el $when';
   static String reportFileName(String month) => 'resumen-mensual-$month.pdf';

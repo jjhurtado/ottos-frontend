@@ -36,9 +36,11 @@ abstract final class CourierTexts {
   static const chooseCustomerFirst = 'Elige primero el remitente';
   static const noBeneficiaries = 'Este remitente no tiene beneficiarios todavía. Búscalo entre todos.';
   static const amountToSend = 'Monto a enviar';
+  static const amountToCollect = 'Monto a recoger';
   static const targetCurrency = 'Moneda';
   static const noRates = 'No hay monedas con tasa para este tipo de remesa.';
   static const quoteHint = 'Escribe el monto para ver la comisión y lo que se entrega.';
+  static const pickupQuoteHint = 'Escribe el monto para ver la comisión.';
   static const fee = 'Comisión';
   static const total = 'Total a cobrar';
   static const rate = 'Tasa';
@@ -100,7 +102,8 @@ abstract final class CourierTexts {
   static String notSynced(int count) => count == 1 ? '1 acción no sincronizada' : '$count acciones no sincronizadas';
   static String pendingActions(int count) => count == 1 ? '1 sin enviar' : '$count sin enviar';
   static String unsentOnLogout(int count) =>
-      'Tienes ${pendingActions(count)} en el teléfono. Si cierras sesión ahora se perderán. '
+      'Tienes ${count == 1 ? '1 acción' : '$count acciones'} sin enviar en el teléfono. '
+      'Si cierras sesión ahora se perderán. '
       'Conéctate y sincroniza antes de salir.';
   static const logoutAnyway = 'Cerrar sesión igualmente';
 

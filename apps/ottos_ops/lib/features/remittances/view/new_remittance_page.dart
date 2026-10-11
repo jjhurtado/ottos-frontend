@@ -108,8 +108,10 @@ class _NewRemittanceViewState extends State<_NewRemittanceView> {
                               enabled: !state.submitting,
                               keyboardType: const TextInputType.numberWithOptions(decimal: true),
                               inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d*[.,]?\d{0,2}'))],
-                              decoration: const InputDecoration(
-                                labelText: OpsTexts.amountToSend,
+                              decoration: InputDecoration(
+                                labelText: state.type == RemittanceType.pickup
+                                    ? OpsTexts.amountToCollect
+                                    : OpsTexts.amountToSend,
                                 suffixText: NewRemittanceCubit.sourceCurrency,
                               ),
                               onChanged: (text) => cubit.amountChanged(double.tryParse(text.replaceAll(',', '.'))),
@@ -138,6 +140,7 @@ class _NewRemittanceViewState extends State<_NewRemittanceView> {
                       ],
                       const SizedBox(height: 16),
                       PickupRateField(state: state),
+                      PickupFeeField(state: state),
                       _QuoteSummary(state: state),
                       const SizedBox(height: 16),
                       TextField(
@@ -368,22 +371,45 @@ class _QuoteSummary extends StatelessWidget {
       child: switch (state.quoteStatus) {
         LoadStatus.loading => const Center(child: CircularProgressIndicator()),
         LoadStatus.failure => Text(state.error ?? CoreTexts.unexpectedError, style: TextStyle(color: colors.error)),
-        LoadStatus.success when quote == null => const Text(OpsTexts.quoteHint),
+        LoadStatus.success when quote == null => Text(
+          state.type == RemittanceType.pickup ? OpsTexts.pickupQuoteHint : OpsTexts.quoteHint,
+        ),
         LoadStatus.success => Column(
           children: [
-            InfoRow(label: OpsTexts.fee, value: Formatters.money(quote!.fee, quote.sourceCurrency)),
-            InfoRow(label: OpsTexts.total, value: Formatters.money(quote.total, quote.sourceCurrency)),
-            InfoRow(
-              label: OpsTexts.rate,
-              value: [
-                Formatters.money(quote.rate, null),
-                if (quote.rateOverridden) CoreTexts.rateTypedByHand,
-              ].join(' · '),
-            ),
-            InfoRow(
-              label: state.type == RemittanceType.pickup ? OpsTexts.cashToCollect : OpsTexts.amountToDeliver,
-              value: Formatters.money(quote.amountToDeliver, quote.targetCurrency),
-            ),
+            // A pickup hands nothing over: the courier collects the amount and
+            // the fee is the business's, so there is no total or amount to deliver.
+            if (state.type == RemittanceType.pickup) ...[
+              InfoRow(label: OpsTexts.cashToCollect, value: Formatters.money(quote!.amount, quote.sourceCurrency)),
+              InfoRow(
+                label: OpsTexts.fee,
+                value: [
+                  Formatters.money(quote.fee, quote.sourceCurrency),
+                  if (quote.feeOverridden) CoreTexts.rateTypedByHand,
+                ].join(' · '),
+              ),
+              InfoRow(
+                label: OpsTexts.rate,
+                value: [
+                  Formatters.money(quote.rate, null),
+                  if (quote.rateOverridden) CoreTexts.rateTypedByHand,
+                  CoreTexts.rateInformative,
+                ].join(' · '),
+              ),
+            ] else ...[
+              InfoRow(label: OpsTexts.fee, value: Formatters.money(quote!.fee, quote.sourceCurrency)),
+              InfoRow(label: OpsTexts.total, value: Formatters.money(quote.total, quote.sourceCurrency)),
+              InfoRow(
+                label: OpsTexts.rate,
+                value: [
+                  Formatters.money(quote.rate, null),
+                  if (quote.rateOverridden) CoreTexts.rateTypedByHand,
+                ].join(' · '),
+              ),
+              InfoRow(
+                label: OpsTexts.amountToDeliver,
+                value: Formatters.money(quote.amountToDeliver, quote.targetCurrency),
+              ),
+            ],
           ],
         ),
       },

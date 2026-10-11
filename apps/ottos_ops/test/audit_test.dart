@@ -30,6 +30,35 @@ void main() {
   });
 
   group('details', () {
+    test('imports and exports read in Spanish, about the kind of records', () {
+      final beneficiaries = _entry('BENEFICIARIES_IMPORTED', {
+        'beneficiariesCreated': 2,
+        'beneficiariesExisting': 0,
+        'beneficiariesRejected': 1,
+      }, type: 'BENEFICIARIES');
+      expect(OpsTexts.auditAction(beneficiaries.action), 'Beneficiarios importados (CSV)');
+      expect(OpsTexts.auditTargetLabel(beneficiaries), 'Beneficiarios');
+      expect(OpsTexts.auditDetails(beneficiaries), ['Beneficiarios: 2 nuevos · 0 ya existían · 1 rechazados']);
+
+      final customers = _entry('CUSTOMERS_IMPORTED', {
+        'customersCreated': 1,
+        'customersExisting': 3,
+        'customersRejected': 0,
+        'beneficiariesCreated': 4,
+        'beneficiariesExisting': 0,
+        'beneficiariesRejected': 0,
+        'linksCreated': 4,
+      }, type: 'CUSTOMERS');
+      expect(OpsTexts.auditDetails(customers), [
+        'Clientes: 1 nuevos · 3 ya existían · 0 rechazados',
+        'Beneficiarios: 4 nuevos · 0 ya existían · 0 rechazados',
+        'Vínculos nuevos: 4',
+      ]);
+      expect(OpsTexts.auditDetails(_entry('CUSTOMERS_EXPORTED', {'customers': 12}, type: 'CUSTOMERS')), [
+        '12 clientes',
+      ]);
+    });
+
     test('roles and permissions read by their Spanish names', () {
       expect(
         OpsTexts.auditDetails(

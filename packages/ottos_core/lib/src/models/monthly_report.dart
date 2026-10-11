@@ -91,6 +91,9 @@ class MonthlyReport extends Equatable {
     this.fees = 0,
     this.deliveredUsd = 0,
     this.difference = 0,
+    this.roundingMargin = 0,
+    this.pickupsCollected = 0,
+    this.pickupsFees = 0,
     this.delivered = const [],
     this.byCurrency = const [],
     this.byType = const [],
@@ -98,6 +101,7 @@ class MonthlyReport extends Equatable {
 
   factory MonthlyReport.fromJson(Map<String, dynamic> json) {
     final counts = (json['remittances'] as Map<String, dynamic>?) ?? const {};
+    final pickups = (json['pickups'] as Map<String, dynamic>?) ?? const {};
     return MonthlyReport(
       month: json['month'] as String? ?? '',
       from: parseDateTime(json['from']),
@@ -113,6 +117,9 @@ class MonthlyReport extends Equatable {
       fees: parseDecimal(json['fees']) ?? 0,
       deliveredUsd: parseDecimal(json['deliveredUsd']) ?? 0,
       difference: parseDecimal(json['difference']) ?? 0,
+      roundingMargin: parseDecimal(json['roundingMargin']) ?? 0,
+      pickupsCollected: parseDecimal(pickups['collected']) ?? 0,
+      pickupsFees: parseDecimal(pickups['fees']) ?? 0,
       delivered: [
         for (final item in json['delivered'] as List? ?? const []) Money.fromJson(item as Map<String, dynamic>),
       ],
@@ -141,25 +148,33 @@ class MonthlyReport extends Equatable {
   final int open;
   final int withIncident;
 
-  /// Charged to senders: amount plus fee.
+  /// Charged to senders for the deliveries: amount plus fee.
   final double collected;
 
-  /// The earnings.
+  /// The earnings: fees of deliveries and pickups.
   final double fees;
 
-  /// Handed to beneficiaries, in USD at each remittance's rate.
+  /// What the deliveries hand over, in USD at each remittance's rate.
   final double deliveredUsd;
 
-  /// [collected] − [deliveredUsd].
+  /// [collected] − [deliveredUsd], deliveries only.
   final double difference;
 
-  /// Handed to beneficiaries, in their currencies.
+  /// What [difference] has beyond the deliveries' fees: rounding down what is
+  /// delivered.
+  final double roundingMargin;
+
+  /// Pickups hand nothing over: what the couriers collected and their fees.
+  final double pickupsCollected;
+  final double pickupsFees;
+
+  /// The deliveries' fees, the part of [fees] inside [difference].
+  double get deliveryFees => fees - pickupsFees;
+
+  /// What the deliveries hand over, in their currencies.
   final List<Money> delivered;
   final List<ReportCurrencyLine> byCurrency;
   final List<ReportTypeLine> byType;
-
-  /// What the difference has beyond the fees: rounding down what is delivered.
-  double get rounding => difference - fees;
 
   @override
   List<Object?> get props => [month, generatedAt, remittances, collected, fees, deliveredUsd, difference];

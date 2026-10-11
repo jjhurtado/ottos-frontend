@@ -31,7 +31,7 @@ abstract final class CoreTexts {
     'NO_EXCHANGE_RATE': 'No hay tasa de cambio configurada para esa moneda.',
     'NO_FEE_RULE': 'No hay comisión configurada para esa moneda.',
     'COURIER_REQUIRED': 'Elige un repartidor.',
-    'INVALID_COURIER': 'Ese usuario no puede recibir remesas.',
+    'INVALID_COURIER': 'Ese usuario no es un repartidor.',
     'COURIER_NOT_ASSIGNED': 'La remesa no está asignada a ti.',
     'INCORRECT_PIN': 'El PIN no es correcto.',
     'INVALID_OCCURRED_AT': 'La hora de la acción no es válida: es futura, demasiado antigua o anterior a la remesa.',
@@ -50,6 +50,7 @@ abstract final class CoreTexts {
     'CUSTOMER_NOT_FOUND': 'No se encontró el remitente.',
     'BENEFICIARY_NOT_FOUND': 'No se encontró el beneficiario.',
     'RATE_NOT_ALLOWED': 'Solo las recogidas pueden llevar su propia tasa.',
+    'FEE_NOT_ALLOWED': 'Solo las recogidas pueden llevar su propia comisión.',
     'CUSTOMER_ALREADY_REGISTERED': 'Ya hay un cliente con ese nombre, teléfono y dirección.',
     'BENEFICIARY_INACTIVE': 'Coincide con un beneficiario borrado; restáuralo en el panel.',
     'INVALID_PHONE': 'El teléfono no es válido.',
@@ -100,6 +101,9 @@ abstract final class CoreTexts {
   static const pickupRate = 'Tasa de esta recogida';
   static String pickupRateConfigured(String rate) => 'Configurada: $rate. Cámbiala si hoy es otra.';
   static const rateTypedByHand = 'indicada a mano';
+  static const pickupFee = 'Comisión de esta recogida';
+  static const pickupFeeHelp = 'Vacía: la comisión configurada. Puede ser 0.';
+  static const rateInformative = 'solo informativa';
 
   // Currency exchange
   static const exchangeTitle = 'Cambiar moneda';
@@ -233,6 +237,7 @@ abstract final class CoreTexts {
   static const confirmDelivery = 'Confirmar entrega';
   static const confirmCollection = 'Confirmar recogida';
   static const pin = 'PIN del beneficiario';
+  static String pinLength(int digits) => 'El PIN tiene $digits dígitos.';
   static const pinHint = 'Opcional si el remitente no recibió PIN';
   static const note = 'Nota (opcional)';
 

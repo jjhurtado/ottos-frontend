@@ -204,11 +204,11 @@ class _CourierCashTile extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 4),
-            Text(
-              courier.balances.isEmpty
-                  ? Formatters.money(0, null)
-                  : courier.balances.map((balance) => Formatters.money(balance.amount, balance.currency)).join(' · '),
-              style: textTheme.bodyMedium?.copyWith(color: courier.negative ? OttosColors.danger : null),
+            BalancesText(
+              balances: courier.balances,
+              empty: Formatters.money(0, null),
+              style: textTheme.bodyMedium,
+              negativeColor: OttosColors.danger,
             ),
             if (canWrite)
               Wrap(

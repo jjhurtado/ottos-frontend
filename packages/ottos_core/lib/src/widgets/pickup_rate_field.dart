@@ -39,3 +39,31 @@ class PickupRateField extends StatelessWidget {
     );
   }
 }
+
+/// A pickup's fee when registering it: empty applies the configured rule;
+/// pickups vary, so the fee of the moment can be typed (0 included).
+class PickupFeeField extends StatelessWidget {
+  const PickupFeeField({super.key, required this.state});
+
+  final NewRemittanceState state;
+
+  @override
+  Widget build(BuildContext context) {
+    if (state.type != RemittanceType.pickup) return const SizedBox.shrink();
+    final cubit = context.read<NewRemittanceCubit>();
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: TextFormField(
+        enabled: !state.submitting,
+        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+        inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d*[.,]?\d{0,2}'))],
+        decoration: const InputDecoration(
+          labelText: CoreTexts.pickupFee,
+          suffixText: NewRemittanceCubit.sourceCurrency,
+          helperText: CoreTexts.pickupFeeHelp,
+        ),
+        onChanged: (text) => cubit.pickupFeeChanged(double.tryParse(text.trim().replaceAll(',', '.'))),
+      ),
+    );
+  }
+}

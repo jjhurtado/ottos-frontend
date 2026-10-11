@@ -34,6 +34,7 @@ final class NewRemittanceState extends Equatable {
     this.couriers = const [],
     this.courier,
     this.pickupRate,
+    this.pickupFee,
   });
 
   final LoadStatus corridorsStatus;
@@ -66,6 +67,9 @@ final class NewRemittanceState extends Equatable {
   /// The rate typed for this pickup; null keeps the configured one.
   final double? pickupRate;
 
+  /// The fee typed for this pickup (may be 0); null applies the configured rule.
+  final double? pickupFee;
+
   bool get canSubmit =>
       customer != null && beneficiary != null && targetCurrency != null && quote != null && !submitting;
 
@@ -88,6 +92,7 @@ final class NewRemittanceState extends Equatable {
     couriers,
     courier,
     pickupRate,
+    pickupFee,
   ];
 }
 
@@ -171,6 +176,7 @@ class NewRemittanceCubit extends Cubit<NewRemittanceState> {
     _emit(
       type: type,
       pickupRate: null,
+      pickupFee: null,
       targetCurrencies: currencies,
       targetCurrency: currencies.contains(current) ? current : (currencies.isEmpty ? null : currencies.first),
     );
@@ -238,6 +244,14 @@ class NewRemittanceCubit extends Cubit<NewRemittanceState> {
     _scheduleQuote();
   }
 
+  /// A pickup's own fee; empty (null) or negative goes back to the configured rule.
+  void pickupFeeChanged(double? fee) {
+    final own = fee == null || fee < 0 ? null : fee;
+    if (own == state.pickupFee) return;
+    _emit(pickupFee: own);
+    _scheduleQuote();
+  }
+
   void amountChanged(double? amount) {
     _emit(amount: amount);
     _scheduleQuote();
@@ -262,6 +276,7 @@ class NewRemittanceCubit extends Cubit<NewRemittanceState> {
           amount: amount,
           type: type,
           rate: type == RemittanceType.pickup ? state.pickupRate : null,
+          fee: type == RemittanceType.pickup ? state.pickupFee : null,
         );
         if (request == _quoteRequest && !isClosed) _emit(quote: quote, quoteStatus: LoadStatus.success);
       } on ApiException catch (error) {
@@ -282,6 +297,7 @@ class NewRemittanceCubit extends Cubit<NewRemittanceState> {
           amount: state.quote!.amount,
           targetCurrency: state.targetCurrency!,
           rate: state.type == RemittanceType.pickup ? state.pickupRate : null,
+          fee: state.type == RemittanceType.pickup ? state.pickupFee : null,
           notes: notes == null || notes.trim().isEmpty ? null : notes.trim(),
         ),
         idempotencyKey: _idempotencyKey,
@@ -323,6 +339,7 @@ class NewRemittanceCubit extends Cubit<NewRemittanceState> {
     List<Courier>? couriers,
     Object? courier = _keep,
     Object? pickupRate = _keep,
+    Object? pickupFee = _keep,
   }) {
     final s = state;
     emit(
@@ -344,6 +361,7 @@ class NewRemittanceCubit extends Cubit<NewRemittanceState> {
         couriers: couriers ?? s.couriers,
         courier: courier == _keep ? s.courier : courier as Courier?,
         pickupRate: pickupRate == _keep ? s.pickupRate : pickupRate as double?,
+        pickupFee: pickupFee == _keep ? s.pickupFee : pickupFee as double?,
       ),
     );
   }

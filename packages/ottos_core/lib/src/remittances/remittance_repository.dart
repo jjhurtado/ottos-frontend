@@ -107,6 +107,7 @@ class NewRemittance extends Equatable {
     required this.targetCurrency,
     this.notes,
     this.rate,
+    this.fee,
   });
 
   final RemittanceType type;
@@ -120,6 +121,10 @@ class NewRemittance extends Equatable {
   /// configured one. Deliveries never send it.
   final double? rate;
 
+  /// A pickup's own fee in USD (may be 0); null uses the configured rule.
+  /// Deliveries never send it.
+  final double? fee;
+
   Map<String, dynamic> toJson() => {
     'type': type.code,
     'customerId': customerId,
@@ -128,10 +133,11 @@ class NewRemittance extends Equatable {
     'targetCurrency': targetCurrency,
     'notes': notes,
     'rate': ?rate,
+    'fee': ?fee,
   };
 
   @override
-  List<Object?> get props => [type, customerId, beneficiaryId, amount, targetCurrency, notes, rate];
+  List<Object?> get props => [type, customerId, beneficiaryId, amount, targetCurrency, notes, rate, fee];
 }
 
 class RemittanceRepository {

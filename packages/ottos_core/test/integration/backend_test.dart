@@ -318,13 +318,27 @@ void main() {
         return;
       }
 
-      final usual = await cash.exchangeOwn(
+      // The admin is not a courier: exchanges go to a courier's cash.
+      await expectLater(
+        cash.exchangeOwn(ExchangeInput(fromCurrency: 'USD', fromAmount: 1, toCurrency: 'CUP', rate: configured)),
+        throwsA(isA<ApiException>().having((e) => e.code, 'code', 'INVALID_COURIER')),
+      );
+      final couriers = await remittances.couriers();
+      if (couriers.isEmpty) {
+        markTestSkipped('Needs a courier');
+        return;
+      }
+      final courier = couriers.first.id;
+
+      final usual = await cash.exchangeFor(
+        courier,
         ExchangeInput(fromCurrency: 'USD', fromAmount: 1, toCurrency: 'CUP', rate: configured),
       );
       expect(usual.toAmount, configured);
       expect(usual.review, isNull);
 
-      final unusual = await cash.exchangeOwn(
+      final unusual = await cash.exchangeFor(
+        courier,
         ExchangeInput(fromCurrency: 'CUP', fromAmount: 1000, toCurrency: 'USD', rate: configured * 3, note: 'Prueba'),
       );
       expect(unusual.pendingReview, isTrue);
@@ -339,7 +353,8 @@ void main() {
       );
 
       // Back to where it was: the opposite exchange at the same rate.
-      await cash.exchangeOwn(
+      await cash.exchangeFor(
+        courier,
         ExchangeInput(fromCurrency: 'CUP', fromAmount: configured, toCurrency: 'USD', rate: configured),
       );
     });
@@ -462,6 +477,20 @@ void main() {
       expect(own.rateOverridden, isTrue);
       expect(own.amountToDeliver, 100);
 
+      final noFee = await rates.quote(
+        sourceCurrency: 'USD',
+        targetCurrency: 'USD',
+        amount: 100,
+        type: RemittanceType.pickup,
+        fee: 0,
+      );
+      expect(noFee.fee, 0);
+      expect(noFee.feeOverridden, isTrue);
+      await expectLater(
+        rates.quote(sourceCurrency: 'USD', targetCurrency: 'USD', amount: 100, fee: 0),
+        throwsA(isA<ApiException>().having((e) => e.code, 'code', 'FEE_NOT_ALLOWED')),
+      );
+
       await expectLater(
         rates.quote(sourceCurrency: 'USD', targetCurrency: 'USD', amount: 100, rate: 1),
         throwsA(isA<ApiException>().having((e) => e.code, 'code', 'RATE_NOT_ALLOWED')),
@@ -479,7 +508,9 @@ void main() {
       expect(report.month, '${now.year}-${now.month.toString().padLeft(2, '0')}');
       expect(report.remittances, report.deliveries + report.pickups);
       expect(report.difference, closeTo(report.collected - report.deliveredUsd, 0.01));
-      expect(report.byCurrency.fold<int>(0, (sum, line) => sum + line.remittances), report.remittances);
+      // Pickups hand nothing over: only deliveries go by currency.
+      expect(report.byCurrency.fold<int>(0, (sum, line) => sum + line.remittances), report.deliveries);
+      expect(report.roundingMargin, closeTo(report.difference - report.deliveryFees, 0.01));
     });
   }, skip: skip);
 

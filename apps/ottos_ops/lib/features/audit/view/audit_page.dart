@@ -85,10 +85,11 @@ class _Filters extends StatelessWidget {
       crossAxisAlignment: WrapCrossAlignment.center,
       children: [
         SizedBox(
-          width: 180,
+          width: 200,
           child: DropdownButtonFormField<String?>(
             key: ValueKey('target-${filter.targetType}'),
             initialValue: filter.targetType,
+            isExpanded: true,
             decoration: const InputDecoration(labelText: OpsTexts.target, isDense: true),
             items: [
               const DropdownMenuItem(value: null, child: Text(OpsTexts.allTargets)),
@@ -151,7 +152,7 @@ class _Entries extends StatelessWidget {
               final entry = items[index];
               return ListTile(
                 leading: Icon(_icon(entry)),
-                title: Text('${OpsTexts.auditAction(entry.action)} · ${entry.targetLabel ?? ''}'),
+                title: Text('${OpsTexts.auditAction(entry.action)} · ${OpsTexts.auditTargetLabel(entry)}'),
                 subtitle: Text(
                   [
                     '${Formatters.dateTime(entry.occurredAt)} · ${entry.actorName ?? OpsTexts.system}',
@@ -187,7 +188,7 @@ class _Entries extends StatelessWidget {
                         children: [
                           Icon(_icon(entry), size: 18, color: OttosColors.navy),
                           const SizedBox(width: 6),
-                          Text(entry.targetLabel ?? ''),
+                          Text(OpsTexts.auditTargetLabel(entry)),
                         ],
                       ),
                     ),

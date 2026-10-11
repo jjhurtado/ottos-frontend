@@ -84,6 +84,7 @@ class RateRepository {
     required double amount,
     RemittanceType type = RemittanceType.delivery,
     double? rate,
+    double? fee,
   }) async => Quote.fromJson(
     await _api.post<Map<String, dynamic>>(
       '/quotes',
@@ -94,6 +95,7 @@ class RateRepository {
         'remittanceType': type.code,
         // Only pickups take their own rate.
         'rate': ?rate,
+        'fee': ?fee,
       },
     ),
   );

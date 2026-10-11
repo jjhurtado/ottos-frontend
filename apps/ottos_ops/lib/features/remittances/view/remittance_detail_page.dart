@@ -286,6 +286,34 @@ class _MoneyCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final source = remittance.sourceCurrency;
+    // A pickup hands nothing over: what the courier collects, the business's
+    // fee and the rate, which is only informative.
+    if (remittance.isPickup) {
+      return _Section(
+        title: OpsTexts.money,
+        children: [
+          InfoRow(
+            label: OpsTexts.cashToCollect,
+            value: Formatters.money(remittance.cashAmount, remittance.cashCurrency),
+          ),
+          InfoRow(
+            label: OpsTexts.fee,
+            value: [
+              Formatters.money(remittance.fee, source),
+              if (remittance.feeOverridden == true) CoreTexts.rateTypedByHand,
+            ].join(' · '),
+          ),
+          InfoRow(
+            label: OpsTexts.rate,
+            value: [
+              Formatters.money(remittance.rate, null),
+              if (remittance.rateOverridden == true) CoreTexts.rateTypedByHand,
+              CoreTexts.rateInformative,
+            ].join(' · '),
+          ),
+        ],
+      );
+    }
     return _Section(
       title: OpsTexts.money,
       children: [
@@ -303,11 +331,6 @@ class _MoneyCard extends StatelessWidget {
           label: OpsTexts.amountToDeliver,
           value: Formatters.money(remittance.amountToDeliver, remittance.targetCurrency),
         ),
-        if (remittance.isPickup)
-          InfoRow(
-            label: OpsTexts.cashToCollect,
-            value: Formatters.money(remittance.cashAmount, remittance.cashCurrency),
-          ),
       ],
     );
   }
