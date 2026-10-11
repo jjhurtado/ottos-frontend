@@ -8,6 +8,9 @@ import '../utils/formatters.dart';
 
 typedef CompleteInput = ({String? pin, String? note});
 
+/// Digits of a remittance PIN, as the backend generates them.
+const pinLength = 6;
+
 /// Asks for the optional PIN and note before completing a remittance.
 Future<CompleteInput?> showCompleteDialog(BuildContext context, {required bool isPickup}) {
   return showDialog<CompleteInput>(
@@ -28,6 +31,27 @@ class _CompleteDialog extends StatefulWidget {
 class _CompleteDialogState extends State<_CompleteDialog> {
   final _pin = TextEditingController();
   final _note = TextEditingController();
+  String? _pinError;
+
+  @override
+  void initState() {
+    super.initState();
+    // Typing again clears the error.
+    _pin.addListener(() {
+      if (_pinError != null) setState(() => _pinError = null);
+    });
+  }
+
+  /// Every PIN has [pinLength] digits; checking it here says so instead of the
+  /// server's generic "invalid data".
+  void _confirm() {
+    final pin = _pin.text.trim();
+    if (pin.isNotEmpty && pin.length != pinLength) {
+      setState(() => _pinError = CoreTexts.pinLength(pinLength));
+      return;
+    }
+    Navigator.of(context).pop((pin: pin, note: _emptyToNull(_note.text)));
+  }
 
   @override
   void dispose() {
@@ -46,11 +70,12 @@ class _CompleteDialogState extends State<_CompleteDialog> {
           TextField(
             controller: _pin,
             keyboardType: TextInputType.number,
-            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-            decoration: const InputDecoration(
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(pinLength)],
+            decoration: InputDecoration(
               labelText: CoreTexts.pin,
               helperText: CoreTexts.pinHint,
               helperMaxLines: 2,
+              errorText: _pinError,
             ),
           ),
           const SizedBox(height: 16),
@@ -65,7 +90,7 @@ class _CompleteDialogState extends State<_CompleteDialog> {
         TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text(CoreTexts.cancel)),
         FilledButton(
           style: FilledButton.styleFrom(backgroundColor: widget.isPickup ? OttosColors.pickup : OttosColors.delivery),
-          onPressed: () => Navigator.of(context).pop((pin: _pin.text.trim(), note: _emptyToNull(_note.text))),
+          onPressed: _confirm,
           child: const Text(CoreTexts.confirm),
         ),
       ],

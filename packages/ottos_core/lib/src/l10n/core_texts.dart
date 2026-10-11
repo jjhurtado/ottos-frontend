@@ -31,7 +31,7 @@ abstract final class CoreTexts {
     'NO_EXCHANGE_RATE': 'No hay tasa de cambio configurada para esa moneda.',
     'NO_FEE_RULE': 'No hay comisión configurada para esa moneda.',
     'COURIER_REQUIRED': 'Elige un repartidor.',
-    'INVALID_COURIER': 'Ese usuario no puede recibir remesas.',
+    'INVALID_COURIER': 'Ese usuario no es un repartidor.',
     'COURIER_NOT_ASSIGNED': 'La remesa no está asignada a ti.',
     'INCORRECT_PIN': 'El PIN no es correcto.',
     'INVALID_OCCURRED_AT': 'La hora de la acción no es válida: es futura, demasiado antigua o anterior a la remesa.',
@@ -233,6 +233,7 @@ abstract final class CoreTexts {
   static const confirmDelivery = 'Confirmar entrega';
   static const confirmCollection = 'Confirmar recogida';
   static const pin = 'PIN del beneficiario';
+  static String pinLength(int digits) => 'El PIN tiene $digits dígitos.';
   static const pinHint = 'Opcional si el remitente no recibió PIN';
   static const note = 'Nota (opcional)';
 

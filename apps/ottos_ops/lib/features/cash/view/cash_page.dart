@@ -257,14 +257,7 @@ class _CourierCashTable extends StatelessWidget {
                     ],
                   ),
                 ),
-                DataCell(
-                  Text(
-                    courier.balances.isEmpty
-                        ? '—'
-                        : courier.balances.map((b) => Formatters.money(b.amount, b.currency)).join(' · '),
-                    style: TextStyle(color: courier.negative ? error : null),
-                  ),
-                ),
+                DataCell(BalancesText(balances: courier.balances, empty: '—', negativeColor: error)),
                 if (canWrite)
                   DataCell(
                     Row(
