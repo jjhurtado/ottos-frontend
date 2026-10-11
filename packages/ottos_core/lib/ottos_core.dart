@@ -31,6 +31,8 @@ export 'src/models/zones.dart';
 export 'src/rates/rate_repository.dart';
 export 'src/remittances/new_remittance_cubit.dart';
 export 'src/remittances/remittance_repository.dart';
+export 'src/sync/sync_models.dart';
+export 'src/sync/sync_repository.dart';
 export 'src/theme/ottos_colors.dart';
 export 'src/users/role_repository.dart';
 export 'src/users/user_repository.dart';

@@ -1,21 +1,23 @@
 import '../api/api_client.dart';
 import '../api/api_exception.dart';
+import '../config/app_config.dart';
 import 'current_user.dart';
 import 'token_storage.dart';
 
 /// Login, logout and the current user.
 class AuthRepository {
-  AuthRepository({required this._api, required this._tokenStorage});
+  AuthRepository({required this._api, required this._tokenStorage, this.client = AppClient.web});
 
   final ApiClient _api;
   final TokenStorage _tokenStorage;
+  final AppClient client;
 
   Stream<void> get sessionExpired => _api.sessionExpired;
 
   Future<CurrentUser> login({required String email, required String password}) async {
     final json = await _api.post<Map<String, dynamic>>(
       '/auth/login',
-      body: {'email': email.trim(), 'password': password},
+      body: {'email': email.trim(), 'password': password, 'client': client.code},
       authenticated: false,
     );
     await _tokenStorage.write(AuthTokens.fromJson(json));

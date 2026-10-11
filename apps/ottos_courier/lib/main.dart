@@ -6,5 +6,5 @@ import 'app/app.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await OttosLocalization.initialize();
-  runApp(CourierApp(config: AppConfig.fromEnvironment()));
+  runApp(CourierApp(config: AppConfig.fromEnvironment(client: AppClient.mobile)));
 }

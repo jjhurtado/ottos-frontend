@@ -306,6 +306,7 @@ abstract final class OpsTexts {
     Permissions.remittancesDeliver => 'Marcar como entregada o recogida (repartidor)',
     Permissions.remittancesPostpone => 'Aplazar remesas',
     Permissions.remittancesReportIncident => 'Reportar incidencias de entrega (repartidor)',
+    Permissions.remittancesReview => 'Revisar remesas marcadas (entregas sin conexión)',
     Permissions.customersRead => 'Ver clientes y beneficiarios',
     Permissions.customersWrite => 'Crear y editar clientes y beneficiarios',
     Permissions.cashRead => 'Ver la caja del negocio y de los repartidores',

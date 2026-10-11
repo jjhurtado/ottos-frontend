@@ -32,6 +32,9 @@ abstract final class CoreTexts {
     'INVALID_COURIER': 'Ese usuario no puede recibir remesas.',
     'COURIER_NOT_ASSIGNED': 'La remesa no está asignada a ti.',
     'INCORRECT_PIN': 'El PIN no es correcto.',
+    'INVALID_OCCURRED_AT': 'La hora de la acción no es válida: es futura, demasiado antigua o anterior a la remesa.',
+    'ACTION_ID_CONFLICT': 'Esta acción ya se registró con otros datos.',
+    'REVIEW_NOT_PENDING': 'Esta remesa ya no está pendiente de revisión.',
     'INVALID_POSTPONE_DATE': 'La nueva fecha debe ser posterior a la fecha prevista.',
     'REMITTANCE_NOT_FOUND': 'No se encontró la remesa.',
     'REMITTANCE_ALREADY_COMPLETED': 'La remesa ya está completada.',
@@ -160,6 +163,17 @@ abstract final class CoreTexts {
     ('DELIVERED', RemittanceType.pickup) => 'Recogida',
     ('DELIVERED', null) => 'Entregada o recogida',
     _ => fallback == null || fallback.isEmpty ? code : fallback,
+  };
+
+  static const review = 'Revisar';
+  static const toReview = 'Para revisar';
+
+  static String reviewReason(ReviewReason reason) => switch (reason) {
+    ReviewReason.deliveredAfterReassignment => 'Entregada después de reasignarla',
+    ReviewReason.pinMismatch => 'Entregada sin conexión con un PIN que no coincide',
+    ReviewReason.duplicateDelivery => 'Dos personas dicen haberla entregado',
+    ReviewReason.lateSync => 'Sincronizada más de 7 días después',
+    ReviewReason.other => 'Marcada para revisión',
   };
 
   static String incidentReason(IncidentReason reason) => switch (reason) {
