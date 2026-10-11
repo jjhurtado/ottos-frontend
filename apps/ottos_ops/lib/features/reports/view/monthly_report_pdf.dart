@@ -192,9 +192,9 @@ Future<Uint8List> buildMonthlyReportPdf(MonthlyReport report, {required DateTime
                 ],
               [
                 OpsTexts.totalRow,
-                '${report.remittances}',
+                '${report.deliveries}',
                 _usd(report.byCurrency.fold(0, (sum, line) => sum + line.sent)),
-                _usd(report.fees),
+                _usd(report.deliveryFees),
                 _usd(report.collected),
                 '-',
                 _usd(report.deliveredUsd),

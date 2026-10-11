@@ -179,14 +179,15 @@ class _ReportView extends StatelessWidget {
                 DataRow(
                   cells: [
                     const DataCell(Text(OpsTexts.totalRow, style: TextStyle(fontWeight: FontWeight.w700))),
-                    DataCell(Text('${report.remittances}', style: const TextStyle(fontWeight: FontWeight.w700))),
+                    // Only deliveries go by currency: their count and fees.
+                    DataCell(Text('${report.deliveries}', style: const TextStyle(fontWeight: FontWeight.w700))),
                     DataCell(
                       Text(
                         usd(report.byCurrency.fold(0, (sum, line) => sum + line.sent)),
                         style: const TextStyle(fontWeight: FontWeight.w700),
                       ),
                     ),
-                    DataCell(Text(usd(report.fees), style: const TextStyle(fontWeight: FontWeight.w700))),
+                    DataCell(Text(usd(report.deliveryFees), style: const TextStyle(fontWeight: FontWeight.w700))),
                     DataCell(Text(usd(report.collected), style: const TextStyle(fontWeight: FontWeight.w700))),
                     const DataCell(Text('—')),
                     DataCell(Text(usd(report.deliveredUsd), style: const TextStyle(fontWeight: FontWeight.w700))),

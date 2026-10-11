@@ -124,6 +124,9 @@ void main() {
         findsOneWidget,
       );
       expect(find.text(OpsTexts.pickupsCollected), findsOneWidget);
+      // The deliveries' total row: 18 of them and their 180 of fees, not the month's 24 and 220.
+      expect(find.text('18'), findsWidgets);
+      expect(find.text(Formatters.money(180, 'USD')), findsWidgets);
       expect(find.text(OpsTexts.pickupsHelp(6, Formatters.money(40, 'USD'))), findsOneWidget);
       expect(find.text(Formatters.money(737950, 'CUP')), findsWidgets);
       expect(find.widgetWithText(FilledButton, OpsTexts.exportPdf), findsOneWidget);
