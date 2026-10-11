@@ -48,6 +48,7 @@ abstract final class CoreTexts {
     'CUSTOMER_NOT_FOUND': 'No se encontró el remitente.',
     'BENEFICIARY_NOT_FOUND': 'No se encontró el beneficiario.',
     'CUSTOMER_ALREADY_REGISTERED': 'Ya hay un cliente con ese nombre, teléfono y dirección.',
+    'BENEFICIARY_INACTIVE': 'Coincide con un beneficiario borrado; restáuralo en el panel.',
     'INVALID_PHONE': 'El teléfono no es válido.',
     'UNKNOWN_MUNICIPALITY': 'El municipio no existe.',
     'INCORRECT_CURRENT_PASSWORD': 'La contraseña actual no es correcta.',

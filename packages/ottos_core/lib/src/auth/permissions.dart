@@ -11,6 +11,8 @@ abstract final class Permissions {
   static const configurationWrite = 'configuration:write';
   static const customersRead = 'customers:read';
   static const customersWrite = 'customers:write';
+  static const customersExport = 'customers:export';
+  static const customersImport = 'customers:import';
   static const remittancesCreate = 'remittances:create';
   static const remittancesRead = 'remittances:read';
   static const remittancesReadAssigned = 'remittances:read-assigned';

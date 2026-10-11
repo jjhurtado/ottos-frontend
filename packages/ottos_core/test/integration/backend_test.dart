@@ -344,6 +344,48 @@ void main() {
     });
   }, skip: skip);
 
+  group('customer transfer', () {
+    setUp(() => auth.login(email: email, password: password));
+
+    test('exports everyone, and a preview import saves nothing', () async {
+      final customers = CustomerRepository(api: api);
+      final exported = await customers.exportAll();
+      expect(exported, isNotEmpty);
+
+      final phone = '+1305${Random().nextInt(9000000) + 1000000}';
+      final preview = await customers.import([
+        ImportCustomer(
+          ref: 'fila 2',
+          fullName: 'Importación Prueba',
+          phone: phone,
+          beneficiaries: const [
+            ImportBeneficiary(
+              ref: 'fila 2',
+              fullName: 'Rosa',
+              phone: '5352223344',
+              street: 'Calle 1',
+              municipality: 'Boyeros',
+            ),
+            ImportBeneficiary(
+              ref: 'fila 3',
+              fullName: 'Luis',
+              phone: '5352223345',
+              street: 'Calle 2',
+              municipality: 'Nowhere',
+            ),
+          ],
+        ),
+      ], dryRun: true);
+
+      expect(preview.dryRun, isTrue);
+      expect(preview.customersCreated, 1);
+      expect(preview.beneficiariesCreated, 1);
+      expect(preview.rejected.single.code, 'UNKNOWN_MUNICIPALITY');
+      expect(preview.rejected.single.ref, 'fila 3');
+      expect(await customers.search(phone.substring(5)), isEmpty, reason: 'nothing was saved');
+    });
+  }, skip: skip);
+
   group('reports', () {
     setUp(() => auth.login(email: email, password: password));
 
