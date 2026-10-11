@@ -1,3 +1,5 @@
+import '../offline/sync_cubit.dart';
+
 /// User-facing texts of the courier app.
 abstract final class CourierTexts {
   static const appName = 'App de repartidores';
@@ -68,6 +70,19 @@ abstract final class CourierTexts {
   static const completed = 'Remesa completada';
   static const postponed = 'Remesa aplazada';
   static const assignToCourier = 'Asignar a repartidor';
+
+  // Offline
+  static const unsent = 'Sin enviar';
+  static const queued = 'Guardada en el teléfono. Se enviará cuando haya conexión.';
+  static const flagged = 'Hecho. Queda marcada para que ventas la revise.';
+
+  /// What to tell after an action: [done] if it went through.
+  static String outcome(ActionOutcome outcome, {required String done}) => switch (outcome) {
+    Applied(flaggedForReview: true) => flagged,
+    Applied() => done,
+    Queued() => queued,
+    Rejected(:final message) => message,
+  };
   static const assigned = 'Repartidor asignado';
 
   // Cash

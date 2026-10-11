@@ -1,6 +1,11 @@
+import 'dart:async';
+
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:ottos_core/ottos_core.dart';
+
+import '../../../offline/remittance_source.dart';
+import '../../../offline/sync_cubit.dart';
 
 enum AssignedStatus { loading, success, failure }
 
@@ -18,6 +23,7 @@ final class AssignedState extends Equatable {
     this.status = AssignedStatus.loading,
     this.items = const [],
     this.sort = AssignedSort.byDay,
+    this.pendingIds = const {},
     this.error,
   });
 
@@ -26,15 +32,24 @@ final class AssignedState extends Equatable {
   /// In the order of [sort].
   final List<Remittance> items;
   final AssignedSort sort;
+
+  /// Remittances with an action not sent yet (no network).
+  final Set<String> pendingIds;
   final String? error;
 
-  AssignedState copyWith({AssignedStatus? status, List<Remittance>? items, AssignedSort? sort, String? error}) =>
-      AssignedState(
-        status: status ?? this.status,
-        items: sorted(items ?? this.items, sort ?? this.sort),
-        sort: sort ?? this.sort,
-        error: error,
-      );
+  AssignedState copyWith({
+    AssignedStatus? status,
+    List<Remittance>? items,
+    AssignedSort? sort,
+    Set<String>? pendingIds,
+    String? error,
+  }) => AssignedState(
+    status: status ?? this.status,
+    items: sorted(items ?? this.items, sort ?? this.sort),
+    sort: sort ?? this.sort,
+    pendingIds: pendingIds ?? this.pendingIds,
+    error: error,
+  );
 
   /// [items] in the order of [sort]; ties by expected date, then code.
   static List<Remittance> sorted(List<Remittance> items, AssignedSort sort, {DateTime? now}) {
@@ -58,59 +73,51 @@ final class AssignedState extends Equatable {
   }
 
   @override
-  List<Object?> get props => [status, items, sort, error];
+  List<Object?> get props => [status, items, sort, pendingIds, error];
 }
 
 /// The open remittances of the courier, or all of them for who sees every
 /// remittance (sales), and the actions on them from the list.
 class AssignedCubit extends Cubit<AssignedState> {
-  AssignedCubit({required this._remittances, this.onlyMine = true}) : super(const AssignedState());
-
-  final RemittanceRepository _remittances;
-
-  /// The ones assigned to the user; false lists every open remittance.
-  final bool onlyMine;
-
-  /// How many of the latest remittances sales sees; the panel has the rest.
-  static const openPageSize = 100;
-
-  Future<List<Remittance>> _fetch() async {
-    if (onlyMine) return _remittances.assignedToMe();
-    final workflow = await _remittances.workflow();
-    final page = await _remittances.search(const RemittanceFilter(), size: openPageSize);
-    return page.items.where((remittance) => !workflow.isFinal(remittance.status)).toList();
+  AssignedCubit({required this._source}) : super(const AssignedState()) {
+    // A sync may bring new remittances or take some away.
+    _changes = _source.changes.listen((_) => load());
   }
+
+  final RemittanceSource _source;
+  late final StreamSubscription<void> _changes;
 
   /// Loads the list; keeps the current items visible while refreshing.
   Future<void> load() async {
     if (state.items.isEmpty) emit(AssignedState(sort: state.sort));
     try {
-      emit(state.copyWith(status: AssignedStatus.success, items: await _fetch()));
+      final items = await _source.list();
+      final pendingIds = await _source.pendingIds();
+      if (isClosed) return;
+      emit(state.copyWith(status: AssignedStatus.success, items: items, pendingIds: pendingIds));
     } on ApiException catch (error) {
-      emit(state.copyWith(status: AssignedStatus.failure, error: error.message));
+      if (!isClosed) emit(state.copyWith(status: AssignedStatus.failure, error: error.message));
     }
   }
 
   void sortBy(AssignedSort sort) => emit(state.copyWith(sort: sort));
 
-  /// Completes a remittance, checking [pin] when one was typed. Returns the
-  /// error to show, or null when it went through.
-  Future<String?> complete(Remittance remittance, {String? pin, String? note}) => _run(
-    () => pin == null || pin.isEmpty
-        ? _remittances.deliver(remittance.id, note: note)
-        : _remittances.deliverWithPin(remittance.id, pin: pin, note: note),
-  );
+  /// Completes a remittance, checking [pin] when one was typed.
+  Future<ActionOutcome> complete(Remittance remittance, {String? pin, String? note}) =>
+      _run(_source.deliver(remittance, pin: pin, note: note));
 
-  Future<String?> reportIncident(Remittance remittance, {required IncidentReason reason, String? note}) =>
-      _run(() => _remittances.reportIncident(remittance.id, reason: reason, note: note));
+  Future<ActionOutcome> reportIncident(Remittance remittance, {required IncidentReason reason, String? note}) =>
+      _run(_source.reportIncident(remittance, reason: reason, note: note));
 
-  Future<String?> _run(Future<Remittance> Function() action) async {
-    try {
-      await action();
-    } on ApiException catch (error) {
-      return error.message;
-    }
-    await load();
-    return null;
+  Future<ActionOutcome> _run(Future<ActionOutcome> action) async {
+    final outcome = await action;
+    if (outcome is! Rejected) await load();
+    return outcome;
+  }
+
+  @override
+  Future<void> close() async {
+    await _changes.cancel();
+    return super.close();
   }
 }

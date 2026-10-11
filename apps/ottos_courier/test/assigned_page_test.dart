@@ -6,6 +6,7 @@ import 'package:ottos_core/ottos_core.dart';
 import 'package:ottos_courier/app/courier_texts.dart';
 import 'package:ottos_courier/features/assigned/cubit/assigned_cubit.dart';
 import 'package:ottos_courier/features/assigned/view/assigned_page.dart';
+import 'package:ottos_courier/offline/remittance_source.dart';
 
 class _MockRemittances extends Mock implements RemittanceRepository {}
 
@@ -67,8 +68,8 @@ void main() {
     addTearDown(authBloc.close);
     await OttosLocalization.initialize();
     await tester.pumpWidget(
-      RepositoryProvider<RemittanceRepository>.value(
-        value: remittances,
+      RepositoryProvider<RemittanceSource>.value(
+        value: OnlineSource(remittances: remittances, onlyMine: true),
         child: BlocProvider.value(
           value: authBloc,
           child: MaterialApp(

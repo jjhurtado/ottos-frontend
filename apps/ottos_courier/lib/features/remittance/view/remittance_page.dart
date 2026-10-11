@@ -4,6 +4,7 @@ import 'package:ottos_core/ottos_core.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../app/courier_texts.dart';
+import '../../../offline/remittance_source.dart';
 import '../cubit/remittance_cubit.dart';
 
 class RemittancePage extends StatelessWidget {
@@ -14,7 +15,11 @@ class RemittancePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => RemittanceCubit(remittances: context.read<RemittanceRepository>(), id: remittanceId)..load(),
+      create: (context) => RemittanceCubit(
+        source: context.read<RemittanceSource>(),
+        remittances: context.read<RemittanceRepository>(),
+        id: remittanceId,
+      )..load(),
       child: BlocConsumer<RemittanceCubit, RemittanceState>(
         listenWhen: (previous, current) => current.actionResult != RemittanceActionResult.none,
         listener: (context, state) {
@@ -23,13 +28,17 @@ class RemittancePage extends StatelessWidget {
             RemittanceActionResult.postponed => CourierTexts.postponed,
             RemittanceActionResult.incidentReported => CoreTexts.incidentReported,
             RemittanceActionResult.assigned => CourierTexts.assigned,
+            RemittanceActionResult.queued => CourierTexts.queued,
+            RemittanceActionResult.flagged => CourierTexts.flagged,
             RemittanceActionResult.failed => state.error!,
             RemittanceActionResult.none => null,
           };
           if (message != null) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
           // With the incident reported there is nothing left to do here for now:
           // back to the list, which puts it at the end.
-          if (state.actionResult == RemittanceActionResult.incidentReported) Navigator.of(context).maybePop();
+          if (state.actionResult case RemittanceActionResult.incidentReported || RemittanceActionResult.queued) {
+            Navigator.of(context).maybePop();
+          }
         },
         builder: (context, state) => Scaffold(
           appBar: AppBar(title: Text(state.remittance?.code ?? '')),

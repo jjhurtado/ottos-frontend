@@ -5,6 +5,8 @@ import 'package:ottos_core/ottos_core.dart';
 
 import '../../../app/courier_texts.dart';
 import '../../../app/router.dart';
+import '../../../offline/remittance_source.dart';
+import '../../../offline/sync_cubit.dart';
 import '../cubit/assigned_cubit.dart';
 
 class AssignedPage extends StatelessWidget {
@@ -12,10 +14,9 @@ class AssignedPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final onlyMine = context.canDo(Permissions.remittancesReadAssigned);
     final canCreate = context.canDo(Permissions.remittancesCreate);
     return BlocProvider(
-      create: (context) => AssignedCubit(remittances: context.read<RemittanceRepository>(), onlyMine: onlyMine)..load(),
+      create: (context) => AssignedCubit(source: context.read<RemittanceSource>())..load(),
       child: Scaffold(
         body: const _AssignedView(),
         floatingActionButton: canCreate ? const _NewRemittanceButton() : null,
@@ -59,6 +60,7 @@ class _AssignedView extends StatelessWidget {
                 remittance: remittance,
                 child: _AssignedCard(
                   remittance: remittance,
+                  unsent: state.pendingIds.contains(remittance.id),
                   onTap: () async {
                     // Reload on return: the remittance may have been completed or postponed.
                     await context.push(Routes.remittance(remittance.id));
@@ -133,21 +135,21 @@ class _Swipeable extends StatelessWidget {
     final messenger = ScaffoldMessenger.of(context);
 
     Future<bool> act(DismissDirection direction) async {
-      final String? error;
+      final ActionOutcome outcome;
       final String done;
       if (direction == DismissDirection.startToEnd) {
         final input = await showCompleteDialog(context, isPickup: remittance.isPickup);
         if (input == null) return false;
-        error = await cubit.complete(remittance, pin: input.pin, note: input.note);
+        outcome = await cubit.complete(remittance, pin: input.pin, note: input.note);
         done = CourierTexts.completed;
       } else {
         if (!context.mounted) return false;
         final input = await showIncidentDialog(context, isPickup: remittance.isPickup);
         if (input == null) return false;
-        error = await cubit.reportIncident(remittance, reason: input.reason, note: input.note);
+        outcome = await cubit.reportIncident(remittance, reason: input.reason, note: input.note);
         done = CoreTexts.incidentReported;
       }
-      messenger.showSnackBar(SnackBar(content: Text(error ?? done)));
+      messenger.showSnackBar(SnackBar(content: Text(CourierTexts.outcome(outcome, done: done))));
       // Never dismissed here: the reload takes the remittance out of the list.
       return false;
     }
@@ -204,10 +206,13 @@ class _SwipeBackground extends StatelessWidget {
 }
 
 class _AssignedCard extends StatelessWidget {
-  const _AssignedCard({required this.remittance, required this.onTap});
+  const _AssignedCard({required this.remittance, required this.onTap, this.unsent = false});
 
   final Remittance remittance;
   final VoidCallback onTap;
+
+  /// An action on it waits for network.
+  final bool unsent;
 
   @override
   Widget build(BuildContext context) {
@@ -243,6 +248,7 @@ class _AssignedCard extends StatelessWidget {
                         children: [
                           RemittanceTypeBadge(type: type),
                           if (remittance.incident case final incident?) IncidentBadge(incident: incident),
+                          if (unsent) const _UnsentBadge(),
                         ],
                       ),
                       const SizedBox(height: 8),
@@ -282,6 +288,33 @@ class _AssignedCard extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// An action on the remittance waits for network to reach the server.
+class _UnsentBadge extends StatelessWidget {
+  const _UnsentBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: OttosColors.warning.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: const Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.cloud_off, size: 16, color: OttosColors.warning),
+          SizedBox(width: 6),
+          Text(
+            CourierTexts.unsent,
+            style: TextStyle(color: OttosColors.warning, fontWeight: FontWeight.w600),
+          ),
+        ],
       ),
     );
   }

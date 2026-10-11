@@ -100,8 +100,9 @@ class SyncAction extends Equatable {
   SyncAction withPayload(Map<String, dynamic> payload) =>
       SyncAction(id: id, type: type, remittanceId: remittanceId, occurredAt: occurredAt, payload: payload);
 
+  // The instant, not the zone: a stored action comes back in UTC.
   @override
-  List<Object?> get props => [id, type, remittanceId, occurredAt, payload];
+  List<Object?> get props => [id, type, remittanceId, occurredAt.microsecondsSinceEpoch, payload];
 }
 
 enum SyncResultStatus {
