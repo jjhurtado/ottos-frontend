@@ -1,6 +1,6 @@
 # Ottos frontend · Roadmap
 
-Actualizado: 2026-10-10
+Actualizado: 2026-10-11
 
 ## Estado actual
 
@@ -88,6 +88,7 @@ Objetivo: sustituir las pantallas «Próximamente» que quedan. Todas tienen el 
 3. ~~**Usuarios**~~ Hecho: listado con búsqueda, alta con contraseña inicial y roles, edición de nombre y roles, restablecer contraseña, desactivar y reactivar.
 4. ~~**Roles y permisos**~~ Hecho: roles con sus permisos por área y en español, alta, edición y eliminación; el rol del sistema es de solo lectura y solo se pueden dar permisos que uno tiene.
 5. ~~**Mi cuenta**~~ Hecho: cambio de contraseña desde el menú de usuario del panel y el menú de cuenta de la app de repartidores; al cambiarla se cierra la sesión y el login explica por qué.
+6. **Registro de auditoría** (backend listo, `GET /audit`, permiso `audit:read`, solo ADMIN): pantalla en el panel con quién cambió qué y cuándo, filtros por usuario, acción y fechas, y acciones traducidas por código (hoy: usuarios y roles).
 
 Los roles del sistema (ADMIN, SALES, DELIVERY) y los permisos se muestran en español, traducidos por su código; el backend los guarda en inglés.
 
