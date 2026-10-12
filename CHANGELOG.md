@@ -6,6 +6,26 @@ Cambios notables del frontend de Ottos (panel de operaciones y app de repartidor
 
 ## [Unreleased]
 
+## [1.0.0-rc.2] - 2026-10-11
+
+Necesita el backend 1.0.0-rc.1.
+
+### Añadido
+
+- Panel: se publica en su propio dominio (panel-staging y, en producción, panel.remesadeotto.com) y habla con el backend a través de ese mismo dominio.
+- App de iPhone: se compila en la nube y se reparte por TestFlight.
+
+### Cambiado
+
+- App: se llama «Ottos» y su identificador pasa a ser com.remesadeotto.ottos en Android e iOS. **Incompatible:** quien tenga instalada una versión anterior de prueba debe desinstalarla e instalar esta; el teléfono la trata como otra app.
+- App: apunta al backend de producción (api.remesadeotto.com).
+- Panel: el texto usa siempre su propia fuente Roboto y no descarga nada de Google al abrirse (puede estar bloqueado desde Cuba).
+
+### Corregido
+
+- App: la versión publicada se quedaba en la pantalla de inicio; ahora abre aunque las notificaciones no puedan arrancar.
+- App de iPhone: pide permiso para las notificaciones y explica para qué usa Face ID.
+
 ## [1.0.0-rc.1] - 2026-10-11
 
 Primera versión candidata a producción. Necesita el backend 1.0.0-rc.1.
@@ -28,5 +48,6 @@ Primera versión candidata a producción. Necesita el backend 1.0.0-rc.1.
 - Panel › Reportes: resumen mensual de ventas (cobrado, entregado, diferencia, recogidas y ganancias) y su PDF en una página A4.
 - Panel › Usuarios, Roles y Auditoría: alta, edición, desactivación y contraseña de usuarios, roles con permisos y registro de quién cambió qué.
 
-[Unreleased]: https://github.com/jjhurtado/ottos-frontend/compare/1.0.0-rc.1...develop
+[Unreleased]: https://github.com/jjhurtado/ottos-frontend/compare/1.0.0-rc.2...develop
+[1.0.0-rc.2]: https://github.com/jjhurtado/ottos-frontend/compare/1.0.0-rc.1...1.0.0-rc.2
 [1.0.0-rc.1]: https://github.com/jjhurtado/ottos-frontend/releases/tag/1.0.0-rc.1
