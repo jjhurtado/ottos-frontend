@@ -159,7 +159,7 @@ y cada versión publicada lleva su tag en `main`, sin prefijo (`1.0.0-beta.1`). 
 | Menor | `1.X.0` | Cada fase siguiente, con su propio ciclo beta → rc → estable | Funcionalidad nueva compatible |
 | Mayor | `X.0.0` | Cambio incompatible (por ejemplo, exige una versión nueva del backend) | Solo con migración planificada |
 
-**Versión actual: `1.0.0-beta.1`.**
+**Versión actual: `1.0.0-rc.1`** (2026-10-11), con el backend `1.0.0-rc.1`.
 
 ## Dependencias con el backend y preguntas abiertas
 
