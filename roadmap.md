@@ -137,6 +137,12 @@ La app tiene lista de asignadas, detalle, entregar (con o sin PIN), posponer y s
 - [ ] Build de producción del panel (`flutter build web`) y dónde se sirve (mismo dominio que la API o CORS configurado).
 - [ ] Variables por entorno (`OTTOS_API_URL`) documentadas para desarrollo, pruebas y producción.
 
+## Prueba general de 1.0 (2026-10-11)
+
+Recorrido completo con ventas, dos repartidores y admin contra el backend 1.0.0-rc.1, documentado en «Prueba general de Ottos 1.0» (Claude Docs). 68 pruebas: todas en OK salvo las que necesitan algo que no hay en local (huella en un teléfono real, monto mínimo configurado, cuatro avisos a la vez, alta de beneficiarios desde la ficha y cambio de moneda desde el panel), cubiertas por tests. Fallos encontrados y arreglados: pantalla roja en Inicio y al cerrar sesión en 11 pantallas, PIN corto sin explicación, saldos en rojo de más, auditoría de importaciones en inglés, recogidas que «entregaban», totales del informe y tablas del PDF; del backend: admin como repartidor, repartidor sin movimientos fuera de Caja y sesiones de usuarios desactivados.
+
+- [ ] Probar la huella (A4, A5) en un teléfono real con huella registrada.
+
 ## Versionado
 
 Versionado semántico (`MAYOR.MENOR.PARCHE`) con etiquetas de pre-release, igual que el backend. La versión vive en el

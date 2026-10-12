@@ -17,7 +17,7 @@ class CustomerDetailPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final canReadRemittances = context.select((AuthBloc bloc) => bloc.state.user!.can(Permissions.remittancesRead));
+    final canReadRemittances = context.canDo(Permissions.remittancesRead);
     return BlocProvider(
       key: ValueKey(customerId),
       create: (context) => CustomerDetailCubit(
@@ -50,7 +50,9 @@ class _CustomerDetailView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final customer = state.customer!;
-    final user = context.select((AuthBloc bloc) => bloc.state.user!);
+    final user = context.select((AuthBloc bloc) => bloc.state.user);
+    // No user while logging out: the page goes before the redirect.
+    if (user == null) return const SizedBox.shrink();
     final cubit = context.read<CustomerDetailCubit>();
     return ListView(
       padding: const EdgeInsets.all(24),

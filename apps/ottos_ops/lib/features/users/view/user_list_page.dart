@@ -23,7 +23,7 @@ class _UserListView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final canWrite = context.select((AuthBloc bloc) => bloc.state.user!.can(Permissions.usersWrite));
+    final canWrite = context.canDo(Permissions.usersWrite);
     final cubit = context.read<UserListCubit>();
     return Padding(
       padding: const EdgeInsets.all(24),
@@ -109,7 +109,7 @@ class _UserTable extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final me = context.select((AuthBloc bloc) => bloc.state.user!.id);
+    final me = context.select((AuthBloc bloc) => bloc.state.user?.id);
     final outline = Theme.of(context).colorScheme.outline;
     return SingleChildScrollView(
       child: SizedBox(

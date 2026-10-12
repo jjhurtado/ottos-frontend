@@ -64,10 +64,13 @@ void main() {
   });
 
   group('page', () {
+    late AuthBloc authBloc;
+
     Future<void> pumpRoles(WidgetTester tester, Set<String> permissions) async {
       final auth = _MockAuth();
       when(() => auth.sessionExpired).thenAnswer((_) => const Stream.empty());
-      final authBloc = AuthBloc(authRepository: auth, accessPolicy: (_) => true)
+      when(auth.logout).thenAnswer((_) async {});
+      authBloc = AuthBloc(authRepository: auth, accessPolicy: (_) => true)
         ..add(
           AuthLoggedIn(
             CurrentUser(
@@ -102,6 +105,13 @@ void main() {
       Permissions.remittancesRead,
       Permissions.remittancesCreate,
     };
+
+    testWidgets('logging out with the page open draws nothing instead of failing', (tester) async {
+      await pumpRoles(tester, writer);
+      authBloc.add(const AuthLogoutRequested());
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+    });
 
     testWidgets('built-in roles are read-only', (tester) async {
       await pumpRoles(tester, writer);

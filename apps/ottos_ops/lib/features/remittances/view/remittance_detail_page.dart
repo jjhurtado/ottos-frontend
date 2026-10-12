@@ -62,7 +62,7 @@ class _RemittanceDetailView extends StatelessWidget {
   Widget build(BuildContext context) {
     final remittance = state.remittance!;
     final textTheme = Theme.of(context).textTheme;
-    final canReadCash = context.select((AuthBloc bloc) => bloc.state.user!.can(Permissions.cashRead));
+    final canReadCash = context.canDo(Permissions.cashRead);
     return ListView(
       padding: const EdgeInsets.all(24),
       children: [
@@ -148,7 +148,7 @@ class _ActionBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final permissions = context.select((AuthBloc bloc) => bloc.state.user!.permissions);
+    final permissions = context.select((AuthBloc bloc) => bloc.state.user?.permissions ?? const <String>{});
     final remittance = state.remittance!;
     final workflow = state.workflow!;
     final cubit = context.read<RemittanceDetailCubit>();

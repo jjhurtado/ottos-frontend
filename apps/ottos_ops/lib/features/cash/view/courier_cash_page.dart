@@ -64,7 +64,7 @@ class _CourierCashView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cash = statement.cash;
-    final canWrite = context.select((AuthBloc bloc) => bloc.state.user!.can(Permissions.cashWrite));
+    final canWrite = context.canDo(Permissions.cashWrite);
     final repository = context.read<CashRepository>();
     final colors = Theme.of(context).colorScheme;
     final currencies = {'USD', 'CUP', for (final balance in cash.balances) balance.currency}.toList();

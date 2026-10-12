@@ -211,7 +211,7 @@ class _CustomerField extends StatelessWidget {
         ),
       );
     }
-    final canCreate = context.select((AuthBloc bloc) => bloc.state.user!.can(Permissions.customersWrite));
+    final canCreate = context.canDo(Permissions.customersWrite);
     final search = Autocomplete<Customer>(
       displayStringForOption: (customer) => customer.fullName,
       optionsBuilder: (value) async {
@@ -293,7 +293,7 @@ class _BeneficiaryField extends StatelessWidget {
       );
     }
     if (state.beneficiariesStatus == LoadStatus.loading) return const LinearProgressIndicator();
-    final canCreate = context.select((AuthBloc bloc) => bloc.state.user!.can(Permissions.customersWrite));
+    final canCreate = context.canDo(Permissions.customersWrite);
     final field = state.beneficiariesStatus == LoadStatus.success && state.beneficiaries.isEmpty
         ? const InputDecorator(
             decoration: InputDecoration(labelText: OpsTexts.beneficiary),

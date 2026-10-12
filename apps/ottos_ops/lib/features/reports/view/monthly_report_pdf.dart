@@ -206,6 +206,7 @@ Future<Uint8List> buildMonthlyReportPdf(MonthlyReport report, {required DateTime
             crossAxisAlignment: pw.CrossAxisAlignment.start,
             children: [
               pw.Expanded(
+                flex: 4,
                 child: pw.Column(
                   crossAxisAlignment: pw.CrossAxisAlignment.stretch,
                   children: [
@@ -228,6 +229,7 @@ Future<Uint8List> buildMonthlyReportPdf(MonthlyReport report, {required DateTime
               ),
               pw.SizedBox(width: 18),
               pw.Expanded(
+                flex: 3,
                 child: pw.Column(
                   crossAxisAlignment: pw.CrossAxisAlignment.stretch,
                   children: [
