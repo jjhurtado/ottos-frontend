@@ -50,7 +50,7 @@ flutter build apk --release --split-per-abi --dart-define=OTTOS_API_URL=https://
 
 ### iOS (TestFlight)
 
-Built on a GitHub Mac by the "iOS · TestFlight" workflow (`.github/workflows/ios-testflight.yml`), run by hand from
+From a Mac, step by step: [docs/ios-en-mac.md](docs/ios-en-mac.md). Without a Mac: built on a GitHub Mac by the "iOS · TestFlight" workflow (`.github/workflows/ios-testflight.yml`), run by hand from
 the Actions tab. It needs an Apple Developer account, the app created in App Store Connect with the identifier above,
 and four repository secrets listed at the top of the workflow.
 
