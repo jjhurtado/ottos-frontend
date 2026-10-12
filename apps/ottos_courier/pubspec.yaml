@@ -1,7 +1,7 @@
 name: ottos_courier
 description: Ottos courier app for deliveries and pickups.
 publish_to: none
-version: 1.0.0-beta.1+1
+version: 1.0.0-rc.1+2
 resolution: workspace
 
 environment:

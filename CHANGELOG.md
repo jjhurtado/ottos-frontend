@@ -5,3 +5,28 @@ Cambios notables del frontend de Ottos (panel de operaciones y app de repartidor
 [roadmap.md › Versionado](roadmap.md#versionado). Cómo y cuándo se escribe: [STANDARDS.md](STANDARDS.md#changelog).
 
 ## [Unreleased]
+
+## [1.0.0-rc.1] - 2026-10-11
+
+Primera versión candidata a producción. Necesita el backend 1.0.0-rc.1.
+
+### Añadido
+
+- Panel y app › Acceso: inicio de sesión con bloqueo tras varios intentos fallidos, «Recordar mi usuario», cambio de la propia contraseña y cierre de sesión en todos los dispositivos al cambiarla.
+- App › Acceso: entrar con huella después de aceptarlo una vez; si la contraseña cambia, la pide de nuevo.
+- Panel › Inicio: remesas abiertas por estado, atrasadas, con incidencia y para revisar.
+- Panel › Remesas: listado con filtros y búsqueda, detalle con historial y movimientos de caja, registrar entregas y recogidas con su cotización, asignar y reasignar repartidor, entregar, aplazar, marcar incidencia y resolver revisiones con una nota.
+- Panel y app › Recogidas: tasa y comisión propias de cada recogida; el repartidor solo recoge el monto y la tasa es informativa.
+- App de día › Repartidor: sus remesas del día o las más atrasadas primero, llamar y escribir por WhatsApp al beneficiario, entregar con PIN, deslizar para marcar incidencia, aplazar y su caja con todos los movimientos.
+- App de día › Ventas: todas las remesas abiertas, nueva remesa con repartidor, asignar desde el detalle y entregar o recibir efectivo de cada repartidor.
+- App › Sin conexión: entregas, recogidas, incidencias y cambios de moneda se guardan en el teléfono, el saldo se mueve al momento y todo se envía solo al volver la red.
+- App › Cambio de moneda: el repartidor registra USD ↔ CUP con la tasa del momento; una tasa lejos de la configurada queda para revisar en el panel.
+- App › Notificaciones: remesa nueva para el repartidor y remesa entregada o recogida completada para ventas, mientras la app está abierta.
+- Panel › Caja: caja del negocio, efectivo de cada repartidor, fondos, devoluciones, cambios de moneda en su nombre y cambios con tasa inusual para revisar.
+- Panel › Clientes: fichas de clientes y beneficiarios, búsqueda, exportar e importar CSV con vista previa, e importar beneficiarios sin remitente; la primera remesa los vincula.
+- Panel › Configuración: tasas y comisiones de entregas y recogidas, monto mínimo, días de entrega, tolerancia del cambio de moneda y calculadora.
+- Panel › Reportes: resumen mensual de ventas (cobrado, entregado, diferencia, recogidas y ganancias) y su PDF en una página A4.
+- Panel › Usuarios, Roles y Auditoría: alta, edición, desactivación y contraseña de usuarios, roles con permisos y registro de quién cambió qué.
+
+[Unreleased]: https://github.com/jjhurtado/ottos-frontend/compare/1.0.0-rc.1...develop
+[1.0.0-rc.1]: https://github.com/jjhurtado/ottos-frontend/releases/tag/1.0.0-rc.1
