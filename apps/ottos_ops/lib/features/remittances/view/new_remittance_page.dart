@@ -7,8 +7,6 @@ import 'package:ottos_core/ottos_core.dart';
 import '../../../app/destinations.dart';
 import '../../../app/ops_texts.dart';
 import '../../../app/router.dart';
-import '../../customers/view/beneficiary_form_dialog.dart';
-import '../../customers/view/customer_form_dialog.dart';
 
 class NewRemittancePage extends StatelessWidget {
   const NewRemittancePage({super.key, this.initialCustomerId});
