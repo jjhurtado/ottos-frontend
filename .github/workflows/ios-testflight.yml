@@ -1,0 +1,98 @@
+# Builds the mobile app for iPhone on a GitHub Mac and uploads it to TestFlight.
+# Run it by hand: Actions › "iOS · TestFlight" › Run workflow.
+#
+# Needs these repository secrets (Settings › Secrets and variables › Actions):
+#   APPLE_TEAM_ID                 Team ID of the Apple Developer account
+#   APP_STORE_CONNECT_KEY_ID      ID of an App Store Connect API key (role App Manager or Admin)
+#   APP_STORE_CONNECT_ISSUER_ID   Issuer ID shown above the API keys
+#   APP_STORE_CONNECT_KEY_P8      Contents of that key's AuthKey_XXXX.p8 file
+# The repository is public: secrets never reach the logs, and nothing here prints them.
+name: iOS · TestFlight
+
+on:
+  workflow_dispatch:
+    inputs:
+      api_url:
+        description: Backend the app talks to
+        default: https://api.remesadeotto.com
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-testflight
+  cancel-in-progress: false
+
+jobs:
+  testflight:
+    runs-on: macos-15
+    timeout-minutes: 45
+    env:
+      APP_DIR: apps/ottos_courier
+      KEY_PATH: ${{ github.workspace }}/AuthKey.p8
+    steps:
+      - uses: actions/checkout@v7.0.1
+
+      - uses: subosito/flutter-action@v2.23.0
+        with:
+          flutter-version: 3.47.7
+          channel: stable
+          cache: true
+
+      - name: Dependencies
+        run: flutter pub get --enforce-lockfile
+
+      - name: App Store Connect key
+        env:
+          KEY_P8: ${{ secrets.APP_STORE_CONNECT_KEY_P8 }}
+        run: |
+          printf '%s' "$KEY_P8" > "$KEY_PATH"
+          chmod 600 "$KEY_PATH"
+
+      # Flutter prepares the Xcode project (and its pods) with the backend and a
+      # build number TestFlight has not seen; Xcode signs it with the API key,
+      # creating the certificate and profile it needs, and uploads it.
+      - name: Prepare the Xcode project
+        working-directory: ${{ env.APP_DIR }}
+        run: |
+          flutter build ios --release --config-only \
+            --build-number=${{ github.run_number }} \
+            --dart-define=OTTOS_API_URL=${{ inputs.api_url }}
+
+      - name: Archive
+        working-directory: ${{ env.APP_DIR }}/ios
+        run: |
+          xcodebuild -workspace Runner.xcworkspace -scheme Runner -configuration Release \
+            -destination 'generic/platform=iOS' -archivePath "$RUNNER_TEMP/Ottos.xcarchive" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$KEY_PATH" \
+            -authenticationKeyID "${{ secrets.APP_STORE_CONNECT_KEY_ID }}" \
+            -authenticationKeyIssuerID "${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}" \
+            DEVELOPMENT_TEAM="${{ secrets.APPLE_TEAM_ID }}" CODE_SIGN_STYLE=Automatic \
+            archive
+
+      - name: Upload to TestFlight
+        working-directory: ${{ env.APP_DIR }}/ios
+        run: |
+          cat > "$RUNNER_TEMP/ExportOptions.plist" <<PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+            <key>method</key><string>app-store-connect</string>
+            <key>destination</key><string>upload</string>
+            <key>teamID</key><string>${{ secrets.APPLE_TEAM_ID }}</string>
+            <key>signingStyle</key><string>automatic</string>
+            <key>manageAppVersionAndBuildNumber</key><false/>
+          </dict></plist>
+          PLIST
+          xcodebuild -exportArchive -archivePath "$RUNNER_TEMP/Ottos.xcarchive" \
+            -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" -exportPath "$RUNNER_TEMP/export" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$KEY_PATH" \
+            -authenticationKeyID "${{ secrets.APP_STORE_CONNECT_KEY_ID }}" \
+            -authenticationKeyIssuerID "${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}"
+
+      - name: Forget the key
+        if: always()
+        run: rm -f "$KEY_PATH"

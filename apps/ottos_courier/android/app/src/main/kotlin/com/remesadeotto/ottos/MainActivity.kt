@@ -1,4 +1,4 @@
-package org.jobits.ottos.ottos_courier
+package com.remesadeotto.ottos
 
 import io.flutter.embedding.android.FlutterFragmentActivity
 

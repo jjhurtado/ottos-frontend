@@ -29,3 +29,32 @@ dart run melos courier   # courier app on a device or emulator
 ```
 
 On web, the dev server proxies `/api` to the backend (see `apps/ottos_ops/web_dev_config.yaml`). To point at another backend, pass `--dart-define=OTTOS_API_URL=https://host` (the origin, without `/api/v1`).
+
+## Release the mobile app (Ottos)
+
+Identifier `com.remesadeotto.ottos` on Android and iOS; production backend `https://api.remesadeotto.com`.
+
+### Android (APK)
+
+The release key lives outside the repository, in `~/.ottos-release/` (`ottos-release.jks` and `key.properties`).
+**Keep a copy somewhere safe**: without it, phones that have the app cannot install updates.
+`apps/ottos_courier/android/key.properties` (git-ignored) points to it.
+
+```sh
+cd apps/ottos_courier
+flutter build apk --release --split-per-abi --dart-define=OTTOS_API_URL=https://api.remesadeotto.com
+```
+
+`build/app/outputs/flutter-apk/app-arm64-v8a-release.apk` fits most phones (about 21 MB);
+`app-armeabi-v7a-release.apk` is for older ones.
+
+### iOS (TestFlight)
+
+Built on a GitHub Mac by the "iOS · TestFlight" workflow (`.github/workflows/ios-testflight.yml`), run by hand from
+the Actions tab. It needs an Apple Developer account, the app created in App Store Connect with the identifier above,
+and four repository secrets listed at the top of the workflow.
+
+### Panel (web)
+
+`apps/ottos_ops/Dockerfile`, built from the repository root; it serves the panel and forwards `/api` to
+`OTTOS_BACKEND_URL`.
