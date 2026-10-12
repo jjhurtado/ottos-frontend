@@ -39,7 +39,7 @@ class _OpsRouterAppState extends State<_OpsRouterApp> {
     return MaterialApp.router(
       title: OpsTexts.appTitle,
       debugShowCheckedModeBanner: false,
-      theme: OttosTheme.light(),
+      theme: _withBundledFont(OttosTheme.light()),
       locale: OttosLocalization.locale,
       supportedLocales: OttosLocalization.supportedLocales,
       localizationsDelegates: OttosLocalization.delegates,
@@ -47,3 +47,11 @@ class _OpsRouterAppState extends State<_OpsRouterApp> {
     );
   }
 }
+
+/// The panel's text in the Roboto bundled with it, whatever the visitor's
+/// system: on the web Flutter would ask for Segoe UI or the Mac's font and
+/// fall back to another one.
+ThemeData _withBundledFont(ThemeData theme) => theme.copyWith(
+  textTheme: theme.textTheme.apply(fontFamily: 'Roboto'),
+  primaryTextTheme: theme.primaryTextTheme.apply(fontFamily: 'Roboto'),
+);

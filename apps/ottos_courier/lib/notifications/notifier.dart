@@ -29,7 +29,15 @@ class LocalNotifier implements Notifier {
     final plugin = FlutterLocalNotificationsPlugin();
     late final LocalNotifier notifier;
     await plugin.initialize(
-      settings: const InitializationSettings(android: AndroidInitializationSettings('ic_notification')),
+      settings: const InitializationSettings(
+        android: AndroidInitializationSettings('ic_notification'),
+        // Asked after the login, with the Android one (requestPermission).
+        iOS: DarwinInitializationSettings(
+          requestAlertPermission: false,
+          requestBadgePermission: false,
+          requestSoundPermission: false,
+        ),
+      ),
       onDidReceiveNotificationResponse: (response) => notifier.onOpen?.call(_remittanceOf(response.payload)),
     );
     notifier = LocalNotifier._(plugin);
@@ -48,6 +56,11 @@ class LocalNotifier implements Notifier {
     await _plugin
         .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
         ?.requestNotificationsPermission();
+    await _plugin.resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>()?.requestPermissions(
+      alert: true,
+      badge: true,
+      sound: true,
+    );
   }
 
   @override
@@ -57,7 +70,10 @@ class LocalNotifier implements Notifier {
         id: notice.id,
         title: notice.title,
         body: notice.body,
-        notificationDetails: NotificationDetails(android: _channels[notice.channel]),
+        notificationDetails: NotificationDetails(
+          android: _channels[notice.channel],
+          iOS: const DarwinNotificationDetails(),
+        ),
         payload: notice.remittanceId,
       );
     }

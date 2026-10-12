@@ -1,0 +1,15 @@
+# Only what the panel's image needs: the workspace's pubspecs and lock, the
+# core package and the panel. Never secrets.
+**/.dart_tool
+**/build
+**/.flutter-plugins*
+**/.idea
+**/*.iml
+.git
+.env
+.env.*
+.claude
+apps/ottos_courier/**
+!apps/ottos_courier/pubspec.yaml
+**/test
+*.md
