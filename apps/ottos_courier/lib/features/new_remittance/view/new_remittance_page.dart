@@ -201,7 +201,7 @@ class _CustomerField extends StatelessWidget {
         ),
       );
     }
-    return Autocomplete<Customer>(
+    final search = Autocomplete<Customer>(
       displayStringForOption: (customer) => customer.fullName,
       optionsBuilder: (value) async {
         if (value.text.trim().length < 2) return const [];
@@ -245,6 +245,23 @@ class _CustomerField extends StatelessWidget {
         ),
       ),
     );
+    if (!context.canDo(Permissions.customersWrite)) return search;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        search,
+        TextButton.icon(
+          onPressed: enabled
+              ? () async {
+                  final created = await showCustomerFormDialog(context);
+                  if (created != null) await cubit.customerSelected(created);
+                }
+              : null,
+          icon: const Icon(Icons.person_add_alt_1),
+          label: const Text(CourierTexts.newCustomer),
+        ),
+      ],
+    );
   }
 }
 
@@ -274,15 +291,30 @@ class _BeneficiaryField extends StatelessWidget {
         else
           _dropdown(context),
         // Beneficiaries loaded without a customer are linked by the remittance.
-        TextButton.icon(
-          onPressed: state.submitting
-              ? null
-              : () async {
-                  final found = await showBeneficiarySearchDialog(context, search: cubit.searchBeneficiaries);
-                  if (found != null) cubit.beneficiaryCreated(found);
-                },
-          icon: const Icon(Icons.person_search),
-          label: const Text(CoreTexts.searchOtherBeneficiary),
+        Wrap(
+          children: [
+            TextButton.icon(
+              onPressed: state.submitting
+                  ? null
+                  : () async {
+                      final found = await showBeneficiarySearchDialog(context, search: cubit.searchBeneficiaries);
+                      if (found != null) cubit.beneficiaryCreated(found);
+                    },
+              icon: const Icon(Icons.person_search),
+              label: const Text(CoreTexts.searchOtherBeneficiary),
+            ),
+            if (context.canDo(Permissions.customersWrite))
+              TextButton.icon(
+                onPressed: state.submitting
+                    ? null
+                    : () async {
+                        final created = await showBeneficiaryFormDialog(context, customerId: state.customer!.id);
+                        if (created != null) cubit.beneficiaryCreated(created);
+                      },
+                icon: const Icon(Icons.add),
+                label: const Text(CourierTexts.newBeneficiary),
+              ),
+          ],
         ),
       ],
     );

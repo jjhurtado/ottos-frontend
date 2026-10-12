@@ -178,6 +178,14 @@ void main() {
       expect(find.text(CourierTexts.noCourier), findsOneWidget);
     });
 
+    testWidgets('who can register customers creates the sender from the form', (tester) async {
+      await pump(tester, {..._sales, Permissions.customersWrite}, const NewRemittancePage());
+      expect(find.text(CourierTexts.newCustomer), findsOneWidget);
+
+      await pump(tester, _sales, const NewRemittancePage());
+      expect(find.text(CourierTexts.newCustomer), findsNothing);
+    });
+
     testWidgets('who cannot assign does not see the courier', (tester) async {
       await pump(tester, _sales.difference({Permissions.remittancesAssign}), const NewRemittancePage());
 

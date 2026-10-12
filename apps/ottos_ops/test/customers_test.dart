@@ -4,7 +4,6 @@ import 'package:ottos_core/ottos_core.dart';
 import 'package:ottos_ops/app/ops_texts.dart';
 import 'package:ottos_ops/features/customers/cubit/customer_detail_cubit.dart';
 import 'package:ottos_ops/features/customers/cubit/customer_list_cubit.dart';
-import 'package:ottos_ops/features/customers/view/customer_form_dialog.dart';
 
 class _MockCustomers extends Mock implements CustomerRepository {}
 

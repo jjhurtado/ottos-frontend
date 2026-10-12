@@ -84,6 +84,28 @@ abstract final class CoreTexts {
   static const emailInvalid = 'Correo no válido';
   static const passwordRequired = 'Escribe tu contraseña';
   static const requiredField = 'Obligatorio';
+
+  // Customer and beneficiary forms (panel and app)
+  static const documentNumber = 'Número de documento';
+  static const documentType = 'Tipo de documento';
+  static const phone = 'Teléfono';
+  static const fullName = 'Nombre completo';
+  static const newCustomer = 'Nuevo cliente';
+  static const editCustomer = 'Editar cliente';
+  static const phoneInvalid = 'Teléfono no válido';
+  static const save = 'Guardar';
+  static const notes = 'Notas';
+  static const address = 'Dirección';
+  static const newBeneficiary = 'Nuevo beneficiario';
+  static const editBeneficiary = 'Editar beneficiario';
+  static const reference = 'Referencia';
+  static const municipality = 'Municipio';
+  static const province = 'Provincia';
+  static const neighborhood = 'Reparto';
+  static const betweenStreets = 'Entre calles';
+  static const houseNumber = 'Número';
+  static const street = 'Calle';
+  static const alternatePhone = 'Teléfono alternativo';
   static const amount = 'Monto';
 
   // Assigning

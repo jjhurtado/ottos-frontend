@@ -38,7 +38,7 @@ abstract final class OpsTexts {
   static const status = 'Estado';
   static const customer = 'Remitente';
   static const beneficiary = 'Beneficiario';
-  static const municipality = 'Municipio';
+  static const municipality = CoreTexts.municipality;
   static const amount = 'Monto';
   static const expectedDate = 'Fecha prevista';
   static const courier = CoreTexts.courier;
@@ -51,10 +51,10 @@ abstract final class OpsTexts {
   static const summary = 'Resumen';
   static const money = 'Importes';
   static const history = 'Historial';
-  static const phone = 'Teléfono';
-  static const alternatePhone = 'Teléfono alternativo';
-  static const address = 'Dirección';
-  static const reference = 'Referencia';
+  static const phone = CoreTexts.phone;
+  static const alternatePhone = CoreTexts.alternatePhone;
+  static const address = CoreTexts.address;
+  static const reference = CoreTexts.reference;
   static const fee = 'Comisión';
   static const total = 'Total cobrado';
   static const rate = 'Tasa';
@@ -62,7 +62,7 @@ abstract final class OpsTexts {
   static const cashToCollect = 'Se recoge';
   static const pin = 'PIN';
   static const postponements = 'Aplazamientos';
-  static const notes = 'Notas';
+  static const notes = CoreTexts.notes;
   static const createdAt = 'Registrada';
   static const completedAt = 'Completada';
   static const noCourier = 'Sin asignar';
@@ -112,21 +112,21 @@ abstract final class OpsTexts {
   };
 
   // Customers
-  static const newCustomer = 'Nuevo cliente';
-  static const editCustomer = 'Editar cliente';
+  static const newCustomer = CoreTexts.newCustomer;
+  static const editCustomer = CoreTexts.editCustomer;
   static const customerData = 'Datos';
-  static const fullName = 'Nombre completo';
+  static const fullName = CoreTexts.fullName;
   static const email = 'Correo electrónico';
   static const document = 'Documento';
-  static const documentType = 'Tipo de documento';
-  static const documentNumber = 'Número de documento';
+  static const documentType = CoreTexts.documentType;
+  static const documentNumber = CoreTexts.documentNumber;
   static const inactive = 'Inactivo';
   static const noCustomers = 'Ningún cliente coincide con la búsqueda.';
   static const noCustomersYet = 'Todavía no hay clientes.';
   static const edit = 'Editar';
-  static const save = 'Guardar';
-  static const requiredField = 'Obligatorio';
-  static const phoneInvalid = 'Teléfono no válido';
+  static const save = CoreTexts.save;
+  static const requiredField = CoreTexts.requiredField;
+  static const phoneInvalid = CoreTexts.phoneInvalid;
   static const viewRemittances = 'Ver remesas';
   static const totalRemittances = 'Remesas';
   static const openRemittancesLabel = 'Abiertas';
@@ -137,13 +137,13 @@ abstract final class OpsTexts {
 
   // Beneficiaries
   static const beneficiaries = 'Beneficiarios';
-  static const newBeneficiary = 'Nuevo beneficiario';
-  static const editBeneficiary = 'Editar beneficiario';
-  static const street = 'Calle';
-  static const houseNumber = 'Número';
-  static const betweenStreets = 'Entre calles';
-  static const neighborhood = 'Reparto';
-  static const province = 'Provincia';
+  static const newBeneficiary = CoreTexts.newBeneficiary;
+  static const editBeneficiary = CoreTexts.editBeneficiary;
+  static const street = CoreTexts.street;
+  static const houseNumber = CoreTexts.houseNumber;
+  static const betweenStreets = CoreTexts.betweenStreets;
+  static const neighborhood = CoreTexts.neighborhood;
+  static const province = CoreTexts.province;
   static const unlink = 'Desvincular';
   static const unlinkTitle = 'Desvincular beneficiario';
   static String unlinkMessage(String name) =>

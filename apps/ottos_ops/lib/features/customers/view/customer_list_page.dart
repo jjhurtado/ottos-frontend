@@ -6,7 +6,6 @@ import 'package:ottos_core/ottos_core.dart';
 import '../../../app/ops_texts.dart';
 import '../../../app/router.dart';
 import '../cubit/customer_list_cubit.dart';
-import 'customer_form_dialog.dart';
 import 'customer_transfer.dart';
 
 class CustomerListPage extends StatelessWidget {
