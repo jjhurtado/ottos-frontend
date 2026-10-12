@@ -27,6 +27,15 @@ class CurrentUser extends Equatable {
   final List<String> roles;
   final Set<String> permissions;
 
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'email': email,
+    'name': name,
+    'type': type,
+    'roles': roles,
+    'permissions': permissions.toList(),
+  };
+
   bool can(String permission) => permissions.contains(permission);
 
   bool canAny(Iterable<String> required) => required.any(permissions.contains);

@@ -14,6 +14,11 @@ abstract final class OttosColors {
   static const cream = Color(0xFFFAE3BB);
   static const creamLight = Color(0xFFFDF6EA);
 
+  /// Remittance types: the courier hands cash over (delivery) or collects it (pickup).
+  /// Pickup avoids amber, which marks assigned remittances.
+  static const delivery = tealDark;
+  static const pickup = Color(0xFF6B46C1);
+
   static const success = Color(0xFF2E7D4F);
   static const warning = Color(0xFFB7791F);
   static const danger = Color(0xFFC0392B);

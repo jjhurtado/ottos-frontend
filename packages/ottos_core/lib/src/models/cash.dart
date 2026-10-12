@@ -25,6 +25,8 @@ enum CashMovementType {
   remittanceRefund('REMITTANCE_REFUND'),
   businessDeposit('BUSINESS_DEPOSIT'),
   businessWithdrawal('BUSINESS_WITHDRAWAL'),
+  courierExchangeOut('COURIER_EXCHANGE_OUT'),
+  courierExchangeIn('COURIER_EXCHANGE_IN'),
   unknown('');
 
   const CashMovementType(this.code);
@@ -44,9 +46,15 @@ class CashMovement extends Equatable {
     required this.amount,
     required this.signedAmount,
     required this.currency,
+    this.fromType,
+    this.fromOwnerId,
+    this.toType,
+    this.toOwnerId,
     this.remittanceId,
     this.note,
     this.occurredAt,
+    this.exchangeId,
+    this.rate,
   });
 
   factory CashMovement.fromJson(Map<String, dynamic> json) => CashMovement(
@@ -55,9 +63,15 @@ class CashMovement extends Equatable {
     amount: parseDecimal(json['amount']) ?? 0,
     signedAmount: parseDecimal(json['signedAmount']) ?? parseDecimal(json['amount']) ?? 0,
     currency: json['currency'] as String? ?? '',
+    fromType: json['fromType'] as String?,
+    fromOwnerId: json['fromOwnerId'] as String?,
+    toType: json['toType'] as String?,
+    toOwnerId: json['toOwnerId'] as String?,
     remittanceId: json['remittanceId'] as String?,
     note: json['note'] as String?,
     occurredAt: parseDateTime(json['occurredAt']),
+    exchangeId: json['exchangeId'] as String?,
+    rate: parseDecimal(json['rate']),
   );
 
   final String id;
@@ -65,9 +79,21 @@ class CashMovement extends Equatable {
   final double amount;
   final double signedAmount;
   final String currency;
+
+  /// Account types: `BUSINESS`, `COURIER` or `EXTERNAL`; the owner is the courier for `COURIER`.
+  final String? fromType;
+  final String? fromOwnerId;
+  final String? toType;
+  final String? toOwnerId;
   final String? remittanceId;
   final String? note;
   final DateTime? occurredAt;
+
+  /// The two legs of a currency exchange share it.
+  final String? exchangeId;
+
+  /// The exchange's rate, CUP per 1 USD.
+  final double? rate;
 
   @override
   List<Object?> get props => [id];
@@ -110,4 +136,22 @@ class CourierStatement {
 
   final CourierCash cash;
   final List<CashMovement> movements;
+}
+
+/// A cash operation to register: funding, return, deposit or withdrawal.
+class CashInput extends Equatable {
+  const CashInput({required this.amount, required this.currency, this.note});
+
+  final double amount;
+  final String currency;
+  final String? note;
+
+  Map<String, dynamic> toJson() => {
+    'amount': amount,
+    'currency': currency,
+    'note': note == null || note!.trim().isEmpty ? null : note!.trim(),
+  };
+
+  @override
+  List<Object?> get props => [amount, currency, note];
 }

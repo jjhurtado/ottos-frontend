@@ -18,15 +18,19 @@ class ApiClient {
       ..connectTimeout = const Duration(seconds: 15)
       ..receiveTimeout = const Duration(seconds: 30)
       ..contentType = Headers.jsonContentType;
+    // Refresh and retry go through a client without the interceptor: a queued
+    // interceptor waits for its current error to finish, so an error from a
+    // request sent while handling one would never be handled.
+    _bareDio = Dio(_dio.options)..httpClientAdapter = _dio.httpClientAdapter;
     _dio.interceptors.add(QueuedInterceptorsWrapper(onRequest: _onRequest, onError: _onError));
   }
 
   final Dio _dio;
+  late final Dio _bareDio;
   final TokenStorage _tokenStorage;
   final _sessionExpired = StreamController<void>.broadcast();
 
   static const _skipAuth = 'skipAuth';
-  static const _retried = 'retried';
 
   /// Emits when the session can no longer be refreshed.
   Stream<void> get sessionExpired => _sessionExpired.stream;
@@ -65,8 +69,7 @@ class ApiClient {
 
   Future<void> _onError(DioException error, ErrorInterceptorHandler handler) async {
     final options = error.requestOptions;
-    final canRefresh =
-        error.response?.statusCode == 401 && options.extra[_skipAuth] != true && options.extra[_retried] != true;
+    final canRefresh = error.response?.statusCode == 401 && options.extra[_skipAuth] != true;
     if (!canRefresh) return handler.next(error);
 
     final tokens = await _tokenStorage.read();
@@ -76,6 +79,10 @@ class ApiClient {
       return _retry(options, tokens.accessToken, handler, error);
     }
     final refreshed = tokens == null ? null : await _refresh(tokens.refreshToken);
+    if (identical(refreshed, _unreachable)) {
+      // No network: the session may still be good; keep it and fail this request.
+      return handler.next(error);
+    }
     if (refreshed == null) {
       await _tokenStorage.clear();
       _sessionExpired.add(null);
@@ -90,28 +97,28 @@ class ApiClient {
     ErrorInterceptorHandler handler,
     DioException original,
   ) async {
-    options
-      ..headers['Authorization'] = 'Bearer $accessToken'
-      ..extra[_retried] = true;
+    options.headers['Authorization'] = 'Bearer $accessToken';
     try {
-      handler.resolve(await _dio.fetch<dynamic>(options));
+      handler.resolve(await _bareDio.fetch<dynamic>(options));
     } on DioException catch (error) {
       handler.next(error);
     }
   }
 
+  /// Returned by [_refresh] when the server could not be reached.
+  static const _unreachable = AuthTokens(accessToken: '', refreshToken: '');
+
+  /// New tokens; null if the server rejected the refresh token, or
+  /// [_unreachable] without network (the app keeps working offline and
+  /// retries later; the backend accepts a retry within its grace window).
   Future<AuthTokens?> _refresh(String refreshToken) async {
     try {
-      final response = await _dio.post<Map<String, dynamic>>(
-        '/auth/refresh',
-        data: {'refreshToken': refreshToken},
-        options: Options(extra: {_skipAuth: true}),
-      );
+      final response = await _bareDio.post<Map<String, dynamic>>('/auth/refresh', data: {'refreshToken': refreshToken});
       final tokens = AuthTokens.fromJson(response.data!);
       await _tokenStorage.write(tokens);
       return tokens;
-    } on DioException {
-      return null;
+    } on DioException catch (error) {
+      return error.response == null ? _unreachable : null;
     }
   }
 

@@ -26,6 +26,12 @@ final class AuthLogoutRequested extends AuthEvent {
   const AuthLogoutRequested();
 }
 
+/// The user changed their password: the backend signed them out everywhere,
+/// so the app does too and the login says why.
+final class AuthPasswordChanged extends AuthEvent {
+  const AuthPasswordChanged();
+}
+
 /// The token could not be refreshed.
 final class _AuthSessionExpired extends AuthEvent {
   const _AuthSessionExpired();

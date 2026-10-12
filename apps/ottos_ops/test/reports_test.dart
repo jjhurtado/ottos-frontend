@@ -1,0 +1,145 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
+import 'package:ottos_core/ottos_core.dart';
+import 'package:ottos_ops/app/ops_texts.dart';
+import 'package:ottos_ops/features/reports/cubit/reports_cubit.dart';
+import 'package:ottos_ops/features/reports/view/monthly_report_pdf.dart';
+import 'package:ottos_ops/features/reports/view/reports_page.dart';
+
+class _MockReports extends Mock implements ReportRepository {}
+
+/// The contract's example month: pickups apart, nothing delivered on them.
+final sampleJson = {
+  'month': '2026-10',
+  'from': '2026-10-01',
+  'to': '2026-10-31',
+  'generatedAt': '2026-11-01T12:00:00Z',
+  'remittances': {'total': 24, 'delivery': 18, 'pickup': 6, 'completed': 21, 'open': 3, 'withIncident': 1},
+  'collected': 1980.00,
+  'fees': 220.00,
+  'deliveredUsd': 1799.00,
+  'difference': 181.00,
+  'roundingMargin': 1.00,
+  'pickups': {'remittances': 6, 'collected': 30000.00, 'fees': 40.00},
+  'delivered': [
+    {'currency': 'CUP', 'amount': 737950.00},
+  ],
+  'byCurrency': [
+    {
+      'currency': 'CUP',
+      'remittances': 18,
+      'sent': 1800.00,
+      'fees': 180.00,
+      'collected': 1980.00,
+      'delivered': 737950.00,
+      'deliveredUsd': 1799.00,
+    },
+  ],
+  'byType': [
+    {'type': 'DELIVERY', 'remittances': 18, 'collected': 1980.00, 'fees': 180.00},
+    {'type': 'PICKUP', 'remittances': 6, 'collected': 30000.00, 'fees': 40.00},
+  ],
+};
+
+void main() {
+  late _MockReports reports;
+
+  setUpAll(OttosLocalization.initialize);
+
+  setUp(() {
+    reports = _MockReports();
+    when(() => reports.monthly(any(), any())).thenAnswer((_) async => MonthlyReport.fromJson(sampleJson));
+  });
+
+  test('reads the month and its totals', () {
+    final report = MonthlyReport.fromJson(sampleJson);
+
+    expect(report.remittances, 24);
+    expect(report.pickups, 6);
+    expect(report.difference, 181);
+    expect(report.roundingMargin, 1);
+    expect(report.pickupsCollected, 30000);
+    expect(report.deliveryFees, 180, reason: 'the earnings include the pickups, the difference does not');
+    expect(report.byCurrency.first.delivered, 737950);
+    expect(report.byType.last.type, RemittanceType.pickup);
+  });
+
+  test('the PDF is one A4 page', () async {
+    final bytes = await buildMonthlyReportPdf(MonthlyReport.fromJson(sampleJson), month: DateTime(2026, 10));
+
+    expect(String.fromCharCodes(bytes.take(5)), '%PDF-');
+    expect(String.fromCharCodes(bytes).contains('/Count 1'), isTrue, reason: 'one page');
+  });
+
+  test('the month title reads in Spanish', () {
+    expect(monthTitle(DateTime(2026, 10)), 'Octubre de 2026');
+  });
+
+  group('cubit', () {
+    test('starts at the current month and never goes past it', () async {
+      final cubit = ReportsCubit(reports: reports);
+      addTearDown(cubit.close);
+      final now = DateTime.now();
+      await cubit.load();
+      verify(() => reports.monthly(now.year, now.month)).called(1);
+
+      await cubit.moveMonth(1);
+      expect(cubit.state.month, DateTime(now.year, now.month));
+
+      await cubit.moveMonth(-1);
+      final previous = DateTime(now.year, now.month - 1);
+      verify(() => reports.monthly(previous.year, previous.month)).called(1);
+    });
+  });
+
+  group('page', () {
+    Future<void> pump(WidgetTester tester) async {
+      await tester.binding.setSurfaceSize(const Size(1400, 1300));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      await tester.pumpWidget(
+        RepositoryProvider<ReportRepository>.value(
+          value: reports,
+          child: MaterialApp(
+            localizationsDelegates: OttosLocalization.delegates,
+            supportedLocales: OttosLocalization.supportedLocales,
+            home: const Scaffold(body: ReportsPage()),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('shows the totals of the month', (tester) async {
+      await pump(tester);
+
+      expect(find.text(OpsTexts.totalCollected), findsOneWidget);
+      expect(find.text(Formatters.money(1980, 'USD')), findsWidgets);
+      expect(find.text(Formatters.money(220, 'USD')), findsWidgets);
+      expect(
+        find.text(
+          OpsTexts.earningsHelp(Formatters.money(180, 'USD'), Formatters.money(40, 'USD'), Formatters.money(1, 'USD')),
+        ),
+        findsOneWidget,
+      );
+      expect(find.text(OpsTexts.pickupsCollected), findsOneWidget);
+      // The deliveries' total row: 18 of them and their 180 of fees, not the month's 24 and 220.
+      expect(find.text('18'), findsWidgets);
+      expect(find.text(Formatters.money(180, 'USD')), findsWidgets);
+      expect(find.text(OpsTexts.pickupsHelp(6, Formatters.money(40, 'USD'))), findsOneWidget);
+      expect(find.text(Formatters.money(737950, 'CUP')), findsWidgets);
+      expect(find.widgetWithText(FilledButton, OpsTexts.exportPdf), findsOneWidget);
+    });
+
+    testWidgets('a month without sales says so and has nothing to export', (tester) async {
+      when(() => reports.monthly(any(), any()))
+          .thenAnswer((_) async => MonthlyReport.fromJson(const {'month': '2026-09'}));
+      await pump(tester);
+
+      expect(find.text(OpsTexts.noSales), findsOneWidget);
+      final button = tester.widget<FilledButton>(find.widgetWithText(FilledButton, OpsTexts.exportPdf));
+      expect(button.onPressed, isNull);
+    });
+  });
+}

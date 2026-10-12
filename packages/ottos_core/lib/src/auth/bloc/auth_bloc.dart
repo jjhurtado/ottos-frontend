@@ -22,6 +22,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<AuthStarted>(_onStarted);
     on<AuthLoggedIn>((event, emit) => emit(AuthState.authenticated(event.user)));
     on<AuthLogoutRequested>(_onLogoutRequested);
+    on<AuthPasswordChanged>(_onPasswordChanged);
     on<_AuthSessionExpired>((event, emit) => emit(const AuthState.unauthenticated(sessionExpired: true)));
     _sessionExpiredSubscription = authRepository.sessionExpired.listen((_) => add(const _AuthSessionExpired()));
   }
@@ -48,6 +49,12 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   Future<void> _onLogoutRequested(AuthLogoutRequested event, Emitter<AuthState> emit) async {
     await _authRepository.logout();
     emit(const AuthState.unauthenticated());
+  }
+
+  Future<void> _onPasswordChanged(AuthPasswordChanged event, Emitter<AuthState> emit) async {
+    // The refresh token is already revoked; this only clears the local session.
+    await _authRepository.logout();
+    emit(const AuthState.unauthenticated(passwordChanged: true));
   }
 
   @override

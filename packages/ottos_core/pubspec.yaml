@@ -1,6 +1,6 @@
 name: ottos_core
 description: Shared code for the Ottos apps - API client, authentication, models, theme and widgets.
-version: 0.1.0
+version: 1.0.0-rc.1
 publish_to: none
 resolution: workspace
 

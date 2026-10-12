@@ -15,6 +15,9 @@ abstract final class Formatters {
   static String dateTime(DateTime? value) =>
       value == null ? '' : DateFormat.yMMMd(_locale).add_Hm().format(value.toLocal());
 
+  /// `14:05`.
+  static String time(DateTime? value) => value == null ? '' : DateFormat.Hm(_locale).format(value.toLocal());
+
   /// `yyyy-MM-dd`, as the API expects in query parameters.
   static String apiDate(DateTime value) => DateFormat('yyyy-MM-dd').format(value);
 }

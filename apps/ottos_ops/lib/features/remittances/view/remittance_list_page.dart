@@ -35,7 +35,17 @@ class _RemittanceListView extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(OpsTexts.remittances, style: Theme.of(context).textTheme.headlineMedium),
+          Row(
+            children: [
+              Expanded(child: Text(OpsTexts.remittances, style: Theme.of(context).textTheme.headlineMedium)),
+              if (context.canDo(Permissions.remittancesCreate))
+                FilledButton.icon(
+                  onPressed: () => context.go(Routes.newRemittance),
+                  icon: const Icon(Icons.add),
+                  label: const Text(OpsTexts.newRemittance),
+                ),
+            ],
+          ),
           const SizedBox(height: 16),
           const _FilterBar(),
           const SizedBox(height: 16),
@@ -95,12 +105,17 @@ class _FilterBar extends StatelessWidget {
             SizedBox(
               width: 220,
               child: DropdownButtonFormField<String?>(
-                key: ValueKey('status-${filter.status}'),
+                // Rebuilt with the type too: it names the final status.
+                key: ValueKey('status-${filter.status}-${filter.type}'),
                 initialValue: filter.status,
                 decoration: const InputDecoration(labelText: OpsTexts.status, isDense: true),
                 items: [
                   const DropdownMenuItem(value: null, child: Text(OpsTexts.allStatuses)),
-                  for (final status in state.statuses) DropdownMenuItem(value: status.code, child: Text(status.name)),
+                  for (final status in state.statuses)
+                    DropdownMenuItem(
+                      value: status.code,
+                      child: Text(CoreTexts.statusName(status.code, type: filter.type, fallback: status.name)),
+                    ),
                 ],
                 onChanged: (status) => change(filter.copyWith(status: status)),
               ),
@@ -123,6 +138,16 @@ class _FilterBar extends StatelessWidget {
               label: const Text(OpsTexts.onlyLate),
               selected: filter.late == true,
               onSelected: (selected) => change(filter.copyWith(late: selected ? true : null)),
+            ),
+            FilterChip(
+              label: const Text(OpsTexts.onlyToReview),
+              selected: filter.review == true,
+              onSelected: (selected) => change(filter.copyWith(review: selected ? true : null)),
+            ),
+            FilterChip(
+              label: const Text(OpsTexts.onlyIncidents),
+              selected: filter.incident == true,
+              onSelected: (selected) => change(filter.copyWith(incident: selected ? true : null)),
             ),
             if (!filter.isEmpty)
               TextButton.icon(
@@ -209,7 +234,7 @@ class _RemittanceTable extends StatelessWidget {
                 onTap: () => open(remittance),
                 title: Text('${remittance.code} · ${remittance.beneficiaryName ?? ''}'),
                 subtitle: Text('${remittance.municipalityName ?? ''} · ${Formatters.date(remittance.expectedDate)}'),
-                trailing: RemittanceStatusChip(remittance: remittance),
+                trailing: _StatusCell(remittance: remittance),
               );
             },
           );
@@ -240,7 +265,7 @@ class _RemittanceTable extends StatelessWidget {
                       cells: [
                         DataCell(Text(remittance.code, style: const TextStyle(fontWeight: FontWeight.w600))),
                         DataCell(Text(remittance.isPickup ? CoreTexts.pickup : CoreTexts.delivery)),
-                        DataCell(RemittanceStatusChip(remittance: remittance)),
+                        DataCell(_StatusCell(remittance: remittance)),
                         DataCell(Text(remittance.customerName ?? '')),
                         DataCell(Text(remittance.beneficiaryName ?? '')),
                         DataCell(Text(remittance.municipalityName ?? '')),
@@ -290,6 +315,38 @@ class _Pagination extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Status chip plus a warning mark when a courier reported an incident.
+class _StatusCell extends StatelessWidget {
+  const _StatusCell({required this.remittance});
+
+  final Remittance remittance;
+
+  @override
+  Widget build(BuildContext context) {
+    final incident = remittance.incident;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        RemittanceStatusChip(remittance: remittance),
+        if (remittance.review case final review?) ...[
+          const SizedBox(width: 6),
+          Tooltip(
+            message: '${CoreTexts.toReview}: ${CoreTexts.reviewReason(review.reason)}',
+            child: const Icon(Icons.flag_outlined, color: OttosColors.warning, size: 20),
+          ),
+        ],
+        if (incident != null) ...[
+          const SizedBox(width: 6),
+          Tooltip(
+            message: '${CoreTexts.incident}: ${CoreTexts.incidentReason(incident.reason)}',
+            child: const Icon(Icons.error_outline, color: OttosColors.danger, size: 20),
+          ),
+        ],
+      ],
     );
   }
 }

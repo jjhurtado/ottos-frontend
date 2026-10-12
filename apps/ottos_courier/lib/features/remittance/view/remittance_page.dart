@@ -4,9 +4,8 @@ import 'package:ottos_core/ottos_core.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../app/courier_texts.dart';
+import '../../../offline/remittance_source.dart';
 import '../cubit/remittance_cubit.dart';
-import 'complete_dialog.dart';
-import 'postpone_dialog.dart';
 
 class RemittancePage extends StatelessWidget {
   const RemittancePage({super.key, required this.remittanceId});
@@ -16,17 +15,30 @@ class RemittancePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => RemittanceCubit(remittances: context.read<RemittanceRepository>(), id: remittanceId)..load(),
+      create: (context) => RemittanceCubit(
+        source: context.read<RemittanceSource>(),
+        remittances: context.read<RemittanceRepository>(),
+        id: remittanceId,
+      )..load(),
       child: BlocConsumer<RemittanceCubit, RemittanceState>(
         listenWhen: (previous, current) => current.actionResult != RemittanceActionResult.none,
         listener: (context, state) {
           final message = switch (state.actionResult) {
             RemittanceActionResult.completed => CourierTexts.completed,
             RemittanceActionResult.postponed => CourierTexts.postponed,
+            RemittanceActionResult.incidentReported => CoreTexts.incidentReported,
+            RemittanceActionResult.assigned => CourierTexts.assigned,
+            RemittanceActionResult.queued => CourierTexts.queued,
+            RemittanceActionResult.flagged => CourierTexts.flagged,
             RemittanceActionResult.failed => state.error!,
             RemittanceActionResult.none => null,
           };
           if (message != null) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+          // With the incident reported there is nothing left to do here for now:
+          // back to the list, which puts it at the end.
+          if (state.actionResult case RemittanceActionResult.incidentReported || RemittanceActionResult.queued) {
+            Navigator.of(context).maybePop();
+          }
         },
         builder: (context, state) => Scaffold(
           appBar: AppBar(title: Text(state.remittance?.code ?? '')),
@@ -55,19 +67,25 @@ class _RemittanceView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    final incident = remittance.incident;
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
+        if (remittance.review case final review?) ...[ReviewBanner(review: review), const SizedBox(height: 12)],
+        if (incident != null) ...[IncidentBanner(incident: incident), const SizedBox(height: 12)],
         Card(
-          color: OttosColors.navy,
+          // Colored by type, as in the list: delivery and pickup never look alike.
+          color: remittance.type.color,
           child: Padding(
             padding: const EdgeInsets.all(20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                RemittanceTypeBadge(type: remittance.type, onDark: true),
+                const SizedBox(height: 12),
                 Text(
                   remittance.isPickup ? CourierTexts.toCollect : CourierTexts.toDeliver,
-                  style: textTheme.titleSmall?.copyWith(color: OttosColors.cream),
+                  style: textTheme.titleSmall?.copyWith(color: Colors.white70),
                 ),
                 const SizedBox(height: 4),
                 Text(
@@ -75,7 +93,7 @@ class _RemittanceView extends StatelessWidget {
                   style: textTheme.headlineMedium?.copyWith(color: Colors.white, fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(height: 8),
-                RemittanceStatusChip(remittance: remittance),
+                RemittanceStatusChip(remittance: remittance, onDark: true),
               ],
             ),
           ),
@@ -125,9 +143,14 @@ class _PhoneRow extends StatelessWidget {
           child: InfoRow(label: label, value: number, labelWidth: 110),
         ),
         IconButton(
+          tooltip: CourierTexts.whatsApp,
+          icon: const Icon(Icons.chat_outlined, color: OttosColors.success),
+          onPressed: () => launchUrl(Phones.whatsApp(number), mode: LaunchMode.externalApplication),
+        ),
+        IconButton(
           tooltip: CourierTexts.call,
           icon: const Icon(Icons.phone, color: OttosColors.teal),
-          onPressed: () => launchUrl(Uri(scheme: 'tel', path: number)),
+          onPressed: () => launchUrl(Phones.call(number)),
         ),
       ],
     );
@@ -142,45 +165,79 @@ class _Actions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final user = context.select((AuthBloc bloc) => bloc.state.user!);
     final cubit = context.read<RemittanceCubit>();
+    final hasCourier = remittance.courierId != null;
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.all(12),
-        child: Row(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            if (user.can(Permissions.remittancesPostpone)) ...[
-              Expanded(
-                child: OutlinedButton(
-                  style: OutlinedButton.styleFrom(minimumSize: const Size(64, 48)),
-                  onPressed: submitting
-                      ? null
-                      : () async {
-                          final result = await showPostponeDialog(context, current: remittance.expectedDate);
-                          if (result != null) await cubit.postpone(newDate: result.newDate, reason: result.reason);
-                        },
-                  child: const Text(CourierTexts.postpone),
-                ),
+            // Registered without a courier (paid): whoever can assign gives it one here.
+            if (remittance.courierId == null && context.canDo(Permissions.remittancesAssign)) ...[
+              FilledButton.icon(
+                style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(48)),
+                onPressed: submitting
+                    ? null
+                    : () async {
+                        final result = await showAssignDialog(context);
+                        if (result != null) await cubit.assign(courierId: result.courierId, note: result.note);
+                      },
+                icon: const Icon(Icons.person_add_alt_1_outlined),
+                label: const Text(CourierTexts.assignToCourier),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(height: 8),
             ],
-            if (user.can(Permissions.remittancesDeliver))
-              Expanded(
-                flex: 2,
-                child: FilledButton(
-                  onPressed: submitting
-                      ? null
-                      : () async {
-                          final result = await showCompleteDialog(context, isPickup: remittance.isPickup);
-                          if (result != null) await cubit.complete(pin: result.pin, note: result.note);
-                        },
-                  child: submitting
-                      ? const SizedBox.square(
-                          dimension: 22,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                        )
-                      : Text(remittance.isPickup ? CourierTexts.markCollected : CourierTexts.markDelivered),
-                ),
+            Row(
+              // Spacing only between buttons: alone, Aplazar takes the whole width.
+              spacing: 12,
+              children: [
+                if (context.canDo(Permissions.remittancesPostpone))
+                  Expanded(
+                    child: OutlinedButton(
+                      style: OutlinedButton.styleFrom(minimumSize: const Size(64, 48)),
+                      onPressed: submitting
+                          ? null
+                          : () async {
+                              final result = await showPostponeDialog(context, current: remittance.expectedDate);
+                              if (result != null) await cubit.postpone(newDate: result.newDate, reason: result.reason);
+                            },
+                      child: const Text(CoreTexts.postpone),
+                    ),
+                  ),
+                // Delivering and failing to deliver need the courier who went.
+                if (hasCourier && context.canDo(Permissions.remittancesDeliver))
+                  Expanded(
+                    flex: 2,
+                    child: FilledButton(
+                      style: FilledButton.styleFrom(backgroundColor: remittance.type.color),
+                      onPressed: submitting
+                          ? null
+                          : () async {
+                              final result = await showCompleteDialog(context, isPickup: remittance.isPickup);
+                              if (result != null) await cubit.complete(pin: result.pin, note: result.note);
+                            },
+                      child: submitting
+                          ? const SizedBox.square(
+                              dimension: 22,
+                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                            )
+                          : Text(remittance.isPickup ? CourierTexts.markCollected : CourierTexts.markDelivered),
+                    ),
+                  ),
+              ],
+            ),
+            if (hasCourier && context.canDo(Permissions.remittancesReportIncident))
+              TextButton.icon(
+                style: TextButton.styleFrom(foregroundColor: OttosColors.danger, minimumSize: const Size(64, 48)),
+                onPressed: submitting
+                    ? null
+                    : () async {
+                        final result = await showIncidentDialog(context, isPickup: remittance.isPickup);
+                        if (result != null) await cubit.reportIncident(reason: result.reason, note: result.note);
+                      },
+                icon: const Icon(Icons.report_outlined),
+                label: Text(remittance.isPickup ? CoreTexts.reportIncidentPickup : CoreTexts.reportIncident),
               ),
           ],
         ),

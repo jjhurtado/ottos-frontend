@@ -1,33 +1,129 @@
+import 'dart:async';
+
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:ottos_core/ottos_core.dart';
 
+import '../../../offline/remittance_source.dart';
+import '../../../offline/sync_cubit.dart';
+
 enum AssignedStatus { loading, success, failure }
 
-final class AssignedState extends Equatable {
-  const AssignedState({this.status = AssignedStatus.loading, this.items = const [], this.error});
+/// How the list is ordered.
+enum AssignedSort {
+  /// The day's work first: late remittances and those with an incident go last.
+  byDay,
 
-  final AssignedStatus status;
-  final List<Remittance> items;
-  final String? error;
-
-  @override
-  List<Object?> get props => [status, items, error];
+  /// Most days late first.
+  mostLate,
 }
 
-/// The courier's open remittances, soonest expected date first.
-class AssignedCubit extends Cubit<AssignedState> {
-  AssignedCubit({required this._remittances}) : super(const AssignedState());
+final class AssignedState extends Equatable {
+  const AssignedState({
+    this.status = AssignedStatus.loading,
+    this.items = const [],
+    this.sort = AssignedSort.byDay,
+    this.pendingIds = const {},
+    this.error,
+  });
 
-  final RemittanceRepository _remittances;
+  final AssignedStatus status;
+
+  /// In the order of [sort].
+  final List<Remittance> items;
+  final AssignedSort sort;
+
+  /// Remittances with an action not sent yet (no network).
+  final Set<String> pendingIds;
+  final String? error;
+
+  AssignedState copyWith({
+    AssignedStatus? status,
+    List<Remittance>? items,
+    AssignedSort? sort,
+    Set<String>? pendingIds,
+    String? error,
+  }) => AssignedState(
+    status: status ?? this.status,
+    items: sorted(items ?? this.items, sort ?? this.sort),
+    sort: sort ?? this.sort,
+    pendingIds: pendingIds ?? this.pendingIds,
+    error: error,
+  );
+
+  /// [items] in the order of [sort]; ties by expected date, then code.
+  static List<Remittance> sorted(List<Remittance> items, AssignedSort sort, {DateTime? now}) {
+    int byDate(Remittance a, Remittance b) {
+      final dates = (a.expectedDate ?? DateTime(9999)).compareTo(b.expectedDate ?? DateTime(9999));
+      return dates != 0 ? dates : a.code.compareTo(b.code);
+    }
+
+    bool setAside(Remittance remittance) => remittance.late || remittance.incident != null;
+
+    return [...items]..sort(
+      (a, b) => switch (sort) {
+        AssignedSort.byDay when setAside(a) != setAside(b) => setAside(a) ? 1 : -1,
+        AssignedSort.byDay => byDate(a, b),
+        AssignedSort.mostLate => switch (b.daysLate(now: now).compareTo(a.daysLate(now: now))) {
+          0 => byDate(a, b),
+          final order => order,
+        },
+      },
+    );
+  }
+
+  @override
+  List<Object?> get props => [status, items, sort, pendingIds, error];
+}
+
+/// The open remittances of the courier, or all of them for who sees every
+/// remittance (sales), and the actions on them from the list.
+class AssignedCubit extends Cubit<AssignedState> {
+  AssignedCubit({required this._source}) : super(const AssignedState()) {
+    // A sync may bring new remittances or take some away.
+    _changes = _source.changes.listen((_) => load());
+  }
+
+  final RemittanceSource _source;
+  late final StreamSubscription<void> _changes;
 
   /// Loads the list; keeps the current items visible while refreshing.
   Future<void> load() async {
-    if (state.items.isEmpty) emit(const AssignedState());
+    if (state.items.isEmpty) emit(AssignedState(sort: state.sort));
     try {
-      emit(AssignedState(status: AssignedStatus.success, items: await _remittances.assignedToMe()));
+      final items = await _source.list();
+      final pendingIds = await _source.pendingIds();
+      if (isClosed) return;
+      emit(state.copyWith(status: AssignedStatus.success, items: items, pendingIds: pendingIds));
     } on ApiException catch (error) {
-      emit(AssignedState(status: AssignedStatus.failure, items: state.items, error: error.message));
+      if (!isClosed) emit(state.copyWith(status: AssignedStatus.failure, error: error.message));
     }
+  }
+
+  /// Pull to refresh: syncs first when the courier works offline.
+  Future<void> refresh() async {
+    await _source.refresh();
+    await load();
+  }
+
+  void sortBy(AssignedSort sort) => emit(state.copyWith(sort: sort));
+
+  /// Completes a remittance, checking [pin] when one was typed.
+  Future<ActionOutcome> complete(Remittance remittance, {String? pin, String? note}) =>
+      _run(_source.deliver(remittance, pin: pin, note: note));
+
+  Future<ActionOutcome> reportIncident(Remittance remittance, {required IncidentReason reason, String? note}) =>
+      _run(_source.reportIncident(remittance, reason: reason, note: note));
+
+  Future<ActionOutcome> _run(Future<ActionOutcome> action) async {
+    final outcome = await action;
+    if (outcome is! Rejected) await load();
+    return outcome;
+  }
+
+  @override
+  Future<void> close() async {
+    await _changes.cancel();
+    return super.close();
   }
 }

@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 
+import '../l10n/core_texts.dart';
 import 'json.dart';
 
 enum RemittanceType {
@@ -12,6 +13,89 @@ enum RemittanceType {
 
   static RemittanceType fromCode(String? code) =>
       values.firstWhere((type) => type.code == code, orElse: () => delivery);
+}
+
+/// Why a remittance was marked for sales to check (`ReviewReason`).
+enum ReviewReason {
+  /// Delivered while offline after it was reassigned to someone else.
+  deliveredAfterReassignment('DELIVERED_AFTER_REASSIGNMENT'),
+
+  /// Delivered offline with a PIN that did not match.
+  pinMismatch('PIN_MISMATCH'),
+
+  /// Two people say they delivered it.
+  duplicateDelivery('DUPLICATE_DELIVERY'),
+
+  /// Synced more than 7 days after it happened.
+  lateSync('LATE_SYNC'),
+
+  /// A courier's currency exchange far from the configured rate.
+  unusualExchangeRate('UNUSUAL_EXCHANGE_RATE'),
+
+  /// A reason this app does not know yet.
+  other('');
+
+  const ReviewReason(this.code);
+
+  final String code;
+
+  static ReviewReason fromCode(String? code) =>
+      values.firstWhere((reason) => reason.code == code && reason != other, orElse: () => other);
+}
+
+/// A pending review of a remittance (`ReviewView`).
+class Review extends Equatable {
+  const Review({required this.reason, this.flaggedAt, this.actionId});
+
+  factory Review.fromJson(Map<String, dynamic> json) => Review(
+    reason: ReviewReason.fromCode(json['reason'] as String?),
+    flaggedAt: parseDateTime(json['flaggedAt']),
+    actionId: json['actionId'] as String?,
+  );
+
+  final ReviewReason reason;
+  final DateTime? flaggedAt;
+  final String? actionId;
+
+  @override
+  List<Object?> get props => [reason, flaggedAt, actionId];
+}
+
+/// Why a delivery or pickup could not be done (`IncidentReason`).
+enum IncidentReason {
+  notHome('NOT_HOME'),
+  wrongAddress('WRONG_ADDRESS'),
+  unreachable('UNREACHABLE'),
+  refused('REFUSED'),
+  other('OTHER');
+
+  const IncidentReason(this.code);
+
+  final String code;
+
+  static IncidentReason fromCode(String? code) =>
+      values.firstWhere((reason) => reason.code == code, orElse: () => other);
+}
+
+/// The open incident of a remittance (`OpenIncident`): it stays until someone
+/// reassigns, postpones, completes or otherwise moves the remittance.
+class Incident extends Equatable {
+  const Incident({required this.reason, this.note, this.reportedAt, this.reportedBy});
+
+  factory Incident.fromJson(Map<String, dynamic> json) => Incident(
+    reason: IncidentReason.fromCode(json['reason'] as String?),
+    note: json['note'] as String?,
+    reportedAt: parseDateTime(json['reportedAt']),
+    reportedBy: json['reportedBy'] as String?,
+  );
+
+  final IncidentReason reason;
+  final String? note;
+  final DateTime? reportedAt;
+  final String? reportedBy;
+
+  @override
+  List<Object?> get props => [reason, note, reportedAt, reportedBy];
 }
 
 /// A remittance as returned by the API (`RemittanceView`). Financial fields
@@ -40,6 +124,8 @@ class Remittance extends Equatable {
     this.fee,
     this.total,
     this.rate,
+    this.rateOverridden,
+    this.feeOverridden,
     this.amountToDeliver,
     this.cashAmount,
     this.cashCurrency,
@@ -50,6 +136,8 @@ class Remittance extends Equatable {
     this.late = false,
     this.postponements = 0,
     this.notes,
+    this.incident,
+    this.review,
     this.createdAt,
     this.createdBy,
     this.completedAt,
@@ -78,6 +166,8 @@ class Remittance extends Equatable {
     fee: parseDecimal(json['fee']),
     total: parseDecimal(json['total']),
     rate: parseDecimal(json['rate']),
+    rateOverridden: json['rateOverridden'] as bool?,
+    feeOverridden: json['feeOverridden'] as bool?,
     amountToDeliver: parseDecimal(json['amountToDeliver']),
     cashAmount: parseDecimal(json['cashAmount']),
     cashCurrency: json['cashCurrency'] as String?,
@@ -88,6 +178,8 @@ class Remittance extends Equatable {
     late: json['late'] as bool? ?? false,
     postponements: json['postponements'] as int? ?? 0,
     notes: json['notes'] as String?,
+    incident: json['incident'] == null ? null : Incident.fromJson(json['incident'] as Map<String, dynamic>),
+    review: json['review'] == null ? null : Review.fromJson(json['review'] as Map<String, dynamic>),
     createdAt: parseDateTime(json['createdAt']),
     createdBy: json['createdBy'] as String?,
     completedAt: parseDateTime(json['completedAt']),
@@ -97,7 +189,12 @@ class Remittance extends Equatable {
   final String code;
   final RemittanceType type;
   final String status;
+
+  /// The backend's name of [status]; only a fallback, see [displayStatus].
   final String statusName;
+
+  /// [status] in Spanish, by code and type.
+  String get displayStatus => CoreTexts.statusName(status, type: type, fallback: statusName);
   final String? customerId;
   final String? customerName;
   final String? customerPhone;
@@ -115,6 +212,13 @@ class Remittance extends Equatable {
   final double? fee;
   final double? total;
   final double? rate;
+
+  /// A pickup whose rate was typed when registering it; null for who does not
+  /// see the financial data.
+  final bool? rateOverridden;
+
+  /// A pickup whose fee was typed when registering it (financials only).
+  final bool? feeOverridden;
   final double? amountToDeliver;
 
   /// Cash the courier hands over (delivery) or collects (pickup).
@@ -125,8 +229,30 @@ class Remittance extends Equatable {
   final String? courierName;
   final DateTime? expectedDate;
   final bool late;
+
+  /// Whole days past the expected date, by calendar day (hours do not count);
+  /// 0 when it is due today or later, or has no date.
+  int daysLate({DateTime? now}) {
+    final expected = expectedDate?.toLocal();
+    if (expected == null) return 0;
+    final today = (now ?? DateTime.now()).toLocal();
+    // UTC midnights: a daylight saving change cannot shorten a day.
+    final days = DateTime.utc(
+      today.year,
+      today.month,
+      today.day,
+    ).difference(DateTime.utc(expected.year, expected.month, expected.day)).inDays;
+    return days > 0 ? days : 0;
+  }
+
   final int postponements;
   final String? notes;
+
+  /// The open incident, null when there is none.
+  final Incident? incident;
+
+  /// Set while sales has to check it, e.g. after an offline delivery with a wrong PIN.
+  final Review? review;
   final DateTime? createdAt;
   final String? createdBy;
   final DateTime? completedAt;
@@ -136,5 +262,25 @@ class Remittance extends Equatable {
   bool get isPickup => type == RemittanceType.pickup;
 
   @override
-  List<Object?> get props => [id, status, courierId, expectedDate, late, postponements, completedAt];
+  List<Object?> get props => [id, status, courierId, expectedDate, late, postponements, incident, review, completedAt];
+}
+
+/// One page of `GET /remittances/completed`, oldest first.
+class CompletedFeed {
+  const CompletedFeed({required this.serverTime, this.hasMore = false, this.remittances = const []});
+
+  factory CompletedFeed.fromJson(Map<String, dynamic> json) => CompletedFeed(
+    serverTime: json['serverTime'] as String,
+    hasMore: json['hasMore'] as bool? ?? false,
+    remittances: [
+      for (final item in json['remittances'] as List? ?? const []) Remittance.fromJson(item as Map<String, dynamic>),
+    ],
+  );
+
+  /// The `since` of the next call; kept even when nothing came.
+  final String serverTime;
+
+  /// More are waiting: ask again right away with [serverTime].
+  final bool hasMore;
+  final List<Remittance> remittances;
 }

@@ -40,12 +40,12 @@ abstract final class Destinations {
     selectedIcon: Icons.people,
     permissions: [Permissions.customersRead],
   );
-  static const rates = Destination(
-    path: '/rates',
-    label: OpsTexts.rates,
-    icon: Icons.currency_exchange_outlined,
-    selectedIcon: Icons.currency_exchange,
-    permissions: [Permissions.ratesRead],
+  static const configuration = Destination(
+    path: '/configuration',
+    label: OpsTexts.configuration,
+    icon: Icons.tune_outlined,
+    selectedIcon: Icons.tune,
+    permissions: [Permissions.configurationRead],
   );
   static const cash = Destination(
     path: '/cash',
@@ -69,7 +69,23 @@ abstract final class Destinations {
     permissions: [Permissions.rolesRead],
   );
 
-  static const all = [home, remittances, customers, rates, cash, users, roles];
+  static const audit = Destination(
+    path: '/audit',
+    label: OpsTexts.audit,
+    icon: Icons.history_outlined,
+    selectedIcon: Icons.history,
+    permissions: [Permissions.auditRead],
+  );
+
+  static const reports = Destination(
+    path: '/reports',
+    label: OpsTexts.reports,
+    icon: Icons.insights_outlined,
+    selectedIcon: Icons.insights,
+    permissions: [Permissions.reportsRead],
+  );
+
+  static const all = [home, remittances, customers, configuration, cash, reports, users, roles, audit];
 
   /// Who may use the panel at all: anyone who can see a section besides home.
   static bool canUsePanel(CurrentUser user) => all.skip(1).any((destination) => destination.isVisibleTo(user));

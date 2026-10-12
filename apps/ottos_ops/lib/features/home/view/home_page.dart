@@ -12,8 +12,12 @@ class HomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final user = context.select((AuthBloc bloc) => bloc.state.user)!;
+    final user = context.select((AuthBloc bloc) => bloc.state.user);
+    // No user while logging out: the page goes before the redirect.
+    if (user == null) return const SizedBox.shrink();
     final canSeeRemittances = user.can(Permissions.remittancesRead);
+    // Read here: `create` runs outside build, where select is not allowed.
+    final canSeeCash = user.can(Permissions.cashRead);
     return ListView(
       padding: const EdgeInsets.all(24),
       children: [
@@ -23,7 +27,10 @@ class HomePage extends StatelessWidget {
           Text(OpsTexts.homeSubtitle, style: TextStyle(color: Theme.of(context).colorScheme.outline)),
           const SizedBox(height: 24),
           BlocProvider(
-            create: (context) => HomeCubit(remittances: context.read<RemittanceRepository>())..load(),
+            create: (context) => HomeCubit(
+              remittances: context.read<RemittanceRepository>(),
+              cash: canSeeCash ? context.read<CashRepository>() : null,
+            )..load(),
             child: const _Summary(),
           ),
         ],
@@ -47,7 +54,7 @@ class _Summary extends StatelessWidget {
           children: [
             for (final item in state.openByStatus)
               _CountCard(
-                label: item.status.name,
+                label: CoreTexts.statusName(item.status.code, fallback: item.status.name),
                 count: item.count,
                 color: OttosColors.teal,
                 icon: Icons.send_outlined,
@@ -62,6 +69,28 @@ class _Summary extends StatelessWidget {
               icon: Icons.schedule,
               onTap: () => context.go('${Destinations.remittances.path}?late=true'),
             ),
+            _CountCard(
+              label: OpsTexts.incidentRemittances,
+              count: state.incidents,
+              color: OttosColors.danger,
+              icon: Icons.error_outline,
+              onTap: () => context.go('${Destinations.remittances.path}?incident=true'),
+            ),
+            _CountCard(
+              label: OpsTexts.reviewRemittances,
+              count: state.toReview,
+              color: OttosColors.warning,
+              icon: Icons.flag_outlined,
+              onTap: () => context.go('${Destinations.remittances.path}?review=true'),
+            ),
+            if (state.exchangesToReview > 0)
+              _CountCard(
+                label: OpsTexts.exchangesToReview,
+                count: state.exchangesToReview,
+                color: OttosColors.warning,
+                icon: Icons.currency_exchange,
+                onTap: () => context.go(Destinations.cash.path),
+              ),
           ],
         ),
       },
