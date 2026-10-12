@@ -1,0 +1,41 @@
+# The panel and its API on one origin. PORT and OTTOS_BACKEND_URL come from
+# the environment (Railway sets PORT; OTTOS_BACKEND_URL is the private address
+# of the backend, e.g. http://backend.railway.internal:8080).
+{
+	admin off
+	auto_https off
+}
+
+:{$PORT:8080} {
+	encode zstd gzip
+
+	# Railway's health check.
+	handle /healthz {
+		respond "ok" 200
+	}
+
+	# The backend. Caddy passes on the X-Real-Ip and X-Forwarded-For set by
+	# Railway's edge untouched: the login limit per IP depends on them.
+	handle /api/* {
+		reverse_proxy {$OTTOS_BACKEND_URL}
+	}
+
+	handle {
+		root * /srv
+
+		# Flutter web names its files without a content hash, so after a
+		# deploy the browser must ask again: these revalidate (a 304 when
+		# nothing changed, thanks to ETag and Last-Modified).
+		@shell path / /index.html /flutter_service_worker.js /flutter_bootstrap.js /main.dart.js /version.json /manifest.json
+		header @shell Cache-Control "no-cache"
+
+		# Engine and assets change only with a new version: a day of cache,
+		# then they revalidate too.
+		@static path /assets/* /canvaskit/* /icons/* /favicon.png
+		header @static Cache-Control "public, max-age=86400, must-revalidate"
+
+		# Single-page app: unknown paths get index.html.
+		try_files {path} /index.html
+		file_server
+	}
+}
