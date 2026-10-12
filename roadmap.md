@@ -161,6 +161,8 @@ y cada versión publicada lleva su tag en `main`, sin prefijo (`1.0.0-beta.1`). 
 
 **Versión actual: `1.0.0-rc.1`** (2026-10-11), con el backend `1.0.0-rc.1`.
 
+Decidido (2026-10-11): los arreglos que salgan de la prueba en staging van en `1.0.0-rc.2` (rama `release/1.0.0-rc.2`); el tag `1.0.0-rc.1` publicado no se toca. Si staging no encuentra nada, se pasa de `1.0.0-rc.1` directamente a `1.0.0`. El backend versiona igual.
+
 ## Dependencias con el backend y preguntas abiertas
 
 - **Cambio incompatible del backend (resuelto):** las tasas y comisiones se movieron a `/api/v1/configuration/…` y `rates:write` se sustituyó por `configuration:read` y `configuration:write`. El frontend ya lo sigue. Las sesiones iniciadas antes del cambio tienen los permisos viejos y deben volver a entrar.
