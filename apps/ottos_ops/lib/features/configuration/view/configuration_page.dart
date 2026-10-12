@@ -35,7 +35,7 @@ class _ConfigurationView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final canQuote = context.select((AuthBloc bloc) => bloc.state.user!.can(Permissions.ratesRead));
+    final canQuote = context.canDo(Permissions.ratesRead);
     final quotable = state.corridors.where((corridor) => RemittanceType.values.any(corridor.canQuoteFor)).toList();
     return ListView(
       padding: const EdgeInsets.all(24),
@@ -58,7 +58,7 @@ class _SettingsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final canWrite = context.select((AuthBloc bloc) => bloc.state.user!.can(Permissions.configurationWrite));
+    final canWrite = context.canDo(Permissions.configurationWrite);
     final cubit = context.read<ConfigurationCubit>();
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
@@ -323,7 +323,7 @@ class _TypeSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final canWrite = context.select((AuthBloc bloc) => bloc.state.user!.can(Permissions.configurationWrite));
+    final canWrite = context.canDo(Permissions.configurationWrite);
     final cubit = context.read<ConfigurationCubit>();
     final colors = Theme.of(context).colorScheme;
     final rate = corridor.rateFor(type);

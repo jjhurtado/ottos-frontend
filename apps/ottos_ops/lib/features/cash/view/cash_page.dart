@@ -37,7 +37,9 @@ class _CashView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final user = context.select((AuthBloc bloc) => bloc.state.user!);
+    final user = context.select((AuthBloc bloc) => bloc.state.user);
+    // No user while logging out: the page goes before the redirect.
+    if (user == null) return const SizedBox.shrink();
     final cubit = context.read<CashOverviewCubit>();
     final cash = context.read<CashRepository>();
     final courierNames = {for (final courier in state.couriers) courier.courierId: courier.name};

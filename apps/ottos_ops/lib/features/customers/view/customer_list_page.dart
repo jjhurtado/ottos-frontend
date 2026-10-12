@@ -26,7 +26,7 @@ class _CustomerListView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final canWrite = context.select((AuthBloc bloc) => bloc.state.user!.can(Permissions.customersWrite));
+    final canWrite = context.canDo(Permissions.customersWrite);
     final cubit = context.read<CustomerListCubit>();
     return Padding(
       padding: const EdgeInsets.all(24),

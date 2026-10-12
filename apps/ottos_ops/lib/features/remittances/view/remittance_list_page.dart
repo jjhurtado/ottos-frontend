@@ -38,7 +38,7 @@ class _RemittanceListView extends StatelessWidget {
           Row(
             children: [
               Expanded(child: Text(OpsTexts.remittances, style: Theme.of(context).textTheme.headlineMedium)),
-              if (context.select((AuthBloc bloc) => bloc.state.user!.can(Permissions.remittancesCreate)))
+              if (context.canDo(Permissions.remittancesCreate))
                 FilledButton.icon(
                   onPressed: () => context.go(Routes.newRemittance),
                   icon: const Icon(Icons.add),
