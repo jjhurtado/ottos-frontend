@@ -32,3 +32,15 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+
+  # Bundled so the web panel does not download Roboto from fonts.gstatic.com,
+  # which may be blocked from Cuba. From the Flutter SDK (Apache 2.0, license
+  # next to the files).
+  fonts:
+    - family: Roboto
+      fonts:
+        - asset: assets/fonts/Roboto-Regular.ttf
+        - asset: assets/fonts/Roboto-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Roboto-Bold.ttf
+          weight: 700
