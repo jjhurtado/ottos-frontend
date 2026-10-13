@@ -19,7 +19,8 @@ final sampleJson = {
   'remittances': {'total': 24, 'delivery': 18, 'pickup': 6, 'completed': 21, 'open': 3, 'withIncident': 1},
   'collected': 1980.00,
   'fees': 220.00,
-  'deliveredUsd': 1799.00,
+  'businessCurrency': 'USD',
+  'deliveredCurrency': 1799.00,
   'difference': 181.00,
   'roundingMargin': 1.00,
   'pickups': {'remittances': 6, 'collected': 30000.00, 'fees': 40.00},
@@ -34,7 +35,7 @@ final sampleJson = {
       'fees': 180.00,
       'collected': 1980.00,
       'delivered': 737950.00,
-      'deliveredUsd': 1799.00,
+      'deliveredCurrency': 1799.00,
     },
   ],
   'byType': [
@@ -64,6 +65,27 @@ void main() {
     expect(report.deliveryFees, 180, reason: 'the earnings include the pickups, the difference does not');
     expect(report.byCurrency.first.delivered, 737950);
     expect(report.byType.last.type, RemittanceType.pickup);
+    expect(report.deliveredCurrency, 1799);
+    expect(report.byCurrency.first.deliveredCurrency, 1799);
+    expect(report.businessCurrency, 'USD');
+  });
+
+  test('a backend before 1.0.0-rc.4 still reads, with its old name', () {
+    final old =
+        {
+            ...sampleJson,
+            'deliveredUsd': 1799.00,
+            'byCurrency': [
+              {'currency': 'CUP', 'remittances': 18, 'delivered': 737950.00, 'deliveredUsd': 1799.00},
+            ],
+          }
+          ..remove('businessCurrency')
+          ..remove('deliveredCurrency');
+    final report = MonthlyReport.fromJson(old);
+
+    expect(report.deliveredCurrency, 1799);
+    expect(report.byCurrency.first.deliveredCurrency, 1799);
+    expect(report.businessCurrency, 'USD');
   });
 
   test('the PDF is one A4 page', () async {

@@ -26,7 +26,11 @@ String _usd(double amount) => Formatters.money(amount, null).replaceAll('−', '
 Future<Uint8List> buildMonthlyReportPdf(MonthlyReport report, {required DateTime month, DateTime? now}) {
   final document = pw.Document(title: '${OpsTexts.monthlyReport} ${monthTitle(month)}', author: "Otto's Bussines");
   final generated = Formatters.dateTime(report.generatedAt ?? now ?? DateTime.now());
-  final period = OpsTexts.reportPeriod(Formatters.date(report.from), Formatters.date(report.to));
+  final period = OpsTexts.reportPeriod(
+    Formatters.date(report.from),
+    Formatters.date(report.to),
+    report.businessCurrency,
+  );
 
   pw.Widget box(String label, String value, String help, {bool highlight = false}) => pw.Container(
     padding: const pw.EdgeInsets.all(10),
@@ -141,7 +145,7 @@ Future<Uint8List> buildMonthlyReportPdf(MonthlyReport report, {required DateTime
               pw.SizedBox(width: 8),
               pw.Expanded(child: box(OpsTexts.totalCollected, _usd(report.collected), 'Entregas: enviado + comisión')),
               pw.SizedBox(width: 8),
-              pw.Expanded(child: box(OpsTexts.totalDelivered, _usd(report.deliveredUsd), delivered)),
+              pw.Expanded(child: box(OpsTexts.totalDelivered, _usd(report.deliveredCurrency), delivered)),
             ],
           ),
           pw.SizedBox(height: 8),
@@ -178,7 +182,15 @@ Future<Uint8List> buildMonthlyReportPdf(MonthlyReport report, {required DateTime
           heading(OpsTexts.byCurrency),
           pw.SizedBox(height: 6),
           table(
-            ['Moneda', 'Remesas', OpsTexts.sent, OpsTexts.fees, OpsTexts.collected, OpsTexts.delivered, 'En USD'],
+            [
+              'Moneda',
+              'Remesas',
+              OpsTexts.sent,
+              OpsTexts.fees,
+              OpsTexts.collected,
+              OpsTexts.delivered,
+              'En ${report.businessCurrency}',
+            ],
             [
               for (final line in report.byCurrency)
                 [
@@ -188,7 +200,7 @@ Future<Uint8List> buildMonthlyReportPdf(MonthlyReport report, {required DateTime
                   _usd(line.fees),
                   _usd(line.collected),
                   Formatters.money(line.delivered, line.currency),
-                  _usd(line.deliveredUsd),
+                  _usd(line.deliveredCurrency),
                 ],
               [
                 OpsTexts.totalRow,
@@ -197,7 +209,7 @@ Future<Uint8List> buildMonthlyReportPdf(MonthlyReport report, {required DateTime
                 _usd(report.deliveryFees),
                 _usd(report.collected),
                 '-',
-                _usd(report.deliveredUsd),
+                _usd(report.deliveredCurrency),
               ],
             ],
           ),

@@ -507,7 +507,7 @@ void main() {
 
       expect(report.month, '${now.year}-${now.month.toString().padLeft(2, '0')}');
       expect(report.remittances, report.deliveries + report.pickups);
-      expect(report.difference, closeTo(report.collected - report.deliveredUsd, 0.01));
+      expect(report.difference, closeTo(report.collected - report.deliveredCurrency, 0.01));
       // Pickups hand nothing over: only deliveries go by currency.
       expect(report.byCurrency.fold<int>(0, (sum, line) => sum + line.remittances), report.deliveries);
       expect(report.roundingMargin, closeTo(report.difference - report.deliveryFees, 0.01));
