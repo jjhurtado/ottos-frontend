@@ -149,6 +149,11 @@ class _FilterBar extends StatelessWidget {
               selected: filter.incident == true,
               onSelected: (selected) => change(filter.copyWith(incident: selected ? true : null)),
             ),
+            FilterChip(
+              label: const Text(OpsTexts.onlyVoided),
+              selected: filter.voided == true,
+              onSelected: (selected) => change(filter.copyWith(voided: selected ? true : null)),
+            ),
             if (!filter.isEmpty)
               TextButton.icon(
                 onPressed: () => change(const RemittanceFilter()),

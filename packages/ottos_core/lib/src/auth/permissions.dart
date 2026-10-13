@@ -22,6 +22,8 @@ abstract final class Permissions {
   static const remittancesDeliver = 'remittances:deliver';
   static const remittancesReportIncident = 'remittances:report-incident';
   static const remittancesReview = 'remittances:review';
+  static const remittancesVoid = 'remittances:void';
+  static const remittancesHistorical = 'remittances:historical';
   static const auditRead = 'audit:read';
   static const reportsRead = 'reports:read';
   static const cashRead = 'cash:read';

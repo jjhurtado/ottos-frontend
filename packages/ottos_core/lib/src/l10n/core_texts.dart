@@ -43,6 +43,8 @@ abstract final class CoreTexts {
     'INVALID_POSTPONE_DATE': 'La nueva fecha debe ser posterior a la fecha prevista.',
     'REMITTANCE_NOT_FOUND': 'No se encontró la remesa.',
     'REMITTANCE_ALREADY_COMPLETED': 'La remesa ya está completada.',
+    'REMITTANCE_VOIDED': 'La remesa está anulada: ya no se puede cambiar.',
+    'REMITTANCE_ALREADY_VOIDED': 'La remesa ya estaba anulada.',
     'REMITTANCE_NOT_ASSIGNABLE': 'La remesa no se puede asignar en su estado actual.',
     'REMITTANCE_NOT_COMPLETABLE': 'La remesa no se puede completar en su estado actual.',
     'TRANSITION_NOT_ALLOWED': 'Ese cambio de estado no está permitido.',
@@ -278,6 +280,11 @@ abstract final class CoreTexts {
   static const newDate = 'Nueva fecha';
   static const reason = 'Motivo';
   static const reasonRequired = 'Escribe el motivo';
+  // Voided remittances
+  static const voided = 'Anulada';
+  static String voidedBy(String? name) => name == null || name.isEmpty ? 'Remesa anulada' : 'Anulada por $name';
+  static const voidReason = 'Motivo';
+  static const voidedHelp = 'No cuenta en reportes ni listas de trabajo, y ya no se puede cambiar.';
   static const delivery = 'Entrega';
   static const pickup = 'Recogida';
 }

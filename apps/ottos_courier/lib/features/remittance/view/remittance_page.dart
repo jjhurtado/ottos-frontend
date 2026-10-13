@@ -50,7 +50,7 @@ class RemittancePage extends StatelessWidget {
             ),
             RemittanceLoadStatus.success => _RemittanceView(remittance: state.remittance!),
           },
-          bottomNavigationBar: state.remittance == null || state.remittance!.isCompleted
+          bottomNavigationBar: state.remittance == null || state.remittance!.isCompleted || state.remittance!.isVoided
               ? null
               : _Actions(remittance: state.remittance!, submitting: state.submitting),
         ),
@@ -71,8 +71,15 @@ class _RemittanceView extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        if (remittance.review case final review?) ...[ReviewBanner(review: review), const SizedBox(height: 12)],
-        if (incident != null) ...[IncidentBanner(incident: incident), const SizedBox(height: 12)],
+        if (remittance.voided case final voided?) ...[VoidedBanner(voided: voided), const SizedBox(height: 12)],
+        if (remittance.review case final review? when !remittance.isVoided) ...[
+          ReviewBanner(review: review),
+          const SizedBox(height: 12),
+        ],
+        if (incident != null && !remittance.isVoided) ...[
+          IncidentBanner(incident: incident),
+          const SizedBox(height: 12),
+        ],
         Card(
           // Colored by type, as in the list: delivery and pickup never look alike.
           color: remittance.type.color,

@@ -24,16 +24,18 @@ final _workflow = Workflow.fromJson({
   ],
 });
 
-Remittance _remittance(String status, {String? courierId, Incident? incident, Review? review}) => Remittance(
-  id: 'r1',
-  code: 'OT-1',
-  type: RemittanceType.delivery,
-  status: status,
-  statusName: _workflow.nameOf(status),
-  courierId: courierId,
-  incident: incident,
-  review: review,
-);
+Remittance _remittance(String status, {String? courierId, Incident? incident, Review? review, Voided? voided}) =>
+    Remittance(
+      id: 'r1',
+      code: 'OT-1',
+      type: RemittanceType.delivery,
+      status: status,
+      statusName: _workflow.nameOf(status),
+      courierId: courierId,
+      incident: incident,
+      review: review,
+      voided: voided,
+    );
 
 CurrentUser _user(Set<String> permissions) =>
     CurrentUser(id: 'u1', email: 'u@ottos.test', name: 'U', type: 'STAFF', roles: const [], permissions: permissions);
@@ -142,6 +144,59 @@ void main() {
 
       verify(() => remittances.resolveReview('r1', note: 'El beneficiario confirmó la entrega')).called(1);
       expect(find.byType(ReviewBanner), findsNothing);
+    });
+
+    testWidgets('an admin voids a delivered remittance with a required reason', (tester) async {
+      final voided = _remittance(
+        'DELIVERED',
+        courierId: 'k1',
+        voided: const Voided(reason: 'Era una entrega de efectivo', byName: 'Administrator'),
+      );
+      when(() => remittances.voidRemittance('r1', reason: 'Era una entrega de efectivo'))
+          .thenAnswer((_) async => voided);
+      await pumpDetail(tester, _remittance('DELIVERED', courierId: 'k1'), {...all, Permissions.remittancesVoid});
+
+      await tester.tap(find.text(OpsTexts.voidAction));
+      await tester.pumpAndSettle();
+      expect(find.text(OpsTexts.voidHelp), findsOneWidget);
+      await tester.tap(find.descendant(of: find.byType(AlertDialog), matching: find.text(OpsTexts.voidAction)));
+      await tester.pumpAndSettle();
+      expect(find.text(CoreTexts.requiredField), findsOneWidget, reason: 'the reason is required');
+
+      await tester.enterText(find.byType(TextFormField), 'Era una entrega de efectivo');
+      await tester.tap(find.descendant(of: find.byType(AlertDialog), matching: find.text(OpsTexts.voidAction)));
+      await tester.pumpAndSettle();
+
+      verify(() => remittances.voidRemittance('r1', reason: 'Era una entrega de efectivo')).called(1);
+      expect(find.text(CoreTexts.voidedBy('Administrator')), findsOneWidget);
+      expect(find.text(CoreTexts.voided), findsOneWidget, reason: 'the status chip says it is voided');
+      expect(find.text(OpsTexts.voidAction), findsNothing, reason: 'it cannot be voided twice');
+    });
+
+    testWidgets('a voided remittance shows why and allows nothing', (tester) async {
+      await pumpDetail(
+        tester,
+        _remittance(
+          'ASSIGNED',
+          courierId: 'k1',
+          incident: const Incident(reason: IncidentReason.notHome),
+          voided: const Voided(reason: 'Duplicada'),
+        ),
+        {...all, Permissions.remittancesReportIncident, Permissions.remittancesVoid},
+      );
+
+      expect(find.byType(VoidedBanner), findsOneWidget);
+      expect(find.text('${CoreTexts.voidReason}: Duplicada'), findsOneWidget);
+      expect(find.byType(IncidentBanner), findsNothing);
+      expect(find.text(OpsTexts.reassignCourier), findsNothing);
+      expect(find.text(OpsTexts.markDelivered), findsNothing);
+      expect(find.text(CoreTexts.postpone), findsNothing);
+      expect(find.text(OpsTexts.voidAction), findsNothing);
+    });
+
+    testWidgets('only who has the permission can void', (tester) async {
+      await pumpDetail(tester, _remittance('PAID'), all);
+      expect(find.text(OpsTexts.voidAction), findsNothing);
     });
 
     testWidgets('without the permission the review is shown but not resolved', (tester) async {

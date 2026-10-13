@@ -41,7 +41,8 @@ class OnlineSource implements RemittanceSource {
   Future<List<Remittance>> list() async {
     if (onlyMine) return _remittances.assignedToMe();
     final workflow = await _remittances.workflow();
-    final page = await _remittances.search(const RemittanceFilter(), size: openPageSize);
+    // Voided ones are not work: the backend keeps them out only of the courier's lists.
+    final page = await _remittances.search(const RemittanceFilter(voided: false), size: openPageSize);
     return page.items.where((remittance) => !workflow.isFinal(remittance.status)).toList();
   }
 
