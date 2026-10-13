@@ -53,7 +53,11 @@ Pedido por el negocio (2026-10-11): avisar en el teléfono **cuando un repartido
 - [x] **Repartidor: remesa nueva.** Al sincronizar, las remesas que el teléfono no tenía avisan «Nueva entrega asignada» / «Nueva recogida asignada» (código, beneficiario, municipio). No avisa en la primera descarga tras el login ni de las que creó el propio usuario. Más de 3 a la vez, un solo aviso. Al tocarla se abre la remesa. Probado en el emulador.
 - [x] **Ventas: remesa completada.** Con `remittances:read`, la app consulta `GET /remittances/completed?since=` (todas las remesas, recogidas incluidas) y avisa «Remesa entregada» / «Recogida completada» con quién la hizo; no avisa de las entregas propias. La primera consulta solo marca desde dónde empezar. Probado en el emulador contra el backend.
 - [x] Permiso de notificaciones de Android 13+ pedido tras el login; dos canales («Remesas nuevas», «Remesas completadas») que se pueden silenciar desde los ajustes de Android.
-- [ ] Con la app cerrada no hay avisos. Valorar una comprobación en segundo plano (Android WorkManager, mínimo ~15 min) y su consumo de batería y datos.
+- [ ] **Avisos con la app cerrada** (pendiente, 2026-10-13; aún no hace falta). Hoy solo avisa con la app abierta o recién minimizada. Opciones:
+  - **Firebase (FCM)**: instantáneo y con la app cerrada, pero depende de Google (puede estar bloqueado en Cuba) y necesita cambios en el backend.
+  - **Comprobación periódica del teléfono** (WorkManager en Android, mínimo ~15 min cuando el sistema lo permite; en iPhone, Background App Refresh, poco fiable). No depende de Google.
+  - **Servicio en primer plano en Android**: la app sigue viva con un aviso fijo en la barra; fiable, pero gasta más batería y solo existe en Android.
+  Al decidir: medir batería y datos, y si se elige FCM, cerrar el contrato con el backend.
 - [ ] Revisar `dependency_overrides: dbus` en el `pubspec.yaml` raíz cuando flutter_local_notifications acepte dbus 0.8.
 
 ## App sin conexión (offline-first)
