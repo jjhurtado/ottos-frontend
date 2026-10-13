@@ -5,6 +5,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ottos_core/ottos_core.dart';
 
+import '../app_update/app_update_cubit.dart';
+import '../app_update/update_gate.dart';
 import '../notifications/notifier.dart';
 import '../offline/offline_store.dart';
 import '../offline/session_scope.dart';
@@ -29,19 +31,32 @@ class CourierApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final app = config.app;
     return OttosScope(
       config: config,
       accessPolicy: canUseApp,
-      child: _CourierRouterApp(store: store, notifier: notifier),
+      child: app == null
+          ? _CourierRouterApp(store: store, notifier: notifier, checksUpdates: false)
+          : BlocProvider(
+              create: (context) => AppUpdateCubit(
+                repository: context.read<AppVersionRepository>(),
+                app: app,
+                refused: context.read<ApiClient>().updateRequired,
+              ),
+              child: _CourierRouterApp(store: store, notifier: notifier, checksUpdates: true),
+            ),
     );
   }
 }
 
 class _CourierRouterApp extends StatefulWidget {
-  const _CourierRouterApp({required this.store, required this.notifier});
+  const _CourierRouterApp({required this.store, required this.notifier, required this.checksUpdates});
 
   final OfflineStore? store;
   final LocalNotifier? notifier;
+
+  /// The installed build is known, so updates are checked (not in tests).
+  final bool checksUpdates;
 
   @override
   State<_CourierRouterApp> createState() => _CourierRouterAppState();
@@ -96,7 +111,12 @@ class _CourierRouterAppState extends State<_CourierRouterApp> {
       supportedLocales: OttosLocalization.supportedLocales,
       localizationsDelegates: OttosLocalization.delegates,
       routerConfig: _router,
-      builder: (context, child) => SessionScope(store: widget.store, notifier: widget.notifier, child: child!),
+      builder: (context, child) => SessionScope(
+        store: widget.store,
+        notifier: widget.notifier,
+        // Inside the session: before asking to update, what waits is sent.
+        child: widget.checksUpdates ? UpdateGate(child: child!) : child!,
+      ),
     );
   }
 }
