@@ -128,6 +128,8 @@ La app tiene lista de asignadas, detalle, entregar (con o sin PIN), posponer y s
 - [ ] Abrir la dirección en mapas desde el detalle.
 - [ ] Sin conexión: ver «App sin conexión (offline-first)».
 - [ ] Builds firmados de Android e iOS y forma de distribuirlos a los repartidores.
+- [x] **Aviso y bloqueo de versiones** (contrato del backend `docs/contracts/app-version.md`): cabeceras `X-App-Platform` y `X-App-Build` en cada petición, aviso cerrable si hay versión nueva y pantalla fija si está por debajo de la mínima (o llega un 426), vaciando antes la cola sin conexión. Las APK separadas por ABI informan `abi*1000 + build`; la app usa el resto entre 1000.
+- [ ] Publicar Android en Play Store (decidido 2026-10-12) y dar al backend el enlace de Play Store y el de TestFlight como `downloadUrl`.
 
 ## Calidad e infraestructura
 

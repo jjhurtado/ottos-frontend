@@ -50,6 +50,7 @@ abstract final class CoreTexts {
     'CUSTOMER_NOT_FOUND': 'No se encontró el remitente.',
     'BENEFICIARY_NOT_FOUND': 'No se encontró el beneficiario.',
     'RATE_NOT_ALLOWED': 'Solo las recogidas pueden llevar su propia tasa.',
+    'APP_UPDATE_REQUIRED': 'Esta versión de la app ya no funciona. Actualízala para continuar.',
     'FEE_NOT_ALLOWED': 'Solo las recogidas pueden llevar su propia comisión.',
     'CUSTOMER_ALREADY_REGISTERED': 'Ya hay un cliente con ese nombre, teléfono y dirección.',
     'BENEFICIARY_INACTIVE': 'Coincide con un beneficiario borrado; restáuralo en el panel.',
@@ -184,6 +185,15 @@ abstract final class CoreTexts {
 
   // Remember me and fingerprint
   static const rememberEmail = 'Recordar mi usuario';
+  // App updates
+  static const updateRequiredTitle = 'Actualiza para continuar';
+  static const updateRequiredBody = 'Esta versión de la app ya no funciona. Instala la nueva para seguir trabajando.';
+  static const updateAvailable = 'Hay una versión nueva de la app';
+  static String newVersion(String version) => 'Versión $version';
+  static const download = 'Descargar';
+  static const later = 'Más tarde';
+  static const noDownloadLink = 'Pide el enlace de la versión nueva a la oficina.';
+  static const syncingBeforeUpdate = 'Enviando lo que tenías sin enviar…';
   static const searchOtherBeneficiary = 'Buscar otro beneficiario';
   static const searchBeneficiaryHint = 'Nombre o teléfono del beneficiario';
   static const searchBeneficiaryHelp =

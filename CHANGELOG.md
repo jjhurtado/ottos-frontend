@@ -6,6 +6,13 @@ Cambios notables del frontend de Ottos (panel de operaciones y app de repartidor
 
 ## [Unreleased]
 
+Necesita el backend con el aviso de versiones (develop 3439c3b o posterior).
+
+### Añadido
+
+- App: avisa cuando hay una versión nueva y, si la instalada ya no sirve, muestra «Actualiza para continuar» y no deja seguir trabajando. Antes de bloquear envía lo que tenga pendiente sin conexión.
+- App: ventas puede crear un remitente nuevo y un beneficiario nuevo al registrar una remesa, sin pasar por el panel.
+
 ## [1.0.0-rc.2] - 2026-10-11
 
 Necesita el backend 1.0.0-rc.1.
