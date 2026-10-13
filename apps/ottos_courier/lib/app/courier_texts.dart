@@ -148,6 +148,10 @@ abstract final class CourierTexts {
   static const owesBusiness = 'Debes efectivo al negocio en alguna moneda.';
   static const movements = 'Movimientos';
   static const noMovements = 'Todavía no tienes movimientos.';
+  static const courierCash = 'Caja del repartidor';
+  static const courierOwesBusiness = 'Debe efectivo al negocio en alguna moneda.';
+  static const courierNoMovements = 'Todavía no tiene movimientos.';
+  static const latestMovements = 'Se muestran los últimos 100 movimientos.';
 
   static String movementTitle(String type) => switch (type) {
     'COURIER_FUNDING' => 'Fondos recibidos',

@@ -191,9 +191,8 @@ abstract final class CoreTexts {
   static const updateRequiredBody = 'Esta versión de la app ya no funciona. Instala la nueva para seguir trabajando.';
   static const updateAvailable = 'Hay una versión nueva de la app';
   static String newVersion(String version) => 'Versión $version';
-  static const download = 'Descargar';
+  static const update = 'Actualizar';
   static const later = 'Más tarde';
-  static const noDownloadLink = 'Pide el enlace de la versión nueva a la oficina.';
   static const syncingBeforeUpdate = 'Enviando lo que tenías sin enviar…';
   static const searchOtherBeneficiary = 'Buscar otro beneficiario';
   static const searchBeneficiaryHint = 'Nombre o teléfono del beneficiario';

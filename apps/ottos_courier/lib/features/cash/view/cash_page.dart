@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:ottos_core/ottos_core.dart';
 
 import '../../../app/courier_texts.dart';
+import '../../../app/router.dart';
 import '../../../offline/sync_bar.dart';
 import '../../../offline/sync_cubit.dart';
 import '../cubit/cash_cubit.dart';
+import 'cash_widgets.dart';
 
 class CashPage extends StatelessWidget {
   const CashPage({super.key});
@@ -54,7 +57,7 @@ class CashPage extends StatelessWidget {
                     const SizedBox(height: 12),
                   ],
                   if (statement != null) ...[
-                    _BalancesCard(cash: statement.cash),
+                    BalancesCard(cash: statement.cash),
                     if (context.canDo(Permissions.cashExchangeOwn)) ...[
                       const SizedBox(height: 8),
                       _ExchangeButton(sync: sync),
@@ -66,82 +69,12 @@ class CashPage extends StatelessWidget {
                         padding: EdgeInsets.all(24),
                         child: EmptyView(message: CourierTexts.noMovements),
                       ),
-                    for (final movement in statement.movements) _MovementTile(movement: movement),
+                    for (final movement in statement.movements) MovementTile(movement: movement),
                   ],
                 ],
               ),
             );
           },
-        ),
-      ),
-    );
-  }
-}
-
-class _BalancesCard extends StatelessWidget {
-  const _BalancesCard({required this.cash});
-
-  final CourierCash cash;
-
-  @override
-  Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-    return Card(
-      color: OttosColors.navy,
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(CourierTexts.balances, style: textTheme.titleSmall?.copyWith(color: OttosColors.cream)),
-            const SizedBox(height: 8),
-            if (cash.balances.isEmpty)
-              Text(Formatters.money(0, null), style: textTheme.headlineSmall?.copyWith(color: Colors.white)),
-            for (final balance in cash.balances)
-              Text(
-                Formatters.money(balance.amount, balance.currency),
-                style: textTheme.headlineSmall?.copyWith(
-                  color: balance.amount < 0 ? const Color(0xFFFF8A80) : Colors.white,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            if (cash.negative) ...[
-              const SizedBox(height: 8),
-              Text(CourierTexts.owesBusiness, style: textTheme.bodySmall?.copyWith(color: OttosColors.cream)),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _MovementTile extends StatelessWidget {
-  const _MovementTile({required this.movement});
-
-  final CashMovement movement;
-
-  @override
-  Widget build(BuildContext context) {
-    final incoming = movement.signedAmount >= 0;
-    final color = incoming ? OttosColors.success : OttosColors.danger;
-    return Card(
-      margin: const EdgeInsets.only(bottom: 8),
-      child: ListTile(
-        leading: Icon(incoming ? Icons.south_west : Icons.north_east, color: color),
-        title: Text(CourierTexts.movementTitle(movement.type.code)),
-        subtitle: Text(
-          [
-            Formatters.dateTime(movement.occurredAt),
-            if (movement.rate != null) CoreTexts.exchangeRateValue(Formatters.money(movement.rate, null)),
-            if (movement.note != null) movement.note!,
-            // Counted already, though the server does not have it yet.
-            if (SyncCubit.isUnsent(movement)) CourierTexts.unsent,
-          ].join(' · '),
-        ),
-        trailing: Text(
-          '${incoming ? '+' : ''}${Formatters.money(movement.signedAmount, movement.currency)}',
-          style: TextStyle(color: color, fontWeight: FontWeight.w600),
         ),
       ),
     );
@@ -192,51 +125,60 @@ class _CourierCashTile extends StatelessWidget {
 
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 12, 8, 4),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(child: Text(courier.name, style: textTheme.titleSmall)),
-                if (courier.negative) const Icon(Icons.warning_amber, color: OttosColors.danger, size: 20),
-              ],
-            ),
-            const SizedBox(height: 4),
-            BalancesText(
-              balances: courier.balances,
-              empty: Formatters.money(0, null),
-              style: textTheme.bodyMedium,
-              negativeColor: OttosColors.danger,
-            ),
-            if (canWrite)
-              Wrap(
-                spacing: 4,
+      clipBehavior: Clip.antiAlias,
+      // The whole card opens the courier's cash, with their movements.
+      child: InkWell(
+        onTap: () async {
+          await context.push(Routes.courierCash(courier.courierId));
+          await cubit.load();
+        },
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 8, 4),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
                 children: [
-                  TextButton.icon(
-                    onPressed: () => operate(
-                      CourierTexts.fundTitle(courier.name),
-                      CourierTexts.fund,
-                      (input) => cubit.fund(courier, input),
-                    ),
-                    icon: const Icon(Icons.arrow_forward),
-                    label: const Text(CourierTexts.fund),
-                  ),
-                  TextButton.icon(
-                    onPressed: () => operate(
-                      CourierTexts.returnTitle(courier.name),
-                      CourierTexts.registerReturn,
-                      (input) => cubit.registerReturn(courier, input),
-                    ),
-                    icon: const Icon(Icons.arrow_back),
-                    label: const Text(CourierTexts.registerReturn),
-                  ),
+                  Expanded(child: Text(courier.name, style: textTheme.titleSmall)),
+                  if (courier.negative) const Icon(Icons.warning_amber, color: OttosColors.danger, size: 20),
+                  const Icon(Icons.chevron_right),
                 ],
-              )
-            else
-              const SizedBox(height: 8),
-          ],
+              ),
+              const SizedBox(height: 4),
+              BalancesText(
+                balances: courier.balances,
+                empty: Formatters.money(0, null),
+                style: textTheme.bodyMedium,
+                negativeColor: OttosColors.danger,
+              ),
+              if (canWrite)
+                Wrap(
+                  spacing: 4,
+                  children: [
+                    TextButton.icon(
+                      onPressed: () => operate(
+                        CourierTexts.fundTitle(courier.name),
+                        CourierTexts.fund,
+                        (input) => cubit.fund(courier, input),
+                      ),
+                      icon: const Icon(Icons.arrow_forward),
+                      label: const Text(CourierTexts.fund),
+                    ),
+                    TextButton.icon(
+                      onPressed: () => operate(
+                        CourierTexts.returnTitle(courier.name),
+                        CourierTexts.registerReturn,
+                        (input) => cubit.registerReturn(courier, input),
+                      ),
+                      icon: const Icon(Icons.arrow_back),
+                      label: const Text(CourierTexts.registerReturn),
+                    ),
+                  ],
+                )
+              else
+                const SizedBox(height: 8),
+            ],
+          ),
         ),
       ),
     );
