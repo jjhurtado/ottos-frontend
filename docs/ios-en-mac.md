@@ -39,7 +39,7 @@ notificaciones, y apunta a producción (`https://api.remesadeotto.com`).
 ```sh
 git clone https://github.com/jjhurtado/ottos-frontend.git
 cd ottos-frontend
-git checkout 1.0.0-rc.4          # o el tag de la versión que toque
+git checkout 1.0.0-rc.5          # o el tag de la versión que toque
 flutter pub get
 ```
 
@@ -88,14 +88,14 @@ En App Store Connect › tu app › TestFlight:
 
 Ellas instalan la app **TestFlight** en su iPhone y abren el enlace del correo.
 
-## Publicar una versión nueva (por ejemplo, 1.0.0-rc.4)
+## Publicar una versión nueva (por ejemplo, 1.0.0-rc.5)
 
 Con el Mac ya preparado (pasos 1, 2 y 4 hechos una vez), cada versión nueva es:
 
 ```sh
 cd ottos-frontend
 git fetch --tags
-git checkout 1.0.0-rc.4          # el tag de la versión que toca
+git checkout 1.0.0-rc.5          # el tag de la versión que toca
 flutter pub get
 cd apps/ottos_courier
 flutter build ipa --release --build-name=1.0.0 --dart-define=OTTOS_API_URL=https://api.remesadeotto.com
@@ -104,13 +104,13 @@ flutter build ipa --release --build-name=1.0.0 --dart-define=OTTOS_API_URL=https
 Después, como en el paso 6: arrastra el `.ipa` a Transporter › **Deliver**. A quienes ya tienen la app por TestFlight
 les llega la actualización solos; en el grupo externo, Apple puede volver a revisarla (suele ser rápido).
 
-- **No pases `--build-number`.** La versión y el número de compilación salen del proyecto (`1.0.0-rc.4+6`: versión
-  1.0.0-rc.4, compilación 6). Ese número es el que la app envía al servidor y el que el backend usa para avisar o
+- **No pases `--build-number`.** La versión y el número de compilación salen del proyecto (`1.0.0-rc.5+7`: versión
+  1.0.0-rc.5, compilación 7). Ese número es el que la app envía al servidor y el que el backend usa para avisar o
   bloquear versiones viejas; si se cambia a mano, dejan de coincidir.
 - **Sí pasa `--build-name`** con la versión sin la etiqueta (`1.0.0`), como en el paso 5.
 - Si App Store Connect dice que esa compilación ya existe, no la cambies a mano: la versión siguiente sube el `+N` en su
   rama `release/`. Excepción ya hecha: la rc.3 de iPhone se subió como compilación **5**, porque la 4 la usó una prueba
-  con el código de la rc.2. La rc.4 usa la 6 y la siguiente, la 7 o más.
+  con el código de la rc.2. La rc.4 usó la 6, la rc.5 la 7 y la siguiente, la 8 o más.
 - Si Xcode o CocoaPods se quejan tras cambiar de versión (la rc.3 trae un componente nuevo para elegir contactos), en
   `apps/ottos_courier/ios` ejecuta `pod install` y vuelve a compilar.
 - «Elegir de contactos» usa el selector de contactos de Apple: no hay que añadir ningún permiso ni texto en Xcode.

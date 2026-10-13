@@ -4,10 +4,10 @@ Actualizado: 2026-10-13
 
 ## Estado actual
 
-**Publicado: `1.0.0-rc.4`** (2026-10-13), con el backend `1.0.0-rc.3`. Trae: anular remesas y registrar remesas
-antiguas a mano (las dos solo ADMIN), más todo lo de la rc.3 (contactos, caja de cada repartidor, sección
-«Beneficiarios», aviso de versiones con «Actualizar»). Android: APK y App Bundle, compilación 6; iPhone: TestFlight
-desde el Mac del usuario como `1.0.0 (6)` ([docs/ios-en-mac.md](docs/ios-en-mac.md)).
+**Publicado: `1.0.0-rc.5`** (2026-10-13), con el backend `1.0.0-rc.4` (base de datos reconstruida, un esquema por
+módulo). Trae el informe mensual con la moneda del negocio (`deliveredCurrency`, `businessCurrency`), además de todo lo
+de la rc.4 (anular, remesas antiguas). Android: APK y App Bundle, compilación 7; iPhone: TestFlight desde el Mac del
+usuario como `1.0.0 (7)` ([docs/ios-en-mac.md](docs/ios-en-mac.md)).
 
 Falta para `1.0.0`:
 
@@ -183,7 +183,7 @@ y cada versión publicada lleva su tag en `main`, sin prefijo (`1.0.0-beta.1`). 
 | Menor | `1.X.0` | Cada fase siguiente, con su propio ciclo beta → rc → estable | Funcionalidad nueva compatible |
 | Mayor | `X.0.0` | Cambio incompatible (por ejemplo, exige una versión nueva del backend) | Solo con migración planificada |
 
-**Versión actual: `1.0.0-rc.4`** (2026-10-13), con el backend `1.0.0-rc.3`; compilación 6. La siguiente usa `+7` o más.
+**Versión actual: `1.0.0-rc.5`** (2026-10-13), con el backend `1.0.0-rc.4`; compilación 7. La siguiente usa `+8` o más.
 
 Decidido (2026-10-11): los arreglos que salgan de la prueba en staging van en `1.0.0-rc.2` (rama `release/1.0.0-rc.2`); el tag `1.0.0-rc.1` publicado no se toca. Si staging no encuentra nada, se pasa de `1.0.0-rc.1` directamente a `1.0.0`. El backend versiona igual.
 

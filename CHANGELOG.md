@@ -6,6 +6,10 @@ Cambios notables del frontend de Ottos (panel de operaciones y app de repartidor
 
 ## [Unreleased]
 
+## [1.0.0-rc.5] - 2026-10-13
+
+Necesita el backend 1.0.0-rc.4 (informe mensual con la moneda del negocio). Compilación 7 en Android e iPhone.
+
 ### Cambiado
 
 - Panel › Reportes: el informe mensual y su PDF leen «Entregado» con el nombre nuevo del backend 1.0.0-rc.4 y muestran los importes en la moneda del negocio que indica el backend (USD en esta instalación). Sigue funcionando con el backend 1.0.0-rc.3.
