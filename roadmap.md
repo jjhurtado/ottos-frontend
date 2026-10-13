@@ -138,6 +138,7 @@ App «Ottos» para repartidores y ventas, probada en emulador contra el backend 
 - [x] **Canvas de diseño al día** (2026-10-13): «Ottos · Panel web» y «Ottos · App móvil», redibujados desde capturas de las vistas reales.
 - [x] Panel › Auditoría: la fecha ya no se parte en cuatro líneas. App: el diálogo de «Nuevo remitente» se titula así y el login dice «Repartos y ventas» en vez de «App de repartidores».
 - [x] **Elegir de contactos** al crear un remitente o un beneficiario en la app: abre el selector de contactos del teléfono (con su buscador) y rellena nombre y teléfono. No pide permiso de contactos: el sistema solo entrega el contacto elegido. El plugin (`flutter_native_contact_picker`) avisa de que usa el Kotlin antiguo de Gradle; vigilarlo al subir de Flutter.
+- [ ] **Pasar iPhone de TestFlight a la App Store** (decidido 2026-10-13, sin fecha). Al hacerlo: cambiar el respaldo de «Actualizar» en `apps/ottos_courier/lib/app_update/update_gate.dart` (`itms-beta://`) por el enlace de la App Store, dar ese enlace al backend como `downloadUrl` de iOS y actualizar `docs/ios-en-mac.md`.
 - [ ] Publicar Android en Play Store (decidido 2026-10-12) y dar al backend el enlace de Play Store y el de TestFlight como `downloadUrl`.
 
 ## Calidad e infraestructura
