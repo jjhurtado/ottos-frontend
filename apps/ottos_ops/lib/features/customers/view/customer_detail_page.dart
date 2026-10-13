@@ -7,8 +7,6 @@ import '../../../app/destinations.dart';
 import '../../../app/ops_texts.dart';
 import '../../../app/router.dart';
 import '../cubit/customer_detail_cubit.dart';
-import 'beneficiary_form_dialog.dart';
-import 'customer_form_dialog.dart';
 
 class CustomerDetailPage extends StatelessWidget {
   const CustomerDetailPage({super.key, required this.customerId});

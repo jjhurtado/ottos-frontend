@@ -1,26 +1,23 @@
 # Ottos frontend · Roadmap
 
-Actualizado: 2026-10-11
+Actualizado: 2026-10-13
 
 ## Estado actual
 
-El panel de operaciones hoy es de solo lectura: login, inicio, listado y detalle de remesas. No puede crear, asignar ni entregar remesas, y Clientes, Tasas, Caja, Usuarios y Roles son pantallas «Próximamente». El backend ya expone casi todos los endpoints necesarios, así que el grueso del trabajo está en el frontend.
+**Publicado: `1.0.0-rc.3`** (2026-10-13), con el backend `1.0.0-rc.2`. Trae: ventas crea remitentes y beneficiarios
+desde la app (con «Elegir de contactos»), la caja de cada repartidor desde la app, la sección «Beneficiarios» del
+panel, el aviso y bloqueo de versiones con botón «Actualizar», la versión en el menú de la cuenta y la caja del negocio
+explicada. Android: APK y App Bundle; iPhone: TestFlight desde el Mac del usuario ([docs/ios-en-mac.md](docs/ios-en-mac.md)).
 
-| Área | Panel (web) | App courier | Backend |
-| --- | --- | --- | --- |
-| Login, sesión, refresco de token | Funciona (probado en Chrome) | Funciona (tests de widget) | Listo |
-| Inicio con contadores | Funciona | — | Listo |
-| Listado y filtros de remesas | Funciona | Lista de asignadas | Listo |
-| Detalle e historial de remesa | Funciona | Funciona | Listo |
-| Crear remesa | No existe | — | `POST /remittances` |
-| Asignar repartidor | No existe | — | `POST /remittances/{id}/assign` |
-| Entregar o posponer | No existe | Existe, sin probar en dispositivo | `deliver`, `deliver-with-pin`, `postpone` |
-| Clientes y beneficiarios | «Próximamente» | — | CRUD completo + búsqueda |
-| Tasas y comisiones | «Próximamente» | — | Corredores, tasas, reglas de comisión, cotización |
-| Caja | «Próximamente» | Saldo propio | Negocio, repartidores, movimientos |
-| Usuarios y roles | «Próximamente» | — | CRUD completo + permisos |
+Falta para `1.0.0`:
 
-Ya corregido (pendiente de commit): sesión caducada que dejaba la app colgada, recarga de página que perdía la ruta, flecha suelta en el historial y test de plantilla roto en la app courier.
+- Publicar Android en Google Play (cuenta de Play Console) y confirmar cómo lo instalan los repartidores en Cuba (ver
+  «Dependencias con el backend y preguntas abiertas»).
+- Pasar al backend el enlace de TestFlight y el de Play Store para el aviso de versión.
+- Probar la huella en un teléfono real.
+- Gestionar la primera remesa real con las apps.
+
+Las decisiones y sus motivos están en [docs/decisiones.md](docs/decisiones.md).
 
 ## Cómo se usa: la app de día, el panel de noche
 
@@ -29,18 +26,21 @@ Decisión del negocio (2026-10-10): durante el día, **ventas y repartidores tra
 - [x] **Nueva remesa desde la app**: botón en la lista de remesas (con `remittances:create`). El mismo formulario que el panel: tipo, remitente, beneficiario, monto y moneda, con la cotización de su tipo (entrega o recogida).
 - [x] **Asignar repartidor al crearla**, solo si el usuario tiene `remittances:assign`; si no, el campo no aparece.
 - [x] **Caja desde la app**: entregar fondos y recibir devoluciones de un repartidor concreto (con `cash:write`). Quien no tiene el permiso ve solo su caja, como hoy.
+- [x] **Caja de cada repartidor desde la app** (2026-10-13): en «Caja», ventas toca un repartidor y ve su saldo y sus movimientos, igual que él en «Mi caja» (`GET /cash/couriers/{id}`, `cash:read`, últimos 100, solo con conexión), con «Entregar fondos» y «Registrar devolución» (`cash:write`).
 - [x] Ventas entra en la app (`remittances:read`): ve las remesas abiertas (las 100 últimas; el resto, en el panel) y la caja de los repartidores; el repartidor ve las suyas y su caja.
-- [ ] Nombre y presentación de la app pensados para ventas y reparto (hoy se llama «Otto's · Repartidor»).
+- [x] Nombre y presentación de la app pensados para ventas y reparto: se llama «Ottos» (`com.remesadeotto.ottos`).
 - [x] **Cambio de moneda del repartidor** (`cash:exchange-own`): en «Mi caja», «Cambiar moneda» con dirección, monto, tasa obtenida (siempre CUP por 1 USD) y nota; funciona sin conexión y el saldo se mueve al momento. En el panel: «Registrar cambio» en nombre de un repartidor (`cash:write`), los cambios con tasa inusual (más allá de la tolerancia de Configuración, 20 % por defecto) en «Cambios de moneda para revisar» de Caja y en Inicio, con «Resolver» y nota (`cash:review`).
 - [x] **Asignar desde el detalle en la app**: una remesa pagada sin repartidor muestra «Asignar a repartidor» a quien tiene `remittances:assign`.
 - [x] **Importar y exportar clientes en CSV** (panel, solo ADMIN): «Exportar CSV» descarga todos los clientes con sus beneficiarios (una fila por beneficiario, `;` y UTF-8 para Excel); «Importar CSV» enseña una vista previa (nuevos, ya existentes y rechazados con su fila y motivo) y guarda solo al confirmar, en lotes de 500. Un cliente con dos direcciones son dos clientes con el mismo nombre y teléfono.
 - [x] **Beneficiarios sin cliente** (2026-10-11): «Importar beneficiarios» en Clientes (panel, solo ADMIN) carga la lista suelta (p. ej. el chat de WhatsApp pasado a CSV) con vista previa; columnas `beneficiario_*` de «Exportar CSV», obligatorias `beneficiario_nombre`, `beneficiario_telefono`, `beneficiario_calle` y `beneficiario_municipio` (código o nombre). En la nueva remesa (panel y app), «Buscar otro beneficiario» busca entre todos; al registrar la remesa queda vinculado al remitente.
-- [ ] Alta de un beneficiario suelto desde el panel (`POST /beneficiaries`), si hace falta además de la importación.
+- [x] Alta de un beneficiario suelto desde el panel (`POST /beneficiaries`): «Nuevo beneficiario» en la sección «Beneficiarios».
+- [ ] **Importar remesas antiguas** (`POST /api/v1/remittances/import`, contrato del backend `docs/contracts/historical-import.md`): falta decidir si es una pantalla del panel o un script de infraestructura. Aún no hace falta.
 - [x] **Tasa de cada recogida**: campo «Tasa de esta recogida» en el alta de recogidas (panel y app), con la configurada de inicio; la cotización y el detalle marcan «indicada a mano». Pendiente del negocio: poner la comisión de recogida en 0 en Configuración › Recogidas si no deben dejar ganancia.
 - [x] **Recordar usuario** en el login (app y panel): casilla «Recordar mi usuario», marcada por defecto; el correo se guarda en el almacenamiento seguro del dispositivo.
 - [x] **Entrar con huella** (app): tras entrar con contraseña, la app pregunta si usar la huella la próxima vez; si se acepta, guarda las credenciales en el almacenamiento seguro (Keystore) y muestra «Entrar con huella». Si la contraseña cambia, las olvida y pide la nueva. Sin huella registrada en el teléfono no se ofrece. Probado en emulador sin huella; falta probar con huella en un teléfono real.
 - [ ] Ajuste para dejar de usar la huella en un dispositivo (hoy: «Ahora no» al preguntar; se vuelve a preguntar en el siguiente login con contraseña).
-- [ ] Decidir qué más de ventas necesita estar en la app de día (alta de clientes y beneficiarios, buscar remesas, reasignar) y qué se queda solo en el panel.
+- [x] **Alta de remitentes y beneficiarios desde la app** (2026-10-12): «Nuevo remitente» y «Nuevo beneficiario» en «Nueva remesa» con `customers:write`; los formularios se movieron a `ottos_core`.
+- [ ] Decidir qué más de ventas necesita estar en la app de día (buscar remesas, reasignar) y qué se queda solo en el panel.
 
 ## Notificaciones de la app
 
@@ -51,7 +51,11 @@ Pedido por el negocio (2026-10-11): avisar en el teléfono **cuando un repartido
 - [x] **Repartidor: remesa nueva.** Al sincronizar, las remesas que el teléfono no tenía avisan «Nueva entrega asignada» / «Nueva recogida asignada» (código, beneficiario, municipio). No avisa en la primera descarga tras el login ni de las que creó el propio usuario. Más de 3 a la vez, un solo aviso. Al tocarla se abre la remesa. Probado en el emulador.
 - [x] **Ventas: remesa completada.** Con `remittances:read`, la app consulta `GET /remittances/completed?since=` (todas las remesas, recogidas incluidas) y avisa «Remesa entregada» / «Recogida completada» con quién la hizo; no avisa de las entregas propias. La primera consulta solo marca desde dónde empezar. Probado en el emulador contra el backend.
 - [x] Permiso de notificaciones de Android 13+ pedido tras el login; dos canales («Remesas nuevas», «Remesas completadas») que se pueden silenciar desde los ajustes de Android.
-- [ ] Con la app cerrada no hay avisos. Valorar una comprobación en segundo plano (Android WorkManager, mínimo ~15 min) y su consumo de batería y datos.
+- [ ] **Avisos con la app cerrada** (pendiente, 2026-10-13; aún no hace falta). Hoy solo avisa con la app abierta o recién minimizada. Opciones:
+  - **Firebase (FCM)**: instantáneo y con la app cerrada, pero depende de Google (puede estar bloqueado en Cuba) y necesita cambios en el backend.
+  - **Comprobación periódica del teléfono** (WorkManager en Android, mínimo ~15 min cuando el sistema lo permite; en iPhone, Background App Refresh, poco fiable). No depende de Google.
+  - **Servicio en primer plano en Android**: la app sigue viva con un aviso fijo en la barra; fiable, pero gasta más batería y solo existe en Android.
+  Al decidir: medir batería y datos, y si se elige FCM, cerrar el contrato con el backend.
 - [ ] Revisar `dependency_overrides: dbus` en el `pubspec.yaml` raíz cuando flutter_local_notifications acepte dbus 0.8.
 
 ## App sin conexión (offline-first)
@@ -91,9 +95,11 @@ Objetivo: gestionar clientes y sus beneficiarios desde el panel. Va en paralelo 
 - [x] **Alta y edición de cliente**, con validación de teléfono y el error de teléfono repetido en español.
 - [x] **Ficha de cliente** (`/customers/{id}`): datos, estadísticas de remesas, beneficiarios, «Ver remesas» (listado filtrado por `customerId`) y «Nueva remesa» con el cliente ya elegido.
 - [x] **Beneficiarios**: alta, edición y desvinculación dentro de la ficha del cliente, con selector de provincia y municipio.
+- [x] **Sección «Beneficiarios»** en el panel (2026-10-13): todos los beneficiarios, tengan cliente o no, con buscador por nombre o teléfono, edición y alta sin cliente (`customers:write`). Antes, los importados sueltos no se podían editar.
 - [x] **Crear cliente o beneficiario desde «Nueva remesa»** sin salir del formulario; el nuevo queda elegido.
 - [ ] Revisar en el navegador las pantallas de la ficha y los formularios (la extensión de Chrome no pudo hacer capturas; los tests de widget e integración pasan).
-- [ ] **Eliminar y restaurar beneficiarios** (borrado lógico para todos los clientes): el backend ya tiene `DELETE /beneficiaries/{id}` y `POST /beneficiaries/{id}/restore`.
+- [ ] **Eliminar y restaurar beneficiarios** (borrado lógico para todos los clientes) desde la sección «Beneficiarios»: el backend ya tiene `DELETE /beneficiaries/{id}` y `POST /beneficiaries/{id}/restore`. Aún no hace falta.
+- [ ] **Ver qué clientes le envían a un beneficiario** en la sección «Beneficiarios» (`GET /beneficiaries/{id}` devuelve sus clientes). Aún no hace falta.
 - [ ] Los tests de integración dejan clientes de prueba en la base local («Prueba Frontend Editada»); no hay endpoint para borrarlos. Valorar una base de datos aparte para tests.
 
 Criterio de salida: se puede registrar un cliente nuevo con un beneficiario y usarlo en una remesa sin salir del panel.
@@ -117,7 +123,7 @@ Criterio de salida: no queda ninguna sección «Próximamente» en el menú y ca
 
 ## App courier
 
-La app tiene lista de asignadas, detalle, entregar (con o sin PIN), posponer y saldo propio, pero nunca se ha ejecutado en un dispositivo ni contra el backend.
+App «Ottos» para repartidores y ventas, probada en emulador contra el backend local y publicada en rc.2 (APK y TestFlight). Detalles técnicos en [apps/ottos_courier/README.md](apps/ottos_courier/README.md).
 
 - [x] Probada en un emulador Android contra el backend local: login, lista, detalle, recoger, entregar con PIN (incorrecto y correcto), aplazar y Mi caja. Arreglos que salieron: fecha propuesta al aplazar, municipio repetido en la dirección, y entregas y recogidas diferenciadas por color e icono.
 - [x] **Incidencias de entrega**: «No se pudo entregar/recoger» con motivo (nota obligatoria en «Otro motivo») en la app y en el detalle del panel; aviso en la lista de la app, en la lista y el detalle del panel; filtro «Con incidencia», tarjeta en Inicio e historial con el motivo. Motivos traducidos por código.
@@ -126,16 +132,24 @@ La app tiene lista de asignadas, detalle, entregar (con o sin PIN), posponer y s
 - [ ] Tests de los cubits de asignadas, remesa y caja.
 - [x] Llamar y escribir por WhatsApp desde el detalle.
 - [ ] Abrir la dirección en mapas desde el detalle.
-- [ ] Sin conexión: ver «App sin conexión (offline-first)».
-- [ ] Builds firmados de Android e iOS y forma de distribuirlos a los repartidores.
+- [x] Sin conexión: ver «App sin conexión (offline-first)».
+- [x] Builds firmados de Android (APK por ABI, clave en `~/.ottos-release/`) e iOS (TestFlight desde el Mac del usuario). En rc.2 la APK se pasó por WhatsApp.
+- [x] **Aviso y bloqueo de versiones** (contrato del backend `docs/contracts/app-version.md`): cabeceras `X-App-Platform` y `X-App-Build` en cada petición, aviso cerrable si hay versión nueva y pantalla fija si está por debajo de la mínima (o llega un 426), vaciando antes la cola sin conexión. Las APK separadas por ABI informan `abi*1000 + build`; la app usa el resto entre 1000.
+- [x] **Botón «Actualizar»** en el aviso y en la pantalla de bloqueo: abre el `downloadUrl` del backend o, si no hay, Play Store (Android) o la app TestFlight (iPhone).
+- [x] **Versión en el menú de la cuenta** (panel y app), elegida entre dos variantes en Claude Design.
+- [x] **Canvas de diseño al día** (2026-10-13): «Ottos · Panel web» y «Ottos · App móvil», redibujados desde capturas de las vistas reales.
+- [x] Panel › Auditoría: la fecha ya no se parte en cuatro líneas. App: el diálogo de «Nuevo remitente» se titula así y el login dice «Repartos y ventas» en vez de «App de repartidores».
+- [x] **Elegir de contactos** al crear un remitente o un beneficiario en la app: abre el selector de contactos del teléfono (con su buscador) y rellena nombre y teléfono. No pide permiso de contactos: el sistema solo entrega el contacto elegido. El plugin (`flutter_native_contact_picker`) avisa de que usa el Kotlin antiguo de Gradle; vigilarlo al subir de Flutter.
+- [ ] **Pasar iPhone de TestFlight a la App Store** (decidido 2026-10-13, sin fecha). Al hacerlo: cambiar el respaldo de «Actualizar» en `apps/ottos_courier/lib/app_update/update_gate.dart` (`itms-beta://`) por el enlace de la App Store, dar ese enlace al backend como `downloadUrl` de iOS y actualizar `docs/ios-en-mac.md`.
+- [ ] Publicar Android en Play Store (decidido 2026-10-12) y dar al backend el enlace de Play Store y el de TestFlight como `downloadUrl`.
 
 ## Calidad e infraestructura
 
 - [ ] Arreglar los scripts de Melos: hoy llaman a `melos`, que no está en el PATH; cambiarlos a `dart run melos` o ejecutar el comando directamente.
 - [ ] CI en GitHub Actions: `flutter analyze` y `flutter test` en cada push; los tests de integración en un job aparte con el backend en Docker.
 - [ ] Tests de widget de cada pantalla nueva y de los cubits/blocs del panel.
-- [ ] Build de producción del panel (`flutter build web`) y dónde se sirve (mismo dominio que la API o CORS configurado).
-- [ ] Variables por entorno (`OTTOS_API_URL`) documentadas para desarrollo, pruebas y producción.
+- [x] Build de producción del panel: imagen Docker con Caddy en su propio dominio, que reenvía `/api` al backend (sin CORS).
+- [x] Variables por entorno (`OTTOS_API_URL`) documentadas para desarrollo, pruebas y producción (README y CLAUDE.md).
 
 ## Prueba general de 1.0 (2026-10-11)
 
@@ -159,7 +173,7 @@ y cada versión publicada lleva su tag en `main`, sin prefijo (`1.0.0-beta.1`). 
 | Menor | `1.X.0` | Cada fase siguiente, con su propio ciclo beta → rc → estable | Funcionalidad nueva compatible |
 | Mayor | `X.0.0` | Cambio incompatible (por ejemplo, exige una versión nueva del backend) | Solo con migración planificada |
 
-**Versión actual: `1.0.0-rc.2`** (2026-10-11), con el backend `1.0.0-rc.1`.
+**Versión actual: `1.0.0-rc.3`** (2026-10-13), con el backend `1.0.0-rc.2`.
 
 Decidido (2026-10-11): los arreglos que salgan de la prueba en staging van en `1.0.0-rc.2` (rama `release/1.0.0-rc.2`); el tag `1.0.0-rc.1` publicado no se toca. Si staging no encuentra nada, se pasa de `1.0.0-rc.1` directamente a `1.0.0`. El backend versiona igual.
 
@@ -171,6 +185,7 @@ Decidido (2026-10-11): los arreglos que salgan de la prueba en staging van en `1
 - ~~**Lista de repartidores para asignar.**~~ Resuelto: `GET /couriers` con `remittances:assign`. Incluye al admin porque tiene todos los permisos; decidir si el panel lo oculta.
 - ~~**Respuesta 401 sin cuerpo.**~~ Resuelto: 401 y 403 traen `ProblemDetail`.
 - ~~**Errores de negocio en inglés.**~~ Resuelto: todos los errores traen un `code` estable y `CoreTexts.errorCodes` traduce los del flujo de remesas y clientes. Añadir traducciones a medida que se usen más códigos.
+- **Google Play en Cuba (abierto, 2026-10-13).** Se decidió distribuir Android por Play Store, pero Google Play no está disponible en Cuba, y las notificaciones y la fuente se diseñaron precisamente para no depender de Google. Antes de publicar, confirmar con el usuario dónde están los repartidores y cómo instalarán la app (cuenta de Google de fuera, VPN, o mantener la APK como alternativa).
 - **Monedas destino.** ¿Qué monedas se ofrecen al crear una remesa: se leen de los corredores (`/corridors`) o son fijas?
 - **Recogidas.** ¿Quién crea las remesas de tipo recogida y qué datos financieros debe ver cada rol? Ya tienen tasa y comisión propias en el backend.
 - ~~**Estados por tipo.**~~ Hecho: `CoreTexts.statusName(code, type:)`.

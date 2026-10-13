@@ -1,24 +1,38 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:ottos_core/ottos_core.dart';
 
-import '../../../app/ops_texts.dart';
+import '../api/api_exception.dart';
+import '../customers/customer_repository.dart';
+import '../l10n/core_texts.dart';
+import '../models/customer.dart';
+import 'contact_picker_button.dart';
+import 'form_pair.dart';
 
 /// Creates a customer, or edits [customer]; returns the saved one, or null if cancelled.
-Future<Customer?> showCustomerFormDialog(BuildContext context, {Customer? customer}) {
+/// [title] replaces «Nuevo cliente» (the app calls them senders). With [pickContact],
+/// a new customer's name and phone can come from the phone's contacts.
+Future<Customer?> showCustomerFormDialog(
+  BuildContext context, {
+  Customer? customer,
+  String? title,
+  ContactPicker? pickContact,
+}) {
   final customers = context.read<CustomerRepository>();
   return showDialog<Customer>(
     context: context,
     barrierDismissible: false,
-    builder: (_) => _CustomerFormDialog(customers: customers, customer: customer),
+    builder: (_) =>
+        _CustomerFormDialog(customers: customers, customer: customer, title: title, pickContact: pickContact),
   );
 }
 
 class _CustomerFormDialog extends StatefulWidget {
-  const _CustomerFormDialog({required this.customers, this.customer});
+  const _CustomerFormDialog({required this.customers, this.customer, this.title, this.pickContact});
 
   final CustomerRepository customers;
   final Customer? customer;
+  final String? title;
+  final ContactPicker? pickContact;
 
   @override
   State<_CustomerFormDialog> createState() => _CustomerFormDialogState();
@@ -78,7 +92,7 @@ class _CustomerFormDialogState extends State<_CustomerFormDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text(widget.customer == null ? OpsTexts.newCustomer : OpsTexts.editCustomer),
+      title: Text(widget.title ?? (widget.customer == null ? CoreTexts.newCustomer : CoreTexts.editCustomer)),
       content: SizedBox(
         width: 520,
         child: Form(
@@ -87,18 +101,18 @@ class _CustomerFormDialogState extends State<_CustomerFormDialog> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                _field(_fullName, OpsTexts.fullName, required: true, autofocus: true),
-                _field(_phone, OpsTexts.phone, required: true, keyboard: TextInputType.phone, validator: phoneError),
-                _field(_email, OpsTexts.email, keyboard: TextInputType.emailAddress, validator: _emailError),
-                Row(
-                  children: [
-                    SizedBox(width: 160, child: _field(_documentType, OpsTexts.documentType)),
-                    const SizedBox(width: 12),
-                    Expanded(child: _field(_documentNumber, OpsTexts.documentNumber)),
-                  ],
+                if (widget.pickContact != null && widget.customer == null)
+                  ContactPickerButton(pick: widget.pickContact!, name: _fullName, phone: _phone, enabled: !_saving),
+                _field(_fullName, CoreTexts.fullName, required: true, autofocus: true),
+                _field(_phone, CoreTexts.phone, required: true, keyboard: TextInputType.phone, validator: phoneError),
+                _field(_email, CoreTexts.email, keyboard: TextInputType.emailAddress, validator: _emailError),
+                FormPair(
+                  first: _field(_documentNumber, CoreTexts.documentNumber),
+                  second: _field(_documentType, CoreTexts.documentType),
+                  secondWidth: 160,
                 ),
-                _field(_address, OpsTexts.address),
-                _field(_notes, OpsTexts.notes, maxLines: 2),
+                _field(_address, CoreTexts.address),
+                _field(_notes, CoreTexts.notes, maxLines: 2),
                 if (_error != null)
                   Align(
                     alignment: Alignment.centerLeft,
@@ -118,7 +132,7 @@ class _CustomerFormDialogState extends State<_CustomerFormDialog> {
                   dimension: 20,
                   child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                 )
-              : const Text(OpsTexts.save),
+              : const Text(CoreTexts.save),
         ),
       ],
     );
@@ -144,7 +158,7 @@ class _CustomerFormDialogState extends State<_CustomerFormDialog> {
         decoration: InputDecoration(labelText: required ? '$label *' : label),
         validator: (value) {
           final text = value?.trim() ?? '';
-          if (text.isEmpty) return required ? OpsTexts.requiredField : null;
+          if (text.isEmpty) return required ? CoreTexts.requiredField : null;
           return validator?.call(text);
         },
       ),
@@ -157,5 +171,5 @@ class _CustomerFormDialogState extends State<_CustomerFormDialog> {
 /// Phones may carry a leading `+`, spaces and dashes; the backend normalizes them.
 String? phoneError(String phone) {
   final digits = phone.replaceAll(RegExp(r'[\s\-()]'), '');
-  return RegExp(r'^\+?\d{6,15}$').hasMatch(digits) ? null : OpsTexts.phoneInvalid;
+  return RegExp(r'^\+?\d{6,15}$').hasMatch(digits) ? null : CoreTexts.phoneInvalid;
 }

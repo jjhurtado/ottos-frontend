@@ -2,6 +2,7 @@ import 'package:go_router/go_router.dart';
 import 'package:ottos_core/ottos_core.dart';
 
 import '../features/audit/view/audit_page.dart';
+import '../features/beneficiaries/view/beneficiary_list_page.dart';
 import '../features/cash/view/cash_page.dart';
 import '../features/cash/view/courier_cash_page.dart';
 import '../features/customers/view/customer_detail_page.dart';
@@ -94,6 +95,7 @@ GoRouter buildRouter(AuthBloc authBloc) {
               ),
             ],
           ),
+          GoRoute(path: Destinations.beneficiaries.path, builder: (_, _) => const BeneficiaryListPage()),
           GoRoute(
             path: Destinations.cash.path,
             builder: (_, _) => const CashPage(),

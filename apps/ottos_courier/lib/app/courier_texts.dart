@@ -4,7 +4,7 @@ import '../offline/sync_cubit.dart';
 
 /// User-facing texts of the courier app.
 abstract final class CourierTexts {
-  static const appName = 'App de repartidores';
+  static const appName = 'Repartos y ventas';
   static const appTitle = 'Ottos';
 
   // Notifications
@@ -22,6 +22,7 @@ abstract final class CourierTexts {
 
   // Navigation
   static const account = 'Mi cuenta';
+  static String version(String version) => 'Ottos versión $version';
   static const myRemittances = 'Mis remesas';
   static const myCash = 'Mi caja';
   static const cash = 'Caja';
@@ -34,7 +35,9 @@ abstract final class CourierTexts {
   static const searchCustomer = 'Busca por nombre o teléfono';
   static const changeCustomer = 'Cambiar remitente';
   static const chooseCustomerFirst = 'Elige primero el remitente';
-  static const noBeneficiaries = 'Este remitente no tiene beneficiarios todavía. Búscalo entre todos.';
+  static const noBeneficiaries = 'Este remitente no tiene beneficiarios todavía. Búscalo entre todos o crea uno.';
+  static const newCustomer = 'Nuevo remitente';
+  static const newBeneficiary = 'Nuevo beneficiario';
   static const amountToSend = 'Monto a enviar';
   static const amountToCollect = 'Monto a recoger';
   static const targetCurrency = 'Moneda';
@@ -145,6 +148,10 @@ abstract final class CourierTexts {
   static const owesBusiness = 'Debes efectivo al negocio en alguna moneda.';
   static const movements = 'Movimientos';
   static const noMovements = 'Todavía no tienes movimientos.';
+  static const courierCash = 'Caja del repartidor';
+  static const courierOwesBusiness = 'Debe efectivo al negocio en alguna moneda.';
+  static const courierNoMovements = 'Todavía no tiene movimientos.';
+  static const latestMovements = 'Se muestran los últimos 100 movimientos.';
 
   static String movementTitle(String type) => switch (type) {
     'COURIER_FUNDING' => 'Fondos recibidos',

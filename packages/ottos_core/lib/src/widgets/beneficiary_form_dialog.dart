@@ -1,16 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:ottos_core/ottos_core.dart';
 
-import '../../../app/ops_texts.dart';
+import '../api/api_exception.dart';
+import '../customers/customer_repository.dart';
+import '../customers/zone_repository.dart';
+import '../l10n/core_texts.dart';
+import '../models/customer.dart';
+import '../models/zones.dart';
+import 'async_view.dart';
+
+import 'contact_picker_button.dart';
 import 'customer_form_dialog.dart';
+import 'form_pair.dart';
 
-/// Creates a beneficiary for [customerId], or edits [beneficiary]; returns the
-/// saved one, or null if cancelled.
+/// Creates a beneficiary for [customerId] (or without a customer when it is
+/// null), or edits [beneficiary]; returns the saved one, or null if cancelled. With [pickContact], a new beneficiary's name
+/// and phone can come from the phone's contacts.
 Future<Beneficiary?> showBeneficiaryFormDialog(
   BuildContext context, {
-  required String customerId,
+  String? customerId,
   Beneficiary? beneficiary,
+  ContactPicker? pickContact,
 }) {
   final customers = context.read<CustomerRepository>();
   final zones = context.read<ZoneRepository>();
@@ -22,6 +32,7 @@ Future<Beneficiary?> showBeneficiaryFormDialog(
       zones: Future.wait([zones.provinces(), zones.municipalities()]),
       customerId: customerId,
       beneficiary: beneficiary,
+      pickContact: pickContact,
     ),
   );
 }
@@ -30,14 +41,16 @@ class _BeneficiaryFormDialog extends StatefulWidget {
   const _BeneficiaryFormDialog({
     required this.customers,
     required this.zones,
-    required this.customerId,
+    this.customerId,
     this.beneficiary,
+    this.pickContact,
   });
 
   final CustomerRepository customers;
   final Future<List<List<Object>>> zones;
-  final String customerId;
+  final String? customerId;
   final Beneficiary? beneficiary;
+  final ContactPicker? pickContact;
 
   @override
   State<_BeneficiaryFormDialog> createState() => _BeneficiaryFormDialogState();
@@ -103,9 +116,12 @@ class _BeneficiaryFormDialogState extends State<_BeneficiaryFormDialog> {
     );
     try {
       final existing = widget.beneficiary;
-      final saved = existing == null
-          ? await widget.customers.addBeneficiary(widget.customerId, input)
-          : await widget.customers.updateBeneficiary(existing.id, input);
+      final customerId = widget.customerId;
+      final saved = existing != null
+          ? await widget.customers.updateBeneficiary(existing.id, input)
+          : customerId != null
+          ? await widget.customers.addBeneficiary(customerId, input)
+          : await widget.customers.createBeneficiary(input);
       if (mounted) Navigator.of(context).pop(saved);
     } on ApiException catch (error) {
       if (mounted) {
@@ -120,7 +136,7 @@ class _BeneficiaryFormDialogState extends State<_BeneficiaryFormDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text(widget.beneficiary == null ? OpsTexts.newBeneficiary : OpsTexts.editBeneficiary),
+      title: Text(widget.beneficiary == null ? CoreTexts.newBeneficiary : CoreTexts.editBeneficiary),
       content: SizedBox(
         width: 560,
         child: FutureBuilder<List<List<Object>>>(
@@ -145,7 +161,7 @@ class _BeneficiaryFormDialogState extends State<_BeneficiaryFormDialog> {
                   dimension: 20,
                   child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                 )
-              : const Text(OpsTexts.save),
+              : const Text(CoreTexts.save),
         ),
       ],
     );
@@ -161,87 +177,70 @@ class _BeneficiaryFormDialogState extends State<_BeneficiaryFormDialog> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            _field(_fullName, OpsTexts.fullName, required: true, autofocus: true),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: _field(
-                    _phone,
-                    OpsTexts.phone,
-                    required: true,
-                    keyboard: TextInputType.phone,
-                    validator: phoneError,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _field(
-                    _alternatePhone,
-                    OpsTexts.alternatePhone,
-                    keyboard: TextInputType.phone,
-                    validator: phoneError,
-                  ),
-                ),
-              ],
+            if (widget.pickContact != null && widget.beneficiary == null)
+              ContactPickerButton(pick: widget.pickContact!, name: _fullName, phone: _phone, enabled: !_saving),
+            _field(_fullName, CoreTexts.fullName, required: true, autofocus: true),
+            FormPair(
+              first: _field(
+                _phone,
+                CoreTexts.phone,
+                required: true,
+                keyboard: TextInputType.phone,
+                validator: phoneError,
+              ),
+              second: _field(
+                _alternatePhone,
+                CoreTexts.alternatePhone,
+                keyboard: TextInputType.phone,
+                validator: phoneError,
+              ),
             ),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(child: _field(_street, OpsTexts.street, required: true)),
-                const SizedBox(width: 12),
-                SizedBox(width: 120, child: _field(_houseNumber, OpsTexts.houseNumber)),
-              ],
+            FormPair(
+              first: _field(_street, CoreTexts.street, required: true),
+              second: _field(_houseNumber, CoreTexts.houseNumber),
+              secondWidth: 120,
             ),
-            _field(_betweenStreets, OpsTexts.betweenStreets),
-            _field(_neighborhood, OpsTexts.neighborhood),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: DropdownButtonFormField<String>(
-                      initialValue: _provinceCode,
-                      isExpanded: true,
-                      decoration: const InputDecoration(labelText: '${OpsTexts.province} *'),
-                      items: [
-                        for (final province in provinces)
-                          DropdownMenuItem(value: province.code, child: Text(province.name)),
-                      ],
-                      onChanged: _saving
-                          ? null
-                          : (code) => setState(() {
-                              _provinceCode = code;
-                              _municipalityCode = null;
-                            }),
-                      validator: (code) => code == null ? OpsTexts.requiredField : null,
-                    ),
-                  ),
+            _field(_betweenStreets, CoreTexts.betweenStreets),
+            _field(_neighborhood, CoreTexts.neighborhood),
+            FormPair(
+              first: Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: DropdownButtonFormField<String>(
+                  initialValue: _provinceCode,
+                  isExpanded: true,
+                  decoration: const InputDecoration(labelText: '${CoreTexts.province} *'),
+                  items: [
+                    for (final province in provinces)
+                      DropdownMenuItem(value: province.code, child: Text(province.name)),
+                  ],
+                  onChanged: _saving
+                      ? null
+                      : (code) => setState(() {
+                          _provinceCode = code;
+                          _municipalityCode = null;
+                        }),
+                  validator: (code) => code == null ? CoreTexts.requiredField : null,
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: DropdownButtonFormField<String>(
-                      key: ValueKey(_provinceCode),
-                      initialValue: inProvince.any((m) => m.code == _municipalityCode) ? _municipalityCode : null,
-                      isExpanded: true,
-                      decoration: const InputDecoration(labelText: '${OpsTexts.municipality} *'),
-                      items: [
-                        for (final municipality in inProvince)
-                          DropdownMenuItem(value: municipality.code, child: Text(municipality.name)),
-                      ],
-                      onChanged: _saving ? null : (code) => setState(() => _municipalityCode = code),
-                      validator: (code) => code == null ? OpsTexts.requiredField : null,
-                    ),
-                  ),
+              ),
+              second: Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: DropdownButtonFormField<String>(
+                  key: ValueKey(_provinceCode),
+                  initialValue: inProvince.any((m) => m.code == _municipalityCode) ? _municipalityCode : null,
+                  isExpanded: true,
+                  decoration: const InputDecoration(labelText: '${CoreTexts.municipality} *'),
+                  items: [
+                    for (final municipality in inProvince)
+                      DropdownMenuItem(value: municipality.code, child: Text(municipality.name)),
+                  ],
+                  onChanged: _saving ? null : (code) => setState(() => _municipalityCode = code),
+                  validator: (code) => code == null ? CoreTexts.requiredField : null,
                 ),
-              ],
+              ),
             ),
-            _field(_reference, OpsTexts.reference),
-            _field(_documentNumber, OpsTexts.documentNumber),
-            _field(_notes, OpsTexts.notes, maxLines: 2),
+            _field(_reference, CoreTexts.reference),
+            _field(_documentNumber, CoreTexts.documentNumber),
+            _field(_notes, CoreTexts.notes, maxLines: 2),
             if (_error != null)
               Align(
                 alignment: Alignment.centerLeft,
@@ -273,7 +272,7 @@ class _BeneficiaryFormDialogState extends State<_BeneficiaryFormDialog> {
         decoration: InputDecoration(labelText: required ? '$label *' : label),
         validator: (value) {
           final text = value?.trim() ?? '';
-          if (text.isEmpty) return required ? OpsTexts.requiredField : null;
+          if (text.isEmpty) return required ? CoreTexts.requiredField : null;
           return validator?.call(text);
         },
       ),

@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../api/api_client.dart';
 import '../audit/audit_repository.dart';
 import '../auth/auth_repository.dart';
+import '../app_version/app_version_repository.dart';
 import '../auth/bloc/auth_bloc.dart';
 import '../auth/login/login_memory.dart';
 import '../auth/token_storage.dart';
@@ -20,8 +21,8 @@ import '../users/user_repository.dart';
 
 /// Creates the shared services and provides them to [child]: [ApiClient],
 /// [AuthRepository], [RemittanceRepository], [CashRepository], [CustomerRepository],
-/// [RateRepository], [ZoneRepository], [UserRepository], [RoleRepository], [SyncRepository], the app's [AccessPolicy] and
-/// the [AuthBloc] (already started).
+/// [RateRepository], [ZoneRepository], [UserRepository], [RoleRepository], [SyncRepository], the [AppConfig], the app's
+/// [AccessPolicy] and the [AuthBloc] (already started).
 class OttosScope extends StatefulWidget {
   const OttosScope({super.key, required this.config, required this.accessPolicy, required this.child});
 
@@ -46,6 +47,7 @@ class _OttosScopeState extends State<OttosScope> {
   late final SyncRepository _syncRepository;
   late final AuditRepository _auditRepository;
   late final ReportRepository _reportRepository;
+  late final AppVersionRepository _appVersionRepository;
   final LoginMemory _loginMemory = SecureLoginMemory();
 
   @override
@@ -69,6 +71,7 @@ class _OttosScopeState extends State<OttosScope> {
     _syncRepository = SyncRepository(api: _api);
     _auditRepository = AuditRepository(api: _api);
     _reportRepository = ReportRepository(api: _api);
+    _appVersionRepository = AppVersionRepository(api: _api);
   }
 
   @override
@@ -81,6 +84,7 @@ class _OttosScopeState extends State<OttosScope> {
   Widget build(BuildContext context) {
     return MultiRepositoryProvider(
       providers: [
+        RepositoryProvider.value(value: widget.config),
         RepositoryProvider.value(value: _api),
         RepositoryProvider.value(value: _authRepository),
         RepositoryProvider.value(value: _remittanceRepository),
@@ -93,6 +97,7 @@ class _OttosScopeState extends State<OttosScope> {
         RepositoryProvider.value(value: _syncRepository),
         RepositoryProvider.value(value: _auditRepository),
         RepositoryProvider.value(value: _reportRepository),
+        RepositoryProvider.value(value: _appVersionRepository),
         RepositoryProvider<LoginMemory>.value(value: _loginMemory),
         RepositoryProvider<AccessPolicy>.value(value: widget.accessPolicy),
       ],

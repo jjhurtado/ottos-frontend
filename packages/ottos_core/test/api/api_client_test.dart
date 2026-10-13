@@ -99,4 +99,38 @@ void main() {
     );
     expect(adapter.requests.map((request) => request.path), ['/remittances', '/auth/refresh', '/remittances']);
   });
+
+  test('the mobile app says which build it is, and hears when the backend refuses it', () async {
+    final adapter = _FakeAdapter({
+      '/remittances': (_) => (
+        426,
+        {'status': 426, 'code': 'APP_UPDATE_REQUIRED', 'minimumBuild': 5, 'latestBuild': 6, 'latestVersion': '1.0.1'},
+      ),
+    });
+    final api = ApiClient(
+      config: const AppConfig(
+        apiUrl: 'http://api',
+        app: AppIdentity(platform: 'ANDROID', build: 4),
+      ),
+      tokenStorage: storage,
+      dio: Dio()..httpClientAdapter = adapter,
+    );
+    final refused = api.updateRequired.first;
+
+    await expectLater(
+      api.get<Object>('/remittances'),
+      throwsA(isA<ApiException>().having((e) => e.code, 'code', 'APP_UPDATE_REQUIRED')),
+    );
+    expect(adapter.requests.single.headers['X-App-Platform'], 'ANDROID');
+    expect(adapter.requests.single.headers['X-App-Build'], '4');
+    final version = await refused;
+    expect(version.minimumBuild, 5);
+    expect(version.updateFor(4), AppUpdate.required);
+  });
+
+  test('the panel sends no app headers', () async {
+    final adapter = _FakeAdapter({'/auth/me': (_) => (200, _me)});
+    await clientWith(adapter).get<Object>('/auth/me');
+    expect(adapter.requests.single.headers.containsKey('X-App-Build'), isFalse);
+  });
 }

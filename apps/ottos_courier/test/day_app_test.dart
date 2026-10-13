@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:ottos_core/ottos_core.dart';
 import 'package:ottos_courier/app/courier_texts.dart';
 import 'package:ottos_courier/features/assigned/view/assigned_page.dart';
+import 'package:ottos_courier/app/router.dart';
 import 'package:ottos_courier/features/cash/view/cash_page.dart';
+import 'package:ottos_courier/features/cash/view/courier_cash_page.dart';
 import 'package:ottos_courier/features/new_remittance/view/new_remittance_page.dart';
 import 'package:ottos_courier/features/remittance/view/remittance_page.dart';
 import 'package:ottos_courier/offline/remittance_source.dart';
@@ -105,10 +108,21 @@ void main() {
         ],
         child: BlocProvider.value(
           value: authBloc,
-          child: MaterialApp(
+          child: MaterialApp.router(
             localizationsDelegates: OttosLocalization.delegates,
             supportedLocales: OttosLocalization.supportedLocales,
-            home: Scaffold(body: page),
+            routerConfig: GoRouter(
+              routes: [
+                GoRoute(
+                  path: '/',
+                  builder: (_, _) => Scaffold(body: page),
+                ),
+                GoRoute(
+                  path: Routes.courierCash(':id'),
+                  builder: (_, state) => CourierCashPage(courierId: state.pathParameters['id']!),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -178,6 +192,33 @@ void main() {
       expect(find.text(CourierTexts.noCourier), findsOneWidget);
     });
 
+    testWidgets('who can register customers creates the sender from the form', (tester) async {
+      await pump(tester, {..._sales, Permissions.customersWrite}, const NewRemittancePage());
+      expect(find.text(CourierTexts.newCustomer), findsOneWidget);
+
+      await pump(tester, _sales, const NewRemittancePage());
+      expect(find.text(CourierTexts.newCustomer), findsNothing);
+    });
+
+    testWidgets('the new sender is titled as such and can come from the phone contacts', (tester) async {
+      await pump(
+        tester,
+        {..._sales, Permissions.customersWrite},
+        NewRemittancePage(
+          pickContact: () async => const PickedContact(name: 'Rosa Pérez', phone: '53 51234567'),
+        ),
+      );
+      await tester.tap(find.text(CourierTexts.newCustomer));
+      await tester.pumpAndSettle();
+
+      expect(find.text(CourierTexts.newCustomer), findsNWidgets(2));
+      expect(find.text(CoreTexts.newCustomer), findsNothing);
+      await tester.tap(find.text(CoreTexts.pickFromContacts));
+      await tester.pumpAndSettle();
+      expect(find.text('Rosa Pérez'), findsOneWidget);
+      expect(find.text('5351234567'), findsOneWidget);
+    });
+
     testWidgets('who cannot assign does not see the courier', (tester) async {
       await pump(tester, _sales.difference({Permissions.remittancesAssign}), const NewRemittancePage());
 
@@ -230,6 +271,75 @@ void main() {
 
       verify(() => cash.fundCourier('k1', any())).called(1);
       expect(find.text(Formatters.money(70, 'USD')), findsOneWidget);
+    });
+
+    testWidgets('sales open a courier and see their movements, as the courier does', (tester) async {
+      when(() => cash.couriers()).thenAnswer((_) async => const [luis]);
+      when(() => cash.courierStatement('k1')).thenAnswer(
+        (_) async => CourierStatement(
+          cash: const CourierCash(
+            courierId: 'k1',
+            name: 'Luis',
+            balances: [Balance(currency: 'CUP', amount: -500)],
+            negative: true,
+          ),
+          movements: [
+            CashMovement.fromJson(const {
+              'id': 'm1',
+              'type': 'DELIVERY_PAYOUT',
+              'amount': 500,
+              'signedAmount': -500,
+              'currency': 'CUP',
+              'occurredAt': '2026-10-12T15:00:00Z',
+            }),
+          ],
+        ),
+      );
+
+      await pump(tester, _sales.difference({Permissions.cashWrite}), const CashPage());
+      await tester.tap(find.text('Luis'));
+      await tester.pumpAndSettle();
+
+      verify(() => cash.courierStatement('k1')).called(1);
+      expect(find.widgetWithText(AppBar, 'Luis'), findsOneWidget);
+      expect(find.text(CourierTexts.balances), findsOneWidget);
+      expect(find.text(CourierTexts.courierOwesBusiness), findsOneWidget);
+      expect(find.text(CourierTexts.movementTitle('DELIVERY_PAYOUT')), findsOneWidget);
+      expect(find.text(CourierTexts.fund), findsNothing, reason: 'moving cash needs cash:write');
+    });
+
+    testWidgets('from a courier\'s cash, sales fund them and see the movement', (tester) async {
+      var movements = <CashMovement>[];
+      when(() => cash.couriers()).thenAnswer((_) async => const [luis]);
+      when(() => cash.courierStatement('k1'))
+          .thenAnswer((_) async => CourierStatement(cash: luis, movements: movements));
+      when(() => cash.fundCourier('k1', any())).thenAnswer((invocation) async {
+        final input = invocation.positionalArguments[1] as CashInput;
+        final movement = CashMovement.fromJson({
+          'id': 'm1',
+          'type': 'COURIER_FUNDING',
+          'amount': input.amount,
+          'signedAmount': input.amount,
+          'currency': input.currency,
+          'occurredAt': '2026-10-13T10:00:00Z',
+        });
+        movements = [movement];
+        return movement;
+      });
+
+      await pump(tester, {..._sales, Permissions.cashWrite}, const CashPage());
+      await tester.tap(find.text('Luis'));
+      await tester.pumpAndSettle();
+      expect(find.text(CourierTexts.registerReturn), findsOneWidget);
+
+      await tester.tap(find.text(CourierTexts.fund));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextFormField).first, '20');
+      await tester.tap(find.descendant(of: find.byType(AlertDialog), matching: find.text(CourierTexts.fund)));
+      await tester.pumpAndSettle();
+
+      verify(() => cash.fundCourier('k1', any())).called(1);
+      expect(find.text(CourierTexts.movementTitle('COURIER_FUNDING')), findsOneWidget);
     });
 
     testWidgets('a courier sees only their own cash', (tester) async {

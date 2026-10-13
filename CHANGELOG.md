@@ -6,6 +6,32 @@ Cambios notables del frontend de Ottos (panel de operaciones y app de repartidor
 
 ## [Unreleased]
 
+## [1.0.0-rc.3] - 2026-10-13
+
+Necesita el backend 1.0.0-rc.2 (aviso de versiones y caja del negocio sin cobros). Con el backend 1.0.0-rc.1 funciona,
+pero sin avisos de versión.
+
+### Añadido
+
+- App: avisa cuando hay una versión nueva y, si la instalada ya no sirve, muestra «Actualiza para continuar» y no deja seguir trabajando. Antes de bloquear envía lo que tenga pendiente sin conexión.
+- Panel y app: el menú de la cuenta (donde se cierra sesión) muestra al final la versión que está funcionando.
+- App: ventas puede crear un remitente nuevo y un beneficiario nuevo al registrar una remesa, sin pasar por el panel.
+- App: en «Caja», ventas puede tocar a un repartidor para ver su saldo y todos sus movimientos, como los ve él en «Mi caja», y desde ahí entregarle fondos o registrar una devolución.
+- Panel: nueva sección «Beneficiarios» con todos los beneficiarios, también los que no tienen cliente (por ejemplo, los importados sueltos). Se buscan por nombre o teléfono, se editan y se crean sin cliente.
+- App: al crear un remitente o un beneficiario, «Elegir de contactos» abre los contactos del teléfono para buscar a la persona y rellena su nombre y su teléfono. La app no pide permiso para leer la agenda: solo recibe el contacto que eliges.
+
+### Cambiado
+
+- Panel › Caja: la caja del negocio explica qué cuenta. Es el efectivo disponible en Cuba para las entregas: sube con depósitos y devoluciones de repartidores, y baja con fondos y retiros. Registrar una remesa ya no suma a la caja, porque se cobra fuera; lo cobrado está en Reportes. Necesita el backend con este cambio.
+- App: el aviso de versión nueva y la pantalla «Actualiza para continuar» tienen un botón «Actualizar» (antes «Descargar», o un texto para pedir el enlace). Abre la versión nueva en Play Store o, en iPhone, en TestFlight.
+
+### Corregido
+
+- Panel: en Auditoría la fecha ya no se parte en varias líneas.
+- Panel: al editar un cliente o un beneficiario, la pantalla muestra el cambio en cuanto guardas (antes, si solo cambiaba la dirección o el número de casa, había que recargar).
+- App: la ventana para crear un remitente se llama «Nuevo remitente» (decía «Nuevo cliente»).
+- App: el inicio de sesión dice «Repartos y ventas» en vez de «App de repartidores», porque la usan también ventas.
+
 ## [1.0.0-rc.2] - 2026-10-11
 
 Necesita el backend 1.0.0-rc.1.

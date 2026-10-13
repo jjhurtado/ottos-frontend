@@ -1,7 +1,7 @@
 name: ottos_ops
 description: Ottos operations panel (web) for administrators and sales staff.
 publish_to: none
-version: 1.0.0-rc.2+3
+version: 1.0.0-rc.3+4
 resolution: workspace
 
 environment:
@@ -20,6 +20,7 @@ dependencies:
   intl: ^0.20.3
   ottos_core:
     path: ../../packages/ottos_core
+  package_info_plus: ^10.2.2
   pdf: ^3.13.1
   printing: ^5.15.1
 

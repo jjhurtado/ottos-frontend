@@ -8,19 +8,28 @@ import 'package:flutter/foundation.dart';
 /// - Android emulator: `10.0.2.2` is the host machine;
 /// - iOS simulator and desktop: `localhost`.
 class AppConfig {
-  const AppConfig({required this.apiUrl, this.client = AppClient.web});
+  const AppConfig({required this.apiUrl, this.client = AppClient.web, this.app, this.version});
 
-  factory AppConfig.fromEnvironment({AppClient client = AppClient.web}) {
+  factory AppConfig.fromEnvironment({AppClient client = AppClient.web, AppIdentity? app, String? version}) {
     const fromDefine = String.fromEnvironment('OTTOS_API_URL');
-    if (fromDefine.isNotEmpty) return AppConfig(apiUrl: fromDefine, client: client);
-    if (kIsWeb) return AppConfig(apiUrl: '', client: client);
+    if (fromDefine.isNotEmpty) return AppConfig(apiUrl: fromDefine, client: client, app: app, version: version);
+    if (kIsWeb) return AppConfig(apiUrl: '', client: client, app: app, version: version);
     return AppConfig(
       apiUrl: defaultTargetPlatform == TargetPlatform.android ? 'http://10.0.2.2:8080' : 'http://localhost:8080',
       client: client,
+      app: app,
+      version: version,
     );
   }
 
   final String apiUrl;
+
+  /// The installed mobile app, sent on every request so the backend can
+  /// refuse a build that is too old. Null in the panel.
+  final AppIdentity? app;
+
+  /// The running version as shown to the user (`1.0.0-rc.3 (4)`), at the end of the account menu.
+  final String? version;
 
   /// Sent on login: a mobile session lasts the whole working day.
   final AppClient client;
@@ -39,4 +48,15 @@ enum AppClient {
   const AppClient(this.code);
 
   final String code;
+}
+
+/// Which mobile app and build is talking to the backend.
+class AppIdentity {
+  const AppIdentity({required this.platform, required this.build});
+
+  /// `ANDROID` or `IOS`.
+  final String platform;
+
+  /// versionCode on Android, CFBundleVersion on iOS.
+  final int build;
 }

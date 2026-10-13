@@ -179,7 +179,8 @@ class _Entries extends StatelessWidget {
               for (final entry in items)
                 DataRow(
                   cells: [
-                    DataCell(Text(Formatters.dateTime(entry.occurredAt))),
+                    // Without softWrap the table squeezes the date into one word per line.
+                    DataCell(Text(Formatters.dateTime(entry.occurredAt), softWrap: false)),
                     DataCell(Text(entry.actorName ?? OpsTexts.system)),
                     DataCell(Text(OpsTexts.auditAction(entry.action))),
                     DataCell(
