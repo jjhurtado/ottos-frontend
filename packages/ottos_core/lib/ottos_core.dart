@@ -70,4 +70,5 @@ export 'src/widgets/review_banner.dart';
 export 'src/widgets/remittance_status_chip.dart';
 export 'src/widgets/remittance_type_badge.dart';
 export 'src/widgets/splash_page.dart';
+export 'src/widgets/version_menu_item.dart';
 export 'src/app/ottos_localization.dart';

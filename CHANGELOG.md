@@ -11,6 +11,7 @@ Necesita el backend con el aviso de versiones (develop 3439c3b o posterior).
 ### Añadido
 
 - App: avisa cuando hay una versión nueva y, si la instalada ya no sirve, muestra «Actualiza para continuar» y no deja seguir trabajando. Antes de bloquear envía lo que tenga pendiente sin conexión.
+- Panel y app: el menú de la cuenta (donde se cierra sesión) muestra al final la versión que está funcionando.
 - App: ventas puede crear un remitente nuevo y un beneficiario nuevo al registrar una remesa, sin pasar por el panel.
 
 ## [1.0.0-rc.2] - 2026-10-11

@@ -19,6 +19,7 @@ Future<void> main() async {
       config: AppConfig.fromEnvironment(
         client: AppClient.mobile,
         app: AppIdentity(platform: Platform.isIOS ? 'IOS' : 'ANDROID', build: _build(info.buildNumber)),
+        version: '${info.version} (${_build(info.buildNumber)})',
       ),
       store: store,
       notifier: notifier,

@@ -29,6 +29,7 @@ class CourierShell extends StatelessWidget {
     final cashTitle = user != null && !user.can(Permissions.cashReadOwn) ? CourierTexts.cash : CourierTexts.myCash;
     final onCash = location == Routes.cash;
     final sync = context.syncCubit;
+    final version = context.read<AppConfig>().version;
     return Scaffold(
       appBar: AppBar(
         title: Column(
@@ -70,6 +71,7 @@ class CourierShell extends StatelessWidget {
                   title: Text(CoreTexts.logout),
                 ),
               ),
+              if (version != null) ...[const PopupMenuDivider(), VersionMenuItem(label: CourierTexts.version(version))],
             ],
           ),
         ],

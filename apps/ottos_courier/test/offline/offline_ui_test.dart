@@ -93,8 +93,11 @@ void main() {
         });
       });
       await tester.pumpWidget(
-        RepositoryProvider<SyncCubit?>.value(
-          value: sync,
+        MultiRepositoryProvider(
+          providers: [
+            RepositoryProvider<SyncCubit?>.value(value: sync),
+            RepositoryProvider.value(value: const AppConfig(apiUrl: '')),
+          ],
           child: BlocProvider.value(
             value: authBloc,
             child: const MaterialApp(
