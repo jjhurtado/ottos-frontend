@@ -6,7 +6,10 @@ Cambios notables del frontend de Ottos (panel de operaciones y app de repartidor
 
 ## [Unreleased]
 
-Necesita el backend con el aviso de versiones (develop 3439c3b o posterior).
+## [1.0.0-rc.3] - 2026-10-13
+
+Necesita el backend 1.0.0-rc.2 (aviso de versiones y caja del negocio sin cobros). Con el backend 1.0.0-rc.1 funciona,
+pero sin avisos de versión.
 
 ### Añadido
 
