@@ -205,15 +205,23 @@ La documentación es el contexto de quien llegue después, persona o agente. Va 
 
 ### Canvas de diseño
 
-Las pantallas de las apps están dibujadas en el canvas **«Ottos · Vistas de las apps»** de Claude Design
-(https://claude.ai/artifact/2j4t789enmGcFDE9Mj7NCy), con una página para el panel y otra para la app. El canvas
-debe reflejar las vistas actuales:
+Hay **un canvas oficial por cliente** en Claude Design, y solo esos dos:
 
-- Todo cambio visual (pantalla nueva, elemento añadido o quitado, textos, colores, orden) actualiza en la misma rama el
-  artboard de esa pantalla, o añade uno si la pantalla no está.
-- Una propuesta con variantes se dibuja primero en un canvas aparte; el usuario elige y lo elegido pasa al canvas
-  principal tal como quedó implementado (por ejemplo, la versión en el menú de cuenta, 2026-10-13).
-- Si al implementar algo cambia respecto al dibujo, el canvas se ajusta a lo implementado, no al revés.
+| Cliente | Canvas |
+| --- | --- |
+| Panel web (`ottos_ops`) | «Ottos · Panel web»: https://claude.ai/artifact/2j4t789enmGcFDE9Mj7NCy |
+| App móvil (`ottos_courier`) | «Ottos · App móvil»: https://claude.ai/artifact/TRmZxFgFDxUGkaEDRHqh6F |
+
+Reglas:
+
+- El canvas oficial refleja las vistas implementadas. Todo cambio visual (pantalla nueva, elemento añadido o quitado,
+  textos, colores, orden) actualiza en la misma rama el artboard de esa pantalla, o añade uno si no está.
+- Si lo implementado difiere del dibujo, se corrige el dibujo, no al revés. Para comprobarlo se capturan las vistas
+  reales (panel en Chrome sin interfaz, app en el emulador) contra el backend local.
+- Los elementos que se repiten son componentes del canvas (barra lateral del panel, barra inferior de la app) y las
+  pantallas los importan: un cambio ahí se hace una sola vez.
+- **No hay canvas extra.** Solo se crea otro para tomar una decisión (variantes para que el usuario elija); cuando
+  decide, lo elegido pasa al canvas oficial y el canvas de la decisión **se borra**.
 
 Los contratos de API no se escriben aquí: viven en el repo del backend (`docs/contracts/`) y se enlazan.
 

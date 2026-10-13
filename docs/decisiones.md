@@ -45,7 +45,7 @@ infraestructura (Railway, dominios).
 
 | Fecha | Decisión | Por qué |
 | --- | --- | --- |
-| 2026-10-13 | El canvas «Ottos · Vistas de las apps» se mantiene igual que las vistas reales: cada cambio visual lo actualiza en la misma rama. | Petición del usuario: que el diseño sirva de referencia fiable. |
+| 2026-10-13 | Un canvas oficial por cliente en Claude Design («Ottos · Panel web» y «Ottos · App móvil»), igual que las vistas reales; cada cambio visual lo actualiza en la misma rama. Otros canvas solo para decidir entre variantes, y se borran al decidir. | Petición del usuario: que el diseño sirva de referencia fiable y no se acumulen canvas viejos. |
 | 2026-10-13 | Esperar antes de cerrar `1.0.0-rc.3` por si entran más cambios. | Petición del usuario. |
 | 2026-10-12 | Siguiente versión tras rc.2: rc.3 (o `1.0.0` si no aparece nada más). Los tags publicados no se tocan. | Mismo criterio que el backend. |
 | 2026-10-12 | Las pruebas contra staging y producción se hacen por API con scripts, nunca escribiendo contraseñas reales en un navegador o emulador. Producción solo tiene el admin del usuario y bloquea 15 min tras 5 fallos. | Seguridad: no exponer credenciales remotas ni bloquear la cuenta del dueño. |
