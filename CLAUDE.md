@@ -17,7 +17,8 @@ del beneficiario. Este repo es el frontend en Flutter; el backend (Spring Boot) 
 | [apps/ottos_ops/README.md](apps/ottos_ops/README.md) | Panel web (admin y ventas, «de noche») y su despliegue con Caddy |
 | [apps/ottos_courier/README.md](apps/ottos_courier/README.md) | App móvil «Ottos» (repartidores y ventas, «de día»): offline, notificaciones, bloqueo de versiones |
 | [docs/ios-en-mac.md](docs/ios-en-mac.md) | Publicar la app de iPhone desde un Mac |
-| [Canvas «Ottos · Vistas de las apps»](https://claude.ai/artifact/2j4t789enmGcFDE9Mj7NCy) | Diseño de cada pantalla del panel y la app (Claude Design); se mantiene igual que las vistas reales |
+| [Canvas «Ottos · Panel web»](https://claude.ai/artifact/2j4t789enmGcFDE9Mj7NCy) | Diseño de cada pantalla del panel (Claude Design), igual que las vistas reales |
+| [Canvas «Ottos · App móvil»](https://claude.ai/artifact/TRmZxFgFDxUGkaEDRHqh6F) | Diseño de cada pantalla de la app, igual que las vistas reales |
 | `../ottos/docs/contracts/*.md` | Contratos de API acordados con el backend (offline-sync, app-version, monthly-report…) |
 
 ## Reglas de trabajo
@@ -28,8 +29,9 @@ del beneficiario. Este repo es el frontend en Flutter; el backend (Spring Boot) 
 - **Antes de fusionar**: `flutter analyze` y `flutter test --exclude-tags integration` en verde en
   `packages/ottos_core`, `apps/ottos_ops` y `apps/ottos_courier`. Actualizar `CHANGELOG.md` (`[Unreleased]`),
   `roadmap.md` y, si hubo una decisión, `docs/decisiones.md`.
-- **Cambios visuales**: actualizar en la misma rama el canvas «Ottos · Vistas de las apps» para que coincida con lo
-  implementado (STANDARDS.md › Canvas de diseño). Las variantes se proponen en un canvas aparte y el usuario elige.
+- **Cambios visuales**: actualizar en la misma rama el canvas oficial del cliente («Ottos · Panel web» o «Ottos · App
+  móvil») para que coincida con lo implementado (STANDARDS.md › Canvas de diseño). Solo esos dos canvas: las variantes
+  para decidir van en uno temporal que se borra cuando el usuario elige.
 - **Idioma**: interfaz y documentación de producto en español; código, commits y READMEs técnicos en inglés.
 - **No publicar una versión** (rama `release/`, tag, APK/AAB, TestFlight) sin el «sí» explícito del usuario.
 
