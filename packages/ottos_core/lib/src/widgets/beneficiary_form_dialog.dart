@@ -9,15 +9,18 @@ import '../models/customer.dart';
 import '../models/zones.dart';
 import 'async_view.dart';
 
+import 'contact_picker_button.dart';
 import 'customer_form_dialog.dart';
 import 'form_pair.dart';
 
 /// Creates a beneficiary for [customerId], or edits [beneficiary]; returns the
-/// saved one, or null if cancelled.
+/// saved one, or null if cancelled. With [pickContact], a new beneficiary's name
+/// and phone can come from the phone's contacts.
 Future<Beneficiary?> showBeneficiaryFormDialog(
   BuildContext context, {
   required String customerId,
   Beneficiary? beneficiary,
+  ContactPicker? pickContact,
 }) {
   final customers = context.read<CustomerRepository>();
   final zones = context.read<ZoneRepository>();
@@ -29,6 +32,7 @@ Future<Beneficiary?> showBeneficiaryFormDialog(
       zones: Future.wait([zones.provinces(), zones.municipalities()]),
       customerId: customerId,
       beneficiary: beneficiary,
+      pickContact: pickContact,
     ),
   );
 }
@@ -39,12 +43,14 @@ class _BeneficiaryFormDialog extends StatefulWidget {
     required this.zones,
     required this.customerId,
     this.beneficiary,
+    this.pickContact,
   });
 
   final CustomerRepository customers;
   final Future<List<List<Object>>> zones;
   final String customerId;
   final Beneficiary? beneficiary;
+  final ContactPicker? pickContact;
 
   @override
   State<_BeneficiaryFormDialog> createState() => _BeneficiaryFormDialogState();
@@ -168,6 +174,8 @@ class _BeneficiaryFormDialogState extends State<_BeneficiaryFormDialog> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            if (widget.pickContact != null && widget.beneficiary == null)
+              ContactPickerButton(pick: widget.pickContact!, name: _fullName, phone: _phone, enabled: !_saving),
             _field(_fullName, CoreTexts.fullName, required: true, autofocus: true),
             FormPair(
               first: _field(

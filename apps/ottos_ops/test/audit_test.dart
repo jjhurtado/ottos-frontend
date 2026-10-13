@@ -126,8 +126,8 @@ void main() {
       );
     });
 
-    Future<void> pump(WidgetTester tester) async {
-      await tester.binding.setSurfaceSize(const Size(1400, 900));
+    Future<void> pump(WidgetTester tester, {double width = 1400}) async {
+      await tester.binding.setSurfaceSize(Size(width, 900));
       addTearDown(() => tester.binding.setSurfaceSize(null));
       await tester.pumpWidget(
         RepositoryProvider<AuditRepository>.value(
@@ -164,6 +164,33 @@ void main() {
       expect(find.text(OpsTexts.auditAction('ROLE_DELETED')), findsOneWidget);
       // Only the table row: the menu offers role actions only.
       expect(find.text(OpsTexts.auditAction('USER_CREATED')), findsOneWidget);
+    });
+
+    testWidgets('the date stays on one line when the details are long', (tester) async {
+      when(
+        () => audit.search(
+          any(),
+          page: any(named: 'page'),
+          size: any(named: 'size'),
+        ),
+      ).thenAnswer(
+        (_) async => PageResult(
+          items: [
+            _entry('ROLE_PERMISSIONS_CHANGED', const {
+              'added': ['remittances:read', 'remittances:assign', 'customers:write', 'cash:read', 'reports:read'],
+              'removed': ['users:write'],
+            }, type: 'ROLE'),
+          ],
+          page: 0,
+          size: 50,
+          totalItems: 1,
+        ),
+      );
+      await pump(tester, width: 1000);
+
+      final date = find.text(Formatters.dateTime(DateTime.parse('2026-10-11T15:31:05Z')));
+      final lineHeight = tester.getSize(find.text(OpsTexts.when)).height;
+      expect(tester.getSize(date).height, lessThan(lineHeight * 1.5));
     });
   });
 }

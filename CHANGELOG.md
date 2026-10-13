@@ -13,6 +13,13 @@ Necesita el backend con el aviso de versiones (develop 3439c3b o posterior).
 - App: avisa cuando hay una versión nueva y, si la instalada ya no sirve, muestra «Actualiza para continuar» y no deja seguir trabajando. Antes de bloquear envía lo que tenga pendiente sin conexión.
 - Panel y app: el menú de la cuenta (donde se cierra sesión) muestra al final la versión que está funcionando.
 - App: ventas puede crear un remitente nuevo y un beneficiario nuevo al registrar una remesa, sin pasar por el panel.
+- App: al crear un remitente o un beneficiario, «Elegir de contactos» abre los contactos del teléfono para buscar a la persona y rellena su nombre y su teléfono. La app no pide permiso para leer la agenda: solo recibe el contacto que eliges.
+
+### Corregido
+
+- Panel: en Auditoría la fecha ya no se parte en varias líneas.
+- App: la ventana para crear un remitente se llama «Nuevo remitente» (decía «Nuevo cliente»).
+- App: el inicio de sesión dice «Repartos y ventas» en vez de «App de repartidores», porque la usan también ventas.
 
 ## [1.0.0-rc.2] - 2026-10-11
 

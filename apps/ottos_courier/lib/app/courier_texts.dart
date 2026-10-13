@@ -4,7 +4,7 @@ import '../offline/sync_cubit.dart';
 
 /// User-facing texts of the courier app.
 abstract final class CourierTexts {
-  static const appName = 'App de repartidores';
+  static const appName = 'Repartos y ventas';
   static const appTitle = 'Ottos';
 
   // Notifications

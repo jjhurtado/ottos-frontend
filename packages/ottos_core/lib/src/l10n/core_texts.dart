@@ -92,6 +92,7 @@ abstract final class CoreTexts {
   static const phone = 'Teléfono';
   static const fullName = 'Nombre completo';
   static const newCustomer = 'Nuevo cliente';
+  static const pickFromContacts = 'Elegir de contactos';
   static const editCustomer = 'Editar cliente';
   static const phoneInvalid = 'Teléfono no válido';
   static const save = 'Guardar';

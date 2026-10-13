@@ -5,23 +5,34 @@ import '../api/api_exception.dart';
 import '../customers/customer_repository.dart';
 import '../l10n/core_texts.dart';
 import '../models/customer.dart';
+import 'contact_picker_button.dart';
 import 'form_pair.dart';
 
 /// Creates a customer, or edits [customer]; returns the saved one, or null if cancelled.
-Future<Customer?> showCustomerFormDialog(BuildContext context, {Customer? customer}) {
+/// [title] replaces «Nuevo cliente» (the app calls them senders). With [pickContact],
+/// a new customer's name and phone can come from the phone's contacts.
+Future<Customer?> showCustomerFormDialog(
+  BuildContext context, {
+  Customer? customer,
+  String? title,
+  ContactPicker? pickContact,
+}) {
   final customers = context.read<CustomerRepository>();
   return showDialog<Customer>(
     context: context,
     barrierDismissible: false,
-    builder: (_) => _CustomerFormDialog(customers: customers, customer: customer),
+    builder: (_) =>
+        _CustomerFormDialog(customers: customers, customer: customer, title: title, pickContact: pickContact),
   );
 }
 
 class _CustomerFormDialog extends StatefulWidget {
-  const _CustomerFormDialog({required this.customers, this.customer});
+  const _CustomerFormDialog({required this.customers, this.customer, this.title, this.pickContact});
 
   final CustomerRepository customers;
   final Customer? customer;
+  final String? title;
+  final ContactPicker? pickContact;
 
   @override
   State<_CustomerFormDialog> createState() => _CustomerFormDialogState();
@@ -81,7 +92,7 @@ class _CustomerFormDialogState extends State<_CustomerFormDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text(widget.customer == null ? CoreTexts.newCustomer : CoreTexts.editCustomer),
+      title: Text(widget.title ?? (widget.customer == null ? CoreTexts.newCustomer : CoreTexts.editCustomer)),
       content: SizedBox(
         width: 520,
         child: Form(
@@ -90,6 +101,8 @@ class _CustomerFormDialogState extends State<_CustomerFormDialog> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
+                if (widget.pickContact != null && widget.customer == null)
+                  ContactPickerButton(pick: widget.pickContact!, name: _fullName, phone: _phone, enabled: !_saving),
                 _field(_fullName, CoreTexts.fullName, required: true, autofocus: true),
                 _field(_phone, CoreTexts.phone, required: true, keyboard: TextInputType.phone, validator: phoneError),
                 _field(_email, CoreTexts.email, keyboard: TextInputType.emailAddress, validator: _emailError),

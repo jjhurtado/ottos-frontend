@@ -4,39 +4,46 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:ottos_core/ottos_core.dart';
 
 import '../../../app/courier_texts.dart';
+import '../../../app/phone_contacts.dart';
 
 /// Registers a remittance from the phone; whoever can assign also picks the
-/// courier. Closes with the remittance registered.
+/// courier. Closes with the remittance registered. New senders and
+/// beneficiaries can take their name and phone from [pickContact].
 class NewRemittancePage extends StatelessWidget {
-  const NewRemittancePage({super.key});
+  const NewRemittancePage({super.key, this.pickContact = pickPhoneContact});
+
+  final ContactPicker pickContact;
 
   @override
   Widget build(BuildContext context) {
     final canAssign = context.canDo(Permissions.remittancesAssign);
-    return BlocProvider(
-      create: (context) => NewRemittanceCubit(
-        remittances: context.read<RemittanceRepository>(),
-        customers: context.read<CustomerRepository>(),
-        rates: context.read<RateRepository>(),
-      )..load(canAssign: canAssign),
-      child: BlocConsumer<NewRemittanceCubit, NewRemittanceState>(
-        listenWhen: (previous, current) => previous.created == null && current.created != null,
-        listener: (context, state) {
-          ScaffoldMessenger.of(context)
-              .showSnackBar(SnackBar(content: Text(state.error ?? CourierTexts.registered(state.created!.code))));
-          Navigator.of(context).pop(state.created);
-        },
-        buildWhen: (previous, current) => previous.corridorsStatus != current.corridorsStatus,
-        builder: (context, state) => Scaffold(
-          appBar: AppBar(title: const Text(CourierTexts.newRemittance)),
-          body: switch (state.corridorsStatus) {
-            LoadStatus.loading => const LoadingView(),
-            LoadStatus.failure => ErrorView(
-              message: state.error!,
-              onRetry: () => context.read<NewRemittanceCubit>().load(canAssign: canAssign),
-            ),
-            LoadStatus.success => const _Form(),
+    return RepositoryProvider<ContactPicker>.value(
+      value: pickContact,
+      child: BlocProvider(
+        create: (context) => NewRemittanceCubit(
+          remittances: context.read<RemittanceRepository>(),
+          customers: context.read<CustomerRepository>(),
+          rates: context.read<RateRepository>(),
+        )..load(canAssign: canAssign),
+        child: BlocConsumer<NewRemittanceCubit, NewRemittanceState>(
+          listenWhen: (previous, current) => previous.created == null && current.created != null,
+          listener: (context, state) {
+            ScaffoldMessenger.of(context)
+                .showSnackBar(SnackBar(content: Text(state.error ?? CourierTexts.registered(state.created!.code))));
+            Navigator.of(context).pop(state.created);
           },
+          buildWhen: (previous, current) => previous.corridorsStatus != current.corridorsStatus,
+          builder: (context, state) => Scaffold(
+            appBar: AppBar(title: const Text(CourierTexts.newRemittance)),
+            body: switch (state.corridorsStatus) {
+              LoadStatus.loading => const LoadingView(),
+              LoadStatus.failure => ErrorView(
+                message: state.error!,
+                onRetry: () => context.read<NewRemittanceCubit>().load(canAssign: canAssign),
+              ),
+              LoadStatus.success => const _Form(),
+            },
+          ),
         ),
       ),
     );
@@ -253,7 +260,11 @@ class _CustomerField extends StatelessWidget {
         TextButton.icon(
           onPressed: enabled
               ? () async {
-                  final created = await showCustomerFormDialog(context);
+                  final created = await showCustomerFormDialog(
+                    context,
+                    title: CourierTexts.newCustomer,
+                    pickContact: context.read<ContactPicker>(),
+                  );
                   if (created != null) await cubit.customerSelected(created);
                 }
               : null,
@@ -308,7 +319,11 @@ class _BeneficiaryField extends StatelessWidget {
                 onPressed: state.submitting
                     ? null
                     : () async {
-                        final created = await showBeneficiaryFormDialog(context, customerId: state.customer!.id);
+                        final created = await showBeneficiaryFormDialog(
+                          context,
+                          customerId: state.customer!.id,
+                          pickContact: context.read<ContactPicker>(),
+                        );
                         if (created != null) cubit.beneficiaryCreated(created);
                       },
                 icon: const Icon(Icons.add),
