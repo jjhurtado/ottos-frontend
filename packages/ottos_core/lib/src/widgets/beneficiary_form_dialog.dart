@@ -13,12 +13,12 @@ import 'contact_picker_button.dart';
 import 'customer_form_dialog.dart';
 import 'form_pair.dart';
 
-/// Creates a beneficiary for [customerId], or edits [beneficiary]; returns the
-/// saved one, or null if cancelled. With [pickContact], a new beneficiary's name
+/// Creates a beneficiary for [customerId] (or without a customer when it is
+/// null), or edits [beneficiary]; returns the saved one, or null if cancelled. With [pickContact], a new beneficiary's name
 /// and phone can come from the phone's contacts.
 Future<Beneficiary?> showBeneficiaryFormDialog(
   BuildContext context, {
-  required String customerId,
+  String? customerId,
   Beneficiary? beneficiary,
   ContactPicker? pickContact,
 }) {
@@ -41,14 +41,14 @@ class _BeneficiaryFormDialog extends StatefulWidget {
   const _BeneficiaryFormDialog({
     required this.customers,
     required this.zones,
-    required this.customerId,
+    this.customerId,
     this.beneficiary,
     this.pickContact,
   });
 
   final CustomerRepository customers;
   final Future<List<List<Object>>> zones;
-  final String customerId;
+  final String? customerId;
   final Beneficiary? beneficiary;
   final ContactPicker? pickContact;
 
@@ -116,9 +116,12 @@ class _BeneficiaryFormDialogState extends State<_BeneficiaryFormDialog> {
     );
     try {
       final existing = widget.beneficiary;
-      final saved = existing == null
-          ? await widget.customers.addBeneficiary(widget.customerId, input)
-          : await widget.customers.updateBeneficiary(existing.id, input);
+      final customerId = widget.customerId;
+      final saved = existing != null
+          ? await widget.customers.updateBeneficiary(existing.id, input)
+          : customerId != null
+          ? await widget.customers.addBeneficiary(customerId, input)
+          : await widget.customers.createBeneficiary(input);
       if (mounted) Navigator.of(context).pop(saved);
     } on ApiException catch (error) {
       if (mounted) {

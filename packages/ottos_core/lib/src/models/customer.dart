@@ -46,7 +46,19 @@ class Customer extends Equatable {
   final DateTime? createdAt;
 
   @override
-  List<Object?> get props => [id, fullName, phone, active];
+  // Every field: an edit that only changes the address must still rebuild the screens.
+  List<Object?> get props => [
+    id,
+    fullName,
+    phone,
+    email,
+    documentType,
+    documentNumber,
+    address,
+    notes,
+    active,
+    createdAt,
+  ];
 }
 
 /// Someone a customer sends money to, with the delivery address (`BeneficiaryInfo`).
@@ -111,7 +123,24 @@ class Beneficiary extends Equatable {
   ].whereType<String>().where((part) => part.isNotEmpty).join(', ');
 
   @override
-  List<Object?> get props => [id, fullName, phone, municipalityCode, active];
+  // Every field: an edit that only changes the house number must still rebuild the lists.
+  List<Object?> get props => [
+    id,
+    fullName,
+    phone,
+    alternatePhone,
+    street,
+    houseNumber,
+    betweenStreets,
+    neighborhood,
+    municipalityCode,
+    municipalityName,
+    provinceName,
+    reference,
+    documentNumber,
+    notes,
+    active,
+  ];
 }
 
 String? _blankToNull(String? value) => value == null || value.trim().isEmpty ? null : value.trim();

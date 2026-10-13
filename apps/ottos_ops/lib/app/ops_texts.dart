@@ -145,6 +145,12 @@ abstract final class OpsTexts {
   static const betweenStreets = CoreTexts.betweenStreets;
   static const neighborhood = CoreTexts.neighborhood;
   static const province = CoreTexts.province;
+  static const searchBeneficiary = searchCustomer;
+  static const noBeneficiariesFound = 'Ningún beneficiario coincide con la búsqueda.';
+  static const noBeneficiariesYet = 'Todavía no hay beneficiarios.';
+  static const beneficiariesHelp =
+      'Todos los beneficiarios, tengan cliente o no. Un cambio vale para todos los clientes que le envían; '
+      'las remesas ya registradas guardan los datos que tenían.';
   static const unlink = 'Desvincular';
   static const unlinkTitle = 'Desvincular beneficiario';
   static String unlinkMessage(String name) =>

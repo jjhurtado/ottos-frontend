@@ -91,6 +91,7 @@ Objetivo: gestionar clientes y sus beneficiarios desde el panel. Va en paralelo 
 - [x] **Alta y edición de cliente**, con validación de teléfono y el error de teléfono repetido en español.
 - [x] **Ficha de cliente** (`/customers/{id}`): datos, estadísticas de remesas, beneficiarios, «Ver remesas» (listado filtrado por `customerId`) y «Nueva remesa» con el cliente ya elegido.
 - [x] **Beneficiarios**: alta, edición y desvinculación dentro de la ficha del cliente, con selector de provincia y municipio.
+- [x] **Sección «Beneficiarios»** en el panel (2026-10-13): todos los beneficiarios, tengan cliente o no, con buscador por nombre o teléfono, edición y alta sin cliente (`customers:write`). Antes, los importados sueltos no se podían editar. Pendiente: borrar y restaurar (`DELETE /beneficiaries/{id}`, `POST …/restore`) y ver qué clientes le envían (`GET /beneficiaries/{id}`); el backend ya los tiene.
 - [x] **Crear cliente o beneficiario desde «Nueva remesa»** sin salir del formulario; el nuevo queda elegido.
 - [ ] Revisar en el navegador las pantallas de la ficha y los formularios (la extensión de Chrome no pudo hacer capturas; los tests de widget e integración pasan).
 - [ ] **Eliminar y restaurar beneficiarios** (borrado lógico para todos los clientes): el backend ya tiene `DELETE /beneficiaries/{id}` y `POST /beneficiaries/{id}/restore`.

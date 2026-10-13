@@ -40,6 +40,13 @@ abstract final class Destinations {
     selectedIcon: Icons.people,
     permissions: [Permissions.customersRead],
   );
+  static const beneficiaries = Destination(
+    path: '/beneficiaries',
+    label: OpsTexts.beneficiaries,
+    icon: Icons.person_pin_circle_outlined,
+    selectedIcon: Icons.person_pin_circle,
+    permissions: [Permissions.customersRead],
+  );
   static const configuration = Destination(
     path: '/configuration',
     label: OpsTexts.configuration,
@@ -85,7 +92,7 @@ abstract final class Destinations {
     permissions: [Permissions.reportsRead],
   );
 
-  static const all = [home, remittances, customers, configuration, cash, reports, users, roles, audit];
+  static const all = [home, remittances, customers, beneficiaries, configuration, cash, reports, users, roles, audit];
 
   /// Who may use the panel at all: anyone who can see a section besides home.
   static bool canUsePanel(CurrentUser user) => all.skip(1).any((destination) => destination.isVisibleTo(user));
