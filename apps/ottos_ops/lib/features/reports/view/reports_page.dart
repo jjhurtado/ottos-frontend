@@ -24,7 +24,14 @@ class ReportsPage extends StatelessWidget {
             children: [
               _Header(state: state),
               const SizedBox(height: 4),
-              if (report != null) Text(OpsTexts.reportPeriod(Formatters.date(report.from), Formatters.date(report.to))),
+              if (report != null)
+                Text(
+                  OpsTexts.reportPeriod(
+                    Formatters.date(report.from),
+                    Formatters.date(report.to),
+                    report.businessCurrency,
+                  ),
+                ),
               const SizedBox(height: 16),
               switch (state.status) {
                 ReportsStatus.loading => const SizedBox(height: 240, child: LoadingView()),
@@ -109,7 +116,7 @@ class _ReportView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    String usd(double amount) => Formatters.money(amount, 'USD');
+    String usd(double amount) => Formatters.money(amount, report.businessCurrency);
     final delivered = report.delivered.map((money) => Formatters.money(money.amount, money.currency)).join(' · ');
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -124,7 +131,7 @@ class _ReportView extends StatelessWidget {
               help: OpsTexts.deliveriesAndPickups(report.deliveries, report.pickups),
             ),
             _Total(label: OpsTexts.totalCollected, value: usd(report.collected), help: OpsTexts.totalCollectedHelp),
-            _Total(label: OpsTexts.totalDelivered, value: usd(report.deliveredUsd), help: delivered),
+            _Total(label: OpsTexts.totalDelivered, value: usd(report.deliveredCurrency), help: delivered),
             _Total(
               label: OpsTexts.difference,
               value: usd(report.difference),
@@ -154,14 +161,14 @@ class _ReportView extends StatelessWidget {
           child: SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: DataTable(
-              columns: const [
-                DataColumn(label: Text('Moneda')),
-                DataColumn(label: Text(OpsTexts.reportRemittances), numeric: true),
-                DataColumn(label: Text(OpsTexts.sent), numeric: true),
-                DataColumn(label: Text(OpsTexts.fees), numeric: true),
-                DataColumn(label: Text(OpsTexts.collected), numeric: true),
-                DataColumn(label: Text(OpsTexts.delivered), numeric: true),
-                DataColumn(label: Text(OpsTexts.deliveredUsd), numeric: true),
+              columns: [
+                const DataColumn(label: Text('Moneda')),
+                const DataColumn(label: Text(OpsTexts.reportRemittances), numeric: true),
+                const DataColumn(label: Text(OpsTexts.sent), numeric: true),
+                const DataColumn(label: Text(OpsTexts.fees), numeric: true),
+                const DataColumn(label: Text(OpsTexts.collected), numeric: true),
+                const DataColumn(label: Text(OpsTexts.delivered), numeric: true),
+                DataColumn(label: Text(OpsTexts.deliveredIn(report.businessCurrency)), numeric: true),
               ],
               rows: [
                 for (final line in report.byCurrency)
@@ -173,7 +180,7 @@ class _ReportView extends StatelessWidget {
                       DataCell(Text(usd(line.fees))),
                       DataCell(Text(usd(line.collected))),
                       DataCell(Text(Formatters.money(line.delivered, line.currency))),
-                      DataCell(Text(usd(line.deliveredUsd))),
+                      DataCell(Text(usd(line.deliveredCurrency))),
                     ],
                   ),
                 DataRow(
@@ -190,7 +197,7 @@ class _ReportView extends StatelessWidget {
                     DataCell(Text(usd(report.deliveryFees), style: const TextStyle(fontWeight: FontWeight.w700))),
                     DataCell(Text(usd(report.collected), style: const TextStyle(fontWeight: FontWeight.w700))),
                     const DataCell(Text('—')),
-                    DataCell(Text(usd(report.deliveredUsd), style: const TextStyle(fontWeight: FontWeight.w700))),
+                    DataCell(Text(usd(report.deliveredCurrency), style: const TextStyle(fontWeight: FontWeight.w700))),
                   ],
                 ),
               ],

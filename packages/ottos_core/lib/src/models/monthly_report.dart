@@ -26,7 +26,7 @@ class ReportCurrencyLine extends Equatable {
     required this.fees,
     required this.collected,
     required this.delivered,
-    required this.deliveredUsd,
+    required this.deliveredCurrency,
   });
 
   factory ReportCurrencyLine.fromJson(Map<String, dynamic> json) => ReportCurrencyLine(
@@ -36,21 +36,21 @@ class ReportCurrencyLine extends Equatable {
     fees: parseDecimal(json['fees']) ?? 0,
     collected: parseDecimal(json['collected']) ?? 0,
     delivered: parseDecimal(json['delivered']) ?? 0,
-    deliveredUsd: parseDecimal(json['deliveredUsd']) ?? 0,
+    deliveredCurrency: _deliveredCurrency(json),
   );
 
   final String currency;
   final int remittances;
 
-  /// In USD, as every amount but [delivered], which is in [currency].
+  /// In the business currency, as every amount but [delivered], which is in [currency].
   final double sent;
   final double fees;
   final double collected;
   final double delivered;
-  final double deliveredUsd;
+  final double deliveredCurrency;
 
   @override
-  List<Object?> get props => [currency, remittances, sent, fees, collected, delivered, deliveredUsd];
+  List<Object?> get props => [currency, remittances, sent, fees, collected, delivered, deliveredCurrency];
 }
 
 /// Deliveries or pickups in a month.
@@ -82,6 +82,7 @@ class MonthlyReport extends Equatable {
     this.to,
     this.generatedAt,
     this.remittances = 0,
+    this.businessCurrency = 'USD',
     this.deliveries = 0,
     this.pickups = 0,
     this.completed = 0,
@@ -89,7 +90,7 @@ class MonthlyReport extends Equatable {
     this.withIncident = 0,
     this.collected = 0,
     this.fees = 0,
-    this.deliveredUsd = 0,
+    this.deliveredCurrency = 0,
     this.difference = 0,
     this.roundingMargin = 0,
     this.pickupsCollected = 0,
@@ -104,6 +105,7 @@ class MonthlyReport extends Equatable {
     final pickups = (json['pickups'] as Map<String, dynamic>?) ?? const {};
     return MonthlyReport(
       month: json['month'] as String? ?? '',
+      businessCurrency: json['businessCurrency'] as String? ?? 'USD',
       from: parseDateTime(json['from']),
       to: parseDateTime(json['to']),
       generatedAt: parseDateTime(json['generatedAt']),
@@ -115,7 +117,7 @@ class MonthlyReport extends Equatable {
       withIncident: counts['withIncident'] as int? ?? 0,
       collected: parseDecimal(json['collected']) ?? 0,
       fees: parseDecimal(json['fees']) ?? 0,
-      deliveredUsd: parseDecimal(json['deliveredUsd']) ?? 0,
+      deliveredCurrency: _deliveredCurrency(json),
       difference: parseDecimal(json['difference']) ?? 0,
       roundingMargin: parseDecimal(json['roundingMargin']) ?? 0,
       pickupsCollected: parseDecimal(pickups['collected']) ?? 0,
@@ -135,6 +137,9 @@ class MonthlyReport extends Equatable {
 
   /// `YYYY-MM`.
   final String month;
+
+  /// The currency of every amount but the delivered ones (`USD` in Cuba).
+  final String businessCurrency;
   final DateTime? from;
   final DateTime? to;
   final DateTime? generatedAt;
@@ -154,10 +159,10 @@ class MonthlyReport extends Equatable {
   /// The earnings: fees of deliveries and pickups.
   final double fees;
 
-  /// What the deliveries hand over, in USD at each remittance's rate.
-  final double deliveredUsd;
+  /// What the deliveries hand over, in [businessCurrency] at each remittance's rate.
+  final double deliveredCurrency;
 
-  /// [collected] − [deliveredUsd], deliveries only.
+  /// [collected] − [deliveredCurrency], deliveries only.
   final double difference;
 
   /// What [difference] has beyond the deliveries' fees: rounding down what is
@@ -177,5 +182,11 @@ class MonthlyReport extends Equatable {
   final List<ReportTypeLine> byType;
 
   @override
-  List<Object?> get props => [month, generatedAt, remittances, collected, fees, deliveredUsd, difference];
+  List<Object?> get props => [month, generatedAt, remittances, collected, fees, deliveredCurrency, difference];
 }
+
+/// What was delivered, converted to the business currency. Backend 1.0.0-rc.4
+/// renamed `deliveredUsd` to `deliveredCurrency`; both are read until every
+/// installation runs it.
+double _deliveredCurrency(Map<String, dynamic> json) =>
+    parseDecimal(json['deliveredCurrency']) ?? parseDecimal(json['deliveredUsd']) ?? 0;
