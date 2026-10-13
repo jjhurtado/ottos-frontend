@@ -547,14 +547,15 @@ abstract final class OpsTexts {
   static const fees = 'Comisiones';
   static const collected = 'Cobrado';
   static const delivered = 'Entregado';
-  static const deliveredUsd = 'Entregado en USD';
+  static String deliveredIn(String currency) => 'Entregado en $currency';
   static const completedLabel = 'Completadas';
   static const openLabel = 'Abiertas (pagadas o asignadas)';
   static const withIncidentLabel = 'Con incidencia';
   static const totalRow = 'Total';
   static const noSales = 'No hay remesas registradas este mes.';
   static String deliveriesAndPickups(int deliveries, int pickups) => '$deliveries entregas · $pickups recogidas';
-  static String reportPeriod(String from, String to) => 'Del $from al $to · hora de Cuba · importes en USD';
+  static String reportPeriod(String from, String to, String currency) =>
+      'Del $from al $to · hora de Cuba · importes en $currency';
   static String generatedOn(String when) => 'Generado el $when';
   static String reportFileName(String month) => 'resumen-mensual-$month.pdf';
 
