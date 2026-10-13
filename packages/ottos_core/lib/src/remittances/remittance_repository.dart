@@ -24,6 +24,7 @@ class RemittanceFilter extends Equatable {
     this.municipality,
     this.from,
     this.to,
+    this.voided,
   });
 
   final String? status;
@@ -42,6 +43,9 @@ class RemittanceFilter extends Equatable {
   final DateTime? from;
   final DateTime? to;
 
+  /// true: only voided remittances; false: without them; null: all.
+  final bool? voided;
+
   static const _keep = Object();
 
   /// Copies the filter; pass `null` explicitly to clear a field.
@@ -51,6 +55,7 @@ class RemittanceFilter extends Equatable {
     Object? late = _keep,
     Object? incident = _keep,
     Object? review = _keep,
+    Object? voided = _keep,
   }) => RemittanceFilter(
     status: status == _keep ? this.status : status as String?,
     type: type == _keep ? this.type : type as RemittanceType?,
@@ -63,6 +68,7 @@ class RemittanceFilter extends Equatable {
     municipality: municipality,
     from: from,
     to: to,
+    voided: voided == _keep ? this.voided : voided as bool?,
   );
 
   bool get isEmpty => toQuery().values.every((value) => value == null);
@@ -79,6 +85,7 @@ class RemittanceFilter extends Equatable {
     municipality,
     from,
     to,
+    voided,
   ];
 
   Map<String, dynamic> toQuery() => {
@@ -93,6 +100,7 @@ class RemittanceFilter extends Equatable {
     'municipality': municipality,
     'from': from == null ? null : Formatters.apiDate(from!),
     'to': to == null ? null : Formatters.apiDate(to!),
+    'voided': voided,
   };
 }
 
@@ -241,4 +249,10 @@ class RemittanceRepository {
           body: {'newDate': Formatters.apiDate(newDate), 'reason': reason},
         ),
       );
+
+  /// Voids a remittance for good, with [reason] (`remittances:void`): the cash it
+  /// moved is reversed and it stops counting, but stays visible.
+  Future<Remittance> voidRemittance(String id, {required String reason}) async => Remittance.fromJson(
+    await _api.post<Map<String, dynamic>>('/remittances/$id/void', body: {'reason': reason.trim()}),
+  );
 }

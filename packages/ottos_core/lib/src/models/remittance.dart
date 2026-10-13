@@ -98,6 +98,27 @@ class Incident extends Equatable {
   List<Object?> get props => [reason, note, reportedAt, reportedBy];
 }
 
+/// Who voided a remittance, when and why (`RemittanceView.voided`). A voided
+/// remittance stays visible but no longer counts and cannot change.
+class Voided extends Equatable {
+  const Voided({required this.reason, this.at, this.by, this.byName});
+
+  factory Voided.fromJson(Map<String, dynamic> json) => Voided(
+    reason: json['reason'] as String? ?? '',
+    at: parseDateTime(json['at']),
+    by: json['by'] as String?,
+    byName: json['byName'] as String?,
+  );
+
+  final String reason;
+  final DateTime? at;
+  final String? by;
+  final String? byName;
+
+  @override
+  List<Object?> get props => [reason, at, by, byName];
+}
+
 /// A remittance as returned by the API (`RemittanceView`). Financial fields
 /// of a pickup are null unless the user has `remittances:read-financials`.
 class Remittance extends Equatable {
@@ -141,6 +162,7 @@ class Remittance extends Equatable {
     this.createdAt,
     this.createdBy,
     this.completedAt,
+    this.voided,
   });
 
   factory Remittance.fromJson(Map<String, dynamic> json) => Remittance(
@@ -183,6 +205,7 @@ class Remittance extends Equatable {
     createdAt: parseDateTime(json['createdAt']),
     createdBy: json['createdBy'] as String?,
     completedAt: parseDateTime(json['completedAt']),
+    voided: json['voided'] == null ? null : Voided.fromJson(json['voided'] as Map<String, dynamic>),
   );
 
   final String id;
@@ -257,12 +280,28 @@ class Remittance extends Equatable {
   final String? createdBy;
   final DateTime? completedAt;
 
+  /// Set when an admin voided it; null while it stands.
+  final Voided? voided;
+
+  bool get isVoided => voided != null;
+
   bool get isCompleted => completedAt != null;
 
   bool get isPickup => type == RemittanceType.pickup;
 
   @override
-  List<Object?> get props => [id, status, courierId, expectedDate, late, postponements, incident, review, completedAt];
+  List<Object?> get props => [
+    id,
+    status,
+    courierId,
+    expectedDate,
+    late,
+    postponements,
+    incident,
+    review,
+    completedAt,
+    voided,
+  ];
 }
 
 /// One page of `GET /remittances/completed`, oldest first.

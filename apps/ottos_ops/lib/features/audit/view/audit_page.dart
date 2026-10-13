@@ -211,8 +211,11 @@ class _Entries extends StatelessWidget {
     );
   }
 
-  static IconData _icon(AuditEntry entry) =>
-      entry.targetType == 'ROLE' ? Icons.admin_panel_settings_outlined : Icons.person_outline;
+  static IconData _icon(AuditEntry entry) => switch (entry.targetType) {
+    'ROLE' => Icons.admin_panel_settings_outlined,
+    'REMITTANCE' => Icons.send_outlined,
+    _ => Icons.person_outline,
+  };
 }
 
 class _Pagination extends StatelessWidget {

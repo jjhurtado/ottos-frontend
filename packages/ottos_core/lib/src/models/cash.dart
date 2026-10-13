@@ -27,6 +27,7 @@ enum CashMovementType {
   businessWithdrawal('BUSINESS_WITHDRAWAL'),
   courierExchangeOut('COURIER_EXCHANGE_OUT'),
   courierExchangeIn('COURIER_EXCHANGE_IN'),
+  remittanceVoidReversal('REMITTANCE_VOID_REVERSAL'),
   unknown('');
 
   const CashMovementType(this.code);
