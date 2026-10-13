@@ -4,7 +4,7 @@ import '../l10n/core_texts.dart';
 import '../models/remittance.dart';
 import '../theme/ottos_colors.dart';
 
-/// Status of a remittance; red when it is late, green when it is completed.
+/// Status of a remittance; red when it is late or voided, green when it is completed.
 class RemittanceStatusChip extends StatelessWidget {
   const RemittanceStatusChip({super.key, required this.remittance, this.onDark = false});
 
@@ -16,6 +16,8 @@ class RemittanceStatusChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (color, label) = switch (remittance) {
+      // Voided wins over everything: it no longer counts, whatever its status.
+      Remittance(isVoided: true) => (OttosColors.danger, CoreTexts.voided),
       Remittance(isCompleted: true) => (OttosColors.success, remittance.displayStatus),
       Remittance(late: true) => (OttosColors.danger, '${remittance.displayStatus} · ${CoreTexts.late}'),
       Remittance(courierId: != null) => (OttosColors.warning, remittance.displayStatus),

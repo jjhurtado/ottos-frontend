@@ -6,6 +6,7 @@ import 'package:ottos_core/ottos_core.dart';
 import '../../../app/destinations.dart';
 import '../../../app/ops_texts.dart';
 import '../../../widgets/resolve_review_dialog.dart';
+import '../../../widgets/void_remittance_dialog.dart';
 import '../cubit/remittance_detail_cubit.dart';
 import '../../cash/view/movement_tile.dart';
 
@@ -29,6 +30,7 @@ class RemittanceDetailPage extends StatelessWidget {
             RemittanceAction.postponed => OpsTexts.postponed,
             RemittanceAction.incidentReported => CoreTexts.incidentReported,
             RemittanceAction.reviewResolved => OpsTexts.reviewResolved,
+            RemittanceAction.voided => OpsTexts.voidedDone,
             RemittanceAction.failed => state.actionError ?? CoreTexts.unexpectedError,
             RemittanceAction.none => null,
           };
@@ -86,7 +88,9 @@ class _RemittanceDetailView extends StatelessWidget {
           ],
         ),
         _ActionBar(state: state),
-        if (remittance.review case final review?) ...[
+        if (remittance.voided case final voided?) ...[const SizedBox(height: 16), VoidedBanner(voided: voided)],
+        // A voided remittance cannot change: no review to resolve, no incident to act on.
+        if (remittance.review case final review? when !remittance.isVoided) ...[
           const SizedBox(height: 16),
           ReviewBanner(
             review: review,
@@ -104,7 +108,7 @@ class _RemittanceDetailView extends StatelessWidget {
                 : null,
           ),
         ],
-        if (remittance.incident case final incident?) ...[
+        if (remittance.incident case final incident? when !remittance.isVoided) ...[
           const SizedBox(height: 16),
           IncidentBanner(incident: incident),
         ],
@@ -117,7 +121,7 @@ class _RemittanceDetailView extends StatelessWidget {
             final cash = canReadCash
                 ? _CashMovementsCard(
                     // A new key reloads the movements after an action changes the remittance.
-                    key: ValueKey('${remittance.status}-${remittance.completedAt}'),
+                    key: ValueKey('${remittance.status}-${remittance.completedAt}-${remittance.isVoided}'),
                     remittanceId: remittance.id,
                   )
                 : null;
@@ -140,7 +144,8 @@ class _RemittanceDetailView extends StatelessWidget {
 }
 
 /// The actions the workflow allows from the current status, among those the
-/// user has permission for. Nothing at all when there are none.
+/// user has permission for, and «Anular» for admins. A voided remittance has
+/// none. Nothing at all when there are none.
 class _ActionBar extends StatelessWidget {
   const _ActionBar({required this.state});
 
@@ -152,15 +157,20 @@ class _ActionBar extends StatelessWidget {
     final remittance = state.remittance!;
     final workflow = state.workflow!;
     final cubit = context.read<RemittanceDetailCubit>();
-    final canAssign = workflow.canAssign(remittance.status, permissions);
-    final canComplete = workflow.canComplete(remittance.status, permissions);
-    final canPostpone = permissions.contains(Permissions.remittancesPostpone) && !workflow.isFinal(remittance.status);
+    final open = !remittance.isVoided;
+    final canAssign = open && workflow.canAssign(remittance.status, permissions);
+    final canComplete = open && workflow.canComplete(remittance.status, permissions);
+    final canPostpone =
+        open && permissions.contains(Permissions.remittancesPostpone) && !workflow.isFinal(remittance.status);
     // An incident is a failed attempt by the assigned courier.
     final canReportIncident =
+        open &&
         permissions.contains(Permissions.remittancesReportIncident) &&
         remittance.courierId != null &&
         !workflow.isFinal(remittance.status);
-    if (!canAssign && !canComplete && !canPostpone && !canReportIncident) return const SizedBox.shrink();
+    // Any status, delivered included: the backend reverses the cash it moved.
+    final canVoid = open && permissions.contains(Permissions.remittancesVoid);
+    if (!canAssign && !canComplete && !canPostpone && !canReportIncident && !canVoid) return const SizedBox.shrink();
 
     final enabled = !state.submitting;
     return Padding(
@@ -214,6 +224,18 @@ class _ActionBar extends StatelessWidget {
                   : null,
               icon: const Icon(Icons.report_problem_outlined),
               label: Text(remittance.isPickup ? CoreTexts.reportIncidentPickup : CoreTexts.reportIncident),
+            ),
+          if (canVoid)
+            TextButton.icon(
+              style: TextButton.styleFrom(foregroundColor: OttosColors.danger),
+              onPressed: enabled
+                  ? () async {
+                      final reason = await askVoidReason(context, remittance);
+                      if (reason != null) await cubit.voidRemittance(reason: reason);
+                    }
+                  : null,
+              icon: const Icon(Icons.block),
+              label: const Text(OpsTexts.voidAction),
             ),
           if (state.submitting) const SizedBox.square(dimension: 20, child: CircularProgressIndicator(strokeWidth: 2)),
         ],

@@ -24,6 +24,7 @@ class RemittanceFilter extends Equatable {
     this.municipality,
     this.from,
     this.to,
+    this.voided,
   });
 
   final String? status;
@@ -42,6 +43,9 @@ class RemittanceFilter extends Equatable {
   final DateTime? from;
   final DateTime? to;
 
+  /// true: only voided remittances; false: without them; null: all.
+  final bool? voided;
+
   static const _keep = Object();
 
   /// Copies the filter; pass `null` explicitly to clear a field.
@@ -51,6 +55,7 @@ class RemittanceFilter extends Equatable {
     Object? late = _keep,
     Object? incident = _keep,
     Object? review = _keep,
+    Object? voided = _keep,
   }) => RemittanceFilter(
     status: status == _keep ? this.status : status as String?,
     type: type == _keep ? this.type : type as RemittanceType?,
@@ -63,6 +68,7 @@ class RemittanceFilter extends Equatable {
     municipality: municipality,
     from: from,
     to: to,
+    voided: voided == _keep ? this.voided : voided as bool?,
   );
 
   bool get isEmpty => toQuery().values.every((value) => value == null);
@@ -79,6 +85,7 @@ class RemittanceFilter extends Equatable {
     municipality,
     from,
     to,
+    voided,
   ];
 
   Map<String, dynamic> toQuery() => {
@@ -93,7 +100,69 @@ class RemittanceFilter extends Equatable {
     'municipality': municipality,
     'from': from == null ? null : Formatters.apiDate(from!),
     'to': to == null ? null : Formatters.apiDate(to!),
+    'voided': voided,
   };
+}
+
+/// An old remittance typed in by hand from its ticket (`POST /remittances/historical`):
+/// registered as completed on [occurredAt], with no courier and moving no cash.
+/// Amounts and the fee are in USD; in CUP the ticket's [rate] and
+/// [amountToDeliver] are required and kept as they were.
+class HistoricalRemittance extends Equatable {
+  const HistoricalRemittance({
+    required this.type,
+    required this.customerId,
+    required this.beneficiaryId,
+    required this.occurredAt,
+    required this.amount,
+    required this.fee,
+    this.targetCurrency = 'USD',
+    this.rate,
+    this.amountToDeliver,
+    this.notes,
+  });
+
+  final RemittanceType type;
+  final String customerId;
+  final String beneficiaryId;
+
+  /// Cuba's wall-clock time, sent without a zone.
+  final DateTime occurredAt;
+  final double amount;
+  final double fee;
+  final String targetCurrency;
+  final double? rate;
+  final double? amountToDeliver;
+  final String? notes;
+
+  bool get inCup => targetCurrency == 'CUP';
+
+  Map<String, dynamic> toJson() => {
+    'type': type.code,
+    'customerId': customerId,
+    'beneficiaryId': beneficiaryId,
+    'occurredAt': Formatters.apiLocalDateTime(occurredAt),
+    'targetCurrency': targetCurrency,
+    'amount': amount,
+    'fee': fee,
+    if (inCup) 'rate': rate,
+    if (inCup) 'amountToDeliver': amountToDeliver,
+    'notes': notes == null || notes!.trim().isEmpty ? null : notes!.trim(),
+  };
+
+  @override
+  List<Object?> get props => [
+    type,
+    customerId,
+    beneficiaryId,
+    occurredAt,
+    amount,
+    fee,
+    targetCurrency,
+    rate,
+    amountToDeliver,
+    notes,
+  ];
 }
 
 /// Data to register a remittance (`POST /remittances`). The source currency is
@@ -241,4 +310,14 @@ class RemittanceRepository {
           body: {'newDate': Formatters.apiDate(newDate), 'reason': reason},
         ),
       );
+
+  /// Voids a remittance for good, with [reason] (`remittances:void`): the cash it
+  /// moved is reversed and it stops counting, but stays visible.
+  Future<Remittance> voidRemittance(String id, {required String reason}) async => Remittance.fromJson(
+    await _api.post<Map<String, dynamic>>('/remittances/$id/void', body: {'reason': reason.trim()}),
+  );
+
+  /// Registers an old remittance from its ticket (`remittances:historical`).
+  Future<Remittance> registerHistorical(HistoricalRemittance remittance) async =>
+      Remittance.fromJson(await _api.post<Map<String, dynamic>>('/remittances/historical', body: remittance.toJson()));
 }

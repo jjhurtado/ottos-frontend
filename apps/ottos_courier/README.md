@@ -61,5 +61,8 @@ passwords into the emulator; test remote environments through the API.
 
 The version is in `pubspec.yaml` (`1.0.0-rc.N+build`, same version as the other packages) and is bumped in the
 `release/` branch. Build commands and signing are in the [root README](../../README.md#release-the-mobile-app-ottos).
+On iOS, build with `--build-name` set to the version without the pre-release tag (`1.0.0`): iOS takes at most three
+integers, and Flutter would turn `1.0.0-rc.3` into `1.0.0.3`, which App Store Connect rejects. Never pass
+`--build-number`; the `+N` is what the version gate compares.
 After publishing a build, send the backend agent: platform, build number, version name, whether it is mandatory and
 notes. The backend publishes them with a migration, and that is what turns the notice or the block on.

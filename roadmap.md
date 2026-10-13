@@ -4,10 +4,10 @@ Actualizado: 2026-10-13
 
 ## Estado actual
 
-**Publicado: `1.0.0-rc.3`** (2026-10-13), con el backend `1.0.0-rc.2`. Trae: ventas crea remitentes y beneficiarios
-desde la app (con «Elegir de contactos»), la caja de cada repartidor desde la app, la sección «Beneficiarios» del
-panel, el aviso y bloqueo de versiones con botón «Actualizar», la versión en el menú de la cuenta y la caja del negocio
-explicada. Android: APK y App Bundle; iPhone: TestFlight desde el Mac del usuario ([docs/ios-en-mac.md](docs/ios-en-mac.md)).
+**Publicado: `1.0.0-rc.4`** (2026-10-13), con el backend `1.0.0-rc.3`. Trae: anular remesas y registrar remesas
+antiguas a mano (las dos solo ADMIN), más todo lo de la rc.3 (contactos, caja de cada repartidor, sección
+«Beneficiarios», aviso de versiones con «Actualizar»). Android: APK y App Bundle, compilación 6; iPhone: TestFlight
+desde el Mac del usuario como `1.0.0 (6)` ([docs/ios-en-mac.md](docs/ios-en-mac.md)).
 
 Falta para `1.0.0`:
 
@@ -34,7 +34,9 @@ Decisión del negocio (2026-10-10): durante el día, **ventas y repartidores tra
 - [x] **Importar y exportar clientes en CSV** (panel, solo ADMIN): «Exportar CSV» descarga todos los clientes con sus beneficiarios (una fila por beneficiario, `;` y UTF-8 para Excel); «Importar CSV» enseña una vista previa (nuevos, ya existentes y rechazados con su fila y motivo) y guarda solo al confirmar, en lotes de 500. Un cliente con dos direcciones son dos clientes con el mismo nombre y teléfono.
 - [x] **Beneficiarios sin cliente** (2026-10-11): «Importar beneficiarios» en Clientes (panel, solo ADMIN) carga la lista suelta (p. ej. el chat de WhatsApp pasado a CSV) con vista previa; columnas `beneficiario_*` de «Exportar CSV», obligatorias `beneficiario_nombre`, `beneficiario_telefono`, `beneficiario_calle` y `beneficiario_municipio` (código o nombre). En la nueva remesa (panel y app), «Buscar otro beneficiario» busca entre todos; al registrar la remesa queda vinculado al remitente.
 - [x] Alta de un beneficiario suelto desde el panel (`POST /beneficiaries`): «Nuevo beneficiario» en la sección «Beneficiarios».
-- [ ] **Importar remesas antiguas** (`POST /api/v1/remittances/import`, contrato del backend `docs/contracts/historical-import.md`): falta decidir si es una pantalla del panel o un script de infraestructura. Aún no hace falta.
+- [x] **Importar remesas antiguas** del chat: lo hizo infraestructura con un script (`POST /api/v1/remittances/import`); producción tiene 339 beneficiarios y 2.516 remesas entregadas de 2024-05 a 2026-10.
+- [x] **Anular remesas** (2026-10-13, ADMIN, `remittances:void`; contrato del backend `docs/contracts/void-and-historical.md`): «Anular» en el detalle con motivo obligatorio, aviso «Anulada por …», sin acciones, chip «Anulada» y filtro «Solo anuladas» en el listado; la app la muestra anulada y ventas no la ve en su lista.
+- [x] **Registrar una remesa antigua a mano** (2026-10-13, ADMIN, `remittances:historical`, `POST /remittances/historical`): página «Registrar remesa antigua» desde Remesas; en CUP pide la tasa y los CUP del ticket; las recogidas, solo USD; la fecha (hora de Cuba) no puede ser futura.
 - [x] **Tasa de cada recogida**: campo «Tasa de esta recogida» en el alta de recogidas (panel y app), con la configurada de inicio; la cotización y el detalle marcan «indicada a mano». Pendiente del negocio: poner la comisión de recogida en 0 en Configuración › Recogidas si no deben dejar ganancia.
 - [x] **Recordar usuario** en el login (app y panel): casilla «Recordar mi usuario», marcada por defecto; el correo se guarda en el almacenamiento seguro del dispositivo.
 - [x] **Entrar con huella** (app): tras entrar con contraseña, la app pregunta si usar la huella la próxima vez; si se acepta, guarda las credenciales en el almacenamiento seguro (Keystore) y muestra «Entrar con huella». Si la contraseña cambia, las olvida y pide la nueva. Sin huella registrada en el teléfono no se ofrece. Probado en emulador sin huella; falta probar con huella en un teléfono real.
@@ -98,6 +100,14 @@ Objetivo: gestionar clientes y sus beneficiarios desde el panel. Va en paralelo 
 - [x] **Sección «Beneficiarios»** en el panel (2026-10-13): todos los beneficiarios, tengan cliente o no, con buscador por nombre o teléfono, edición y alta sin cliente (`customers:write`). Antes, los importados sueltos no se podían editar.
 - [x] **Crear cliente o beneficiario desde «Nueva remesa»** sin salir del formulario; el nuevo queda elegido.
 - [ ] Revisar en el navegador las pantallas de la ficha y los formularios (la extensión de Chrome no pudo hacer capturas; los tests de widget e integración pasan).
+- [ ] **Total en las listas de clientes y beneficiarios** (pedido 2026-10-13): que se vea en algún sitio cuántos hay en total
+  (y cuántos coinciden con la búsqueda), por ejemplo «339 beneficiarios» junto al título o al pie de la tabla.
+- [ ] **Paginado en las listas de clientes y beneficiarios** (pedido 2026-10-13): hoy solo se ven los 50 más recientes o
+  los 50 primeros que coinciden con la búsqueda, y con los datos reales (339 beneficiarios) ya no caben. Igual que en
+  Remesas: páginas con «1–50 de 339» y flechas. Contrato cerrado con el backend (2026-10-13,
+  `ottos/docs/contracts/customer-beneficiary-pages.md`, backend develop 30e8cd1, llega a producción con su próxima
+  versión): con `page` (desde 0) y `size` (1–100, 50 por defecto) responde `{items, page, size, totalItems}` como
+  remesas; sin `page`, la lista de siempre. Falta la parte del panel, que da también el total del punto anterior.
 - [ ] **Eliminar y restaurar beneficiarios** (borrado lógico para todos los clientes) desde la sección «Beneficiarios»: el backend ya tiene `DELETE /beneficiaries/{id}` y `POST /beneficiaries/{id}/restore`. Aún no hace falta.
 - [ ] **Ver qué clientes le envían a un beneficiario** en la sección «Beneficiarios» (`GET /beneficiaries/{id}` devuelve sus clientes). Aún no hace falta.
 - [ ] Los tests de integración dejan clientes de prueba en la base local («Prueba Frontend Editada»); no hay endpoint para borrarlos. Valorar una base de datos aparte para tests.
@@ -173,7 +183,7 @@ y cada versión publicada lleva su tag en `main`, sin prefijo (`1.0.0-beta.1`). 
 | Menor | `1.X.0` | Cada fase siguiente, con su propio ciclo beta → rc → estable | Funcionalidad nueva compatible |
 | Mayor | `X.0.0` | Cambio incompatible (por ejemplo, exige una versión nueva del backend) | Solo con migración planificada |
 
-**Versión actual: `1.0.0-rc.3`** (2026-10-13), con el backend `1.0.0-rc.2`.
+**Versión actual: `1.0.0-rc.4`** (2026-10-13), con el backend `1.0.0-rc.3`; compilación 6. La siguiente usa `+7` o más.
 
 Decidido (2026-10-11): los arreglos que salgan de la prueba en staging van en `1.0.0-rc.2` (rama `release/1.0.0-rc.2`); el tag `1.0.0-rc.1` publicado no se toca. Si staging no encuentra nada, se pasa de `1.0.0-rc.1` directamente a `1.0.0`. El backend versiona igual.
 

@@ -102,6 +102,40 @@ abstract final class OpsTexts {
   static const resolveNote = 'Nota *';
   static const reviewResolved = 'Revisión resuelta';
 
+  // Old remittance typed in from its ticket (admin)
+  static const historicalAction = 'Registrar remesa antigua';
+  static const historicalTitle = 'Registrar remesa antigua';
+  static const historicalHelp =
+      'Para remesas ya hechas que no están en el sistema, con los datos de su ticket. Queda como entregada o recogida '
+      'en esa fecha, sin repartidor y sin mover ninguna caja.';
+  static const historicalCustomerHint = 'Nombre o teléfono; si no se sabe, «Cliente histórico sin identificar»';
+  static const historicalDate = 'Fecha';
+  static const historicalPickDate = 'Elegir fecha';
+  static const historicalTime = 'Hora';
+  static const historicalCubaTime = 'Fecha y hora de Cuba, como en el ticket.';
+  static const historicalFutureDate = 'La fecha no puede ser futura.';
+  static const historicalDeliveredInUsd = 'Se entregó en USD';
+  static const historicalDeliveredInCup = 'Se entregó en CUP';
+  static const historicalPickupUsd = 'Las recogidas se registran en USD.';
+  static const historicalSent = 'Monto enviado';
+  static const historicalCollected = 'Monto recogido';
+  static const historicalFee = 'Comisión';
+  static const historicalRate = 'Tasa';
+  static const historicalToDeliver = 'CUP entregados';
+  static const historicalCupHelp = 'La tasa y los CUP del ticket, tal cual: no se recalculan.';
+  static const historicalInvalidNumber = 'Escribe un número válido.';
+  static String historicalRegistered(String code) => 'Remesa antigua $code registrada';
+
+  // Voiding a remittance (admin)
+  static const voidAction = 'Anular';
+  static String voidTitle(String code) => 'Anular la remesa $code';
+  static const voidHelp =
+      'La remesa queda guardada pero deja de contar en reportes, estadísticas y listas de trabajo, y ya no se podrá '
+      'cambiar. Si movió efectivo, se devuelve solo a la caja de donde salió. No se puede deshacer.';
+  static const voidReasonLabel = 'Motivo *';
+  static const voidedDone = 'Remesa anulada';
+  static const onlyVoided = 'Solo anuladas';
+
   static String eventTitle(String type) => switch (type) {
     'CREATED' => 'Remesa registrada',
     'STATUS_CHANGED' => 'Cambio de estado',
@@ -109,6 +143,7 @@ abstract final class OpsTexts {
     'INCIDENT_REPORTED' => CoreTexts.incidentReported,
     'REVIEW_FLAGGED' => 'Marcada para revisión',
     'REVIEW_RESOLVED' => 'Revisión resuelta',
+    'VOIDED' => 'Anulada',
     _ => type,
   };
 
@@ -195,6 +230,7 @@ abstract final class OpsTexts {
     CashMovementType.businessWithdrawal => 'Retiro',
     CashMovementType.courierExchangeOut => 'Cambio de moneda: entregado',
     CashMovementType.courierExchangeIn => 'Cambio de moneda: recibido',
+    CashMovementType.remittanceVoidReversal => 'Anulación de remesa',
     CashMovementType.unknown => 'Movimiento',
   };
 
@@ -333,6 +369,8 @@ abstract final class OpsTexts {
     Permissions.remittancesPostpone => 'Aplazar remesas',
     Permissions.remittancesReportIncident => 'Reportar incidencias de entrega (repartidor)',
     Permissions.remittancesReview => 'Revisar remesas marcadas (entregas sin conexión)',
+    Permissions.remittancesVoid => 'Anular remesas (deshace su caja)',
+    Permissions.remittancesHistorical => 'Registrar remesas antiguas a mano',
     Permissions.auditRead => 'Ver el registro de auditoría',
     Permissions.reportsRead => 'Ver los reportes del negocio (resumen mensual)',
     Permissions.cashExchangeOwn => 'Cambiar moneda en su propia caja (repartidor)',
@@ -374,6 +412,7 @@ abstract final class OpsTexts {
     'ROLE' => 'Roles',
     'CUSTOMERS' => 'Clientes',
     'BENEFICIARIES' => 'Beneficiarios',
+    'REMITTANCE' => 'Remesas',
     _ => type,
   };
 
@@ -399,6 +438,7 @@ abstract final class OpsTexts {
     'ROLE': ['ROLE_CREATED', 'ROLE_DESCRIBED', 'ROLE_PERMISSIONS_CHANGED', 'ROLE_DELETED'],
     'CUSTOMERS': ['CUSTOMERS_IMPORTED', 'CUSTOMERS_EXPORTED'],
     'BENEFICIARIES': ['BENEFICIARIES_IMPORTED'],
+    'REMITTANCE': ['REMITTANCE_VOIDED', 'HISTORICAL_REMITTANCE_CREATED'],
   };
 
   static String auditAction(String code) => switch (code) {
@@ -416,6 +456,8 @@ abstract final class OpsTexts {
     'CUSTOMERS_IMPORTED' => 'Clientes importados (CSV)',
     'CUSTOMERS_EXPORTED' => 'Clientes exportados (CSV)',
     'BENEFICIARIES_IMPORTED' => 'Beneficiarios importados (CSV)',
+    'REMITTANCE_VOIDED' => 'Remesa anulada',
+    'HISTORICAL_REMITTANCE_CREATED' => 'Remesa antigua registrada',
     _ => code,
   };
 
@@ -465,6 +507,18 @@ abstract final class OpsTexts {
         if (details['linksCreated'] != null) '$importLinks: ${details['linksCreated']}',
       ],
       'CUSTOMERS_EXPORTED' => ['${details['customers'] ?? 0} clientes'],
+      'REMITTANCE_VOIDED' => ['Motivo: ${text(details['reason'])}'],
+      'HISTORICAL_REMITTANCE_CREATED' => [
+        [
+          RemittanceType.fromCode(details['type'] as String?) == RemittanceType.pickup
+              ? CoreTexts.pickup
+              : CoreTexts.delivery,
+          if (details['amount'] != null) Formatters.money((details['amount'] as num).toDouble(), 'USD'),
+          if (details['currency'] != null) 'en ${details['currency']}',
+        ].join(' · '),
+        if (details['fee'] != null) 'Comisión: ${Formatters.money((details['fee'] as num).toDouble(), 'USD')}',
+        if (details['occurredAt'] != null) 'Fecha: ${details['occurredAt']}',
+      ],
       _ => [for (final entry in details.entries) '${entry.key}: ${entry.value}'],
     };
   }

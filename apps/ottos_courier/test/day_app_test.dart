@@ -148,6 +148,7 @@ void main() {
       expect(find.text('OT-DONE'), findsNothing);
       expect(find.text(CourierTexts.newRemittance), findsOneWidget);
       verifyNever(() => remittances.assignedToMe());
+      verify(() => remittances.search(const RemittanceFilter(voided: false), size: 100)).called(1);
     });
 
     testWidgets('logging out with the list open does not fail', (tester) async {
@@ -389,6 +390,23 @@ void main() {
     testWidgets('no assigning once it has a courier, or without the permission', (tester) async {
       when(() => remittances.get('r1')).thenAnswer((_) async => withCourier('k1'));
       await pump(tester, _sales, const RemittancePage(remittanceId: 'r1'));
+      expect(find.text(CourierTexts.assignToCourier), findsNothing);
+    });
+
+    testWidgets('a voided remittance shows why and offers no actions', (tester) async {
+      when(() => remittances.get('r1')).thenAnswer(
+        (_) async => Remittance(
+          id: 'r1',
+          code: 'OT-1',
+          type: RemittanceType.delivery,
+          status: 'PAID',
+          statusName: '',
+          voided: const Voided(reason: 'Duplicada', byName: 'Admin'),
+        ),
+      );
+      await pump(tester, _sales, const RemittancePage(remittanceId: 'r1'));
+
+      expect(find.byType(VoidedBanner), findsOneWidget);
       expect(find.text(CourierTexts.assignToCourier), findsNothing);
     });
 

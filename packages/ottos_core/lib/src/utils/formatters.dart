@@ -20,4 +20,7 @@ abstract final class Formatters {
 
   /// `yyyy-MM-dd`, as the API expects in query parameters.
   static String apiDate(DateTime value) => DateFormat('yyyy-MM-dd').format(value);
+
+  /// Wall-clock date and time without a zone, as the API takes Cuba's local time.
+  static String apiLocalDateTime(DateTime value) => DateFormat("yyyy-MM-dd'T'HH:mm:ss").format(value);
 }
