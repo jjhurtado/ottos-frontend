@@ -201,6 +201,19 @@ La documentación es el contexto de quien llegue después, persona o agente. Va 
 | `docs/decisiones.md` | Se toma una decisión de producto, plataforma o proceso: qué, cuándo y **por qué** |
 | `README.md` de cada paquete | Cambia su estructura, cómo se ejecuta o se publica, o un mecanismo importante |
 | `CLAUDE.md` | Cambian las reglas de trabajo, los entornos o la coordinación con otros agentes |
+| Canvas de diseño (Claude Design) | Cambia algo visual en el panel o la app (ver abajo) |
+
+### Canvas de diseño
+
+Las pantallas de las apps están dibujadas en el canvas **«Ottos · Vistas de las apps»** de Claude Design
+(https://claude.ai/artifact/2j4t789enmGcFDE9Mj7NCy), con una página para el panel y otra para la app. El canvas
+debe reflejar las vistas actuales:
+
+- Todo cambio visual (pantalla nueva, elemento añadido o quitado, textos, colores, orden) actualiza en la misma rama el
+  artboard de esa pantalla, o añade uno si la pantalla no está.
+- Una propuesta con variantes se dibuja primero en un canvas aparte; el usuario elige y lo elegido pasa al canvas
+  principal tal como quedó implementado (por ejemplo, la versión en el menú de cuenta, 2026-10-13).
+- Si al implementar algo cambia respecto al dibujo, el canvas se ajusta a lo implementado, no al revés.
 
 Los contratos de API no se escriben aquí: viven en el repo del backend (`docs/contracts/`) y se enlazan.
 

@@ -32,8 +32,13 @@ void main() {
 
   Future<void> openAccountMenu(WidgetTester tester) async {
     await tester.pumpWidget(
-      RepositoryProvider<AuthRepository>.value(
-        value: authRepository,
+      MultiRepositoryProvider(
+        providers: [
+          RepositoryProvider<AuthRepository>.value(value: authRepository),
+          RepositoryProvider.value(
+            value: const AppConfig(apiUrl: '', version: '1.0.0-rc.3 (4)'),
+          ),
+        ],
         child: BlocProvider.value(
           value: authBloc,
           child: const MaterialApp(
@@ -51,6 +56,12 @@ void main() {
 
     // Once in the app bar, once at the top of the menu.
     expect(find.text('Courier 1'), findsNWidgets(2));
+  });
+
+  testWidgets('the account menu ends with the running version', (tester) async {
+    await openAccountMenu(tester);
+
+    expect(find.text(CourierTexts.version('1.0.0-rc.3 (4)')), findsOneWidget);
   });
 
   testWidgets('the account menu changes the password', (tester) async {

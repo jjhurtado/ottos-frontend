@@ -98,6 +98,7 @@ class _UserMenu extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final initial = user.displayName.characters.first.toUpperCase();
+    final version = context.read<AppConfig>().version;
     return PopupMenuButton<void>(
       tooltip: user.displayName,
       position: PopupMenuPosition.under,
@@ -123,6 +124,7 @@ class _UserMenu extends StatelessWidget {
             title: Text(CoreTexts.logout),
           ),
         ),
+        if (version != null) ...[const PopupMenuDivider(), VersionMenuItem(label: OpsTexts.version(version))],
       ],
       child: CircleAvatar(backgroundColor: OttosColors.cream, foregroundColor: OttosColors.navy, child: Text(initial)),
     );

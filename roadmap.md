@@ -9,7 +9,7 @@ Actualizado: 2026-10-13
 apuntando a producción.
 
 **En `develop`, para `1.0.0-rc.3`** (esperando al usuario por si entran más cambios): ventas crea remitentes y
-beneficiarios desde la app, y el aviso y bloqueo de versiones de la app.
+beneficiarios desde la app, el aviso y bloqueo de versiones de la app, y la versión en el menú de la cuenta.
 
 Falta para `1.0.0`:
 
@@ -129,6 +129,7 @@ App «Ottos» para repartidores y ventas, probada en emulador contra el backend 
 - [x] Sin conexión: ver «App sin conexión (offline-first)».
 - [x] Builds firmados de Android (APK por ABI, clave en `~/.ottos-release/`) e iOS (TestFlight desde el Mac del usuario). En rc.2 la APK se pasó por WhatsApp.
 - [x] **Aviso y bloqueo de versiones** (contrato del backend `docs/contracts/app-version.md`): cabeceras `X-App-Platform` y `X-App-Build` en cada petición, aviso cerrable si hay versión nueva y pantalla fija si está por debajo de la mínima (o llega un 426), vaciando antes la cola sin conexión. Las APK separadas por ABI informan `abi*1000 + build`; la app usa el resto entre 1000.
+- [x] **Versión en el menú de la cuenta** (panel y app), elegida entre dos variantes en Claude Design.
 - [ ] Publicar Android en Play Store (decidido 2026-10-12) y dar al backend el enlace de Play Store y el de TestFlight como `downloadUrl`.
 
 ## Calidad e infraestructura

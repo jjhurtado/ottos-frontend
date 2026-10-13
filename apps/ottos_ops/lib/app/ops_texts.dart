@@ -4,6 +4,7 @@ import 'package:ottos_core/ottos_core.dart';
 abstract final class OpsTexts {
   static const appName = 'Panel de operaciones';
   static const appTitle = "Otto's · Operaciones";
+  static String version(String version) => 'Panel versión $version';
 
   // Menu
   static const home = 'Inicio';

@@ -21,8 +21,8 @@ import '../users/user_repository.dart';
 
 /// Creates the shared services and provides them to [child]: [ApiClient],
 /// [AuthRepository], [RemittanceRepository], [CashRepository], [CustomerRepository],
-/// [RateRepository], [ZoneRepository], [UserRepository], [RoleRepository], [SyncRepository], the app's [AccessPolicy] and
-/// the [AuthBloc] (already started).
+/// [RateRepository], [ZoneRepository], [UserRepository], [RoleRepository], [SyncRepository], the [AppConfig], the app's
+/// [AccessPolicy] and the [AuthBloc] (already started).
 class OttosScope extends StatefulWidget {
   const OttosScope({super.key, required this.config, required this.accessPolicy, required this.child});
 
@@ -84,6 +84,7 @@ class _OttosScopeState extends State<OttosScope> {
   Widget build(BuildContext context) {
     return MultiRepositoryProvider(
       providers: [
+        RepositoryProvider.value(value: widget.config),
         RepositoryProvider.value(value: _api),
         RepositoryProvider.value(value: _authRepository),
         RepositoryProvider.value(value: _remittanceRepository),

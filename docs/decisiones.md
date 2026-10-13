@@ -12,6 +12,7 @@ infraestructura (Railway, dominios).
 
 | Fecha | Decisión | Por qué |
 | --- | --- | --- |
+| 2026-10-13 | La versión en uso se muestra al final del menú de la cuenta, en el panel y en la app (se descartó un pie de pantalla siempre visible). | Saber qué versión tiene cada uno cuando reporta un problema, sin ocupar espacio en la pantalla principal. Elegido por el usuario entre dos variantes dibujadas en Claude Design. |
 | 2026-10-12 | Ventas crea remitentes y beneficiarios nuevos desde «Nueva remesa» en la app (con `customers:write`). Los formularios viven en `ottos_core` y los comparten panel y app. | Ventas registra remesas de día con la app y no podía dar de alta a un cliente nuevo sin ir al panel. |
 | 2026-10-11 | El admin no aparece en la lista de repartidores para asignar. | Tiene todos los permisos, así que el backend lo devolvía como repartidor; no reparte. Lo filtra el backend. |
 | 2026-10-11 | Resumen mensual de ventas (cobrado, entregado, diferencia, ganancias = comisiones) exportable a PDF, generado en el panel. | Es el informe que el negocio necesita cada mes; generarlo en el panel evita depender de un servicio de PDF en el backend. |
@@ -44,6 +45,7 @@ infraestructura (Railway, dominios).
 
 | Fecha | Decisión | Por qué |
 | --- | --- | --- |
+| 2026-10-13 | El canvas «Ottos · Vistas de las apps» se mantiene igual que las vistas reales: cada cambio visual lo actualiza en la misma rama. | Petición del usuario: que el diseño sirva de referencia fiable. |
 | 2026-10-13 | Esperar antes de cerrar `1.0.0-rc.3` por si entran más cambios. | Petición del usuario. |
 | 2026-10-12 | Siguiente versión tras rc.2: rc.3 (o `1.0.0` si no aparece nada más). Los tags publicados no se tocan. | Mismo criterio que el backend. |
 | 2026-10-12 | Las pruebas contra staging y producción se hacen por API con scripts, nunca escribiendo contraseñas reales en un navegador o emulador. Producción solo tiene el admin del usuario y bloquea 15 min tras 5 fallos. | Seguridad: no exponer credenciales remotas ni bloquear la cuenta del dueño. |

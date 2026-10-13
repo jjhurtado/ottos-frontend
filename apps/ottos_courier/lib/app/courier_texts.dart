@@ -22,6 +22,7 @@ abstract final class CourierTexts {
 
   // Navigation
   static const account = 'Mi cuenta';
+  static String version(String version) => 'Ottos versión $version';
   static const myRemittances = 'Mis remesas';
   static const myCash = 'Mi caja';
   static const cash = 'Caja';
