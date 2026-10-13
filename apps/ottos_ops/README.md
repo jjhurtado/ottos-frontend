@@ -14,6 +14,7 @@ permission **and** the workflow allows it from the current status.
 | Inicio | `features/home` | — | Open remittances by status, overdue, with incident, to review, exchanges to review |
 | Remesas | `features/remittances` | `remittances:read` | List with filters, detail with history and cash movements, new remittance with quote, assign, deliver, postpone, incident, resolve review |
 | Clientes | `features/customers` | `customers:read` | Customers and beneficiaries, CSV export/import with preview, loose beneficiaries import |
+| Beneficiarios | `features/beneficiaries` | `customers:read` | Every beneficiary, with or without a customer: search, edit and create without a customer (`customers:write`) |
 | Caja | `features/cash` | `cash:read` | Business cash, each courier's cash, fund/return, deposits, exchanges on behalf of a courier and to review |
 | Configuración | `features/configuration` | `configuration:read` | Rates and commissions (deliveries and pickups separately), minimum amount, delivery days, exchange tolerance, calculator |
 | Reportes | `features/reports` | `reports:read` | Monthly sales summary and its one-page A4 PDF (built in the browser) |

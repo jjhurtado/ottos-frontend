@@ -44,6 +44,10 @@ class CustomerRepository {
     return json.map((item) => Beneficiary.fromJson(item as Map<String, dynamic>)).toList();
   }
 
+  /// Creates a beneficiary without a customer; a customer is linked later, or by its first remittance.
+  Future<Beneficiary> createBeneficiary(BeneficiaryInput input) async =>
+      Beneficiary.fromJson(await _api.post<Map<String, dynamic>>('/beneficiaries', body: input.toJson()));
+
   /// Creates a beneficiary linked to [customerId].
   Future<Beneficiary> addBeneficiary(String customerId, BeneficiaryInput input) async => Beneficiary.fromJson(
     await _api.post<Map<String, dynamic>>('/customers/$customerId/beneficiaries', body: input.toJson()),
