@@ -1,26 +1,25 @@
 # Ottos frontend · Roadmap
 
-Actualizado: 2026-10-11
+Actualizado: 2026-10-13
 
 ## Estado actual
 
-El panel de operaciones hoy es de solo lectura: login, inicio, listado y detalle de remesas. No puede crear, asignar ni entregar remesas, y Clientes, Tasas, Caja, Usuarios y Roles son pantallas «Próximamente». El backend ya expone casi todos los endpoints necesarios, así que el grueso del trabajo está en el frontend.
+**Publicado: `1.0.0-rc.2`** (2026-10-11), con el backend `1.0.0-rc.1`. El panel está en producción
+(https://panel.remesadeotto.com) y en staging. La app «Ottos» se distribuyó como APK (Android) y por TestFlight (iOS),
+apuntando a producción.
 
-| Área | Panel (web) | App courier | Backend |
-| --- | --- | --- | --- |
-| Login, sesión, refresco de token | Funciona (probado en Chrome) | Funciona (tests de widget) | Listo |
-| Inicio con contadores | Funciona | — | Listo |
-| Listado y filtros de remesas | Funciona | Lista de asignadas | Listo |
-| Detalle e historial de remesa | Funciona | Funciona | Listo |
-| Crear remesa | No existe | — | `POST /remittances` |
-| Asignar repartidor | No existe | — | `POST /remittances/{id}/assign` |
-| Entregar o posponer | No existe | Existe, sin probar en dispositivo | `deliver`, `deliver-with-pin`, `postpone` |
-| Clientes y beneficiarios | «Próximamente» | — | CRUD completo + búsqueda |
-| Tasas y comisiones | «Próximamente» | — | Corredores, tasas, reglas de comisión, cotización |
-| Caja | «Próximamente» | Saldo propio | Negocio, repartidores, movimientos |
-| Usuarios y roles | «Próximamente» | — | CRUD completo + permisos |
+**En `develop`, para `1.0.0-rc.3`** (esperando al usuario por si entran más cambios): ventas crea remitentes y
+beneficiarios desde la app, y el aviso y bloqueo de versiones de la app.
 
-Ya corregido (pendiente de commit): sesión caducada que dejaba la app colgada, recarga de página que perdía la ruta, flecha suelta en el historial y test de plantilla roto en la app courier.
+Falta para `1.0.0`:
+
+- Publicar Android en Google Play (cuenta de Play Console) y confirmar cómo lo instalan los repartidores en Cuba (ver
+  «Dependencias con el backend y preguntas abiertas»).
+- Pasar al backend el enlace de TestFlight y el de Play Store para el aviso de versión.
+- Probar la huella en un teléfono real.
+- Gestionar la primera remesa real con las apps.
+
+Las decisiones y sus motivos están en [docs/decisiones.md](docs/decisiones.md).
 
 ## Cómo se usa: la app de día, el panel de noche
 
@@ -30,7 +29,7 @@ Decisión del negocio (2026-10-10): durante el día, **ventas y repartidores tra
 - [x] **Asignar repartidor al crearla**, solo si el usuario tiene `remittances:assign`; si no, el campo no aparece.
 - [x] **Caja desde la app**: entregar fondos y recibir devoluciones de un repartidor concreto (con `cash:write`). Quien no tiene el permiso ve solo su caja, como hoy.
 - [x] Ventas entra en la app (`remittances:read`): ve las remesas abiertas (las 100 últimas; el resto, en el panel) y la caja de los repartidores; el repartidor ve las suyas y su caja.
-- [ ] Nombre y presentación de la app pensados para ventas y reparto (hoy se llama «Otto's · Repartidor»).
+- [x] Nombre y presentación de la app pensados para ventas y reparto: se llama «Ottos» (`com.remesadeotto.ottos`).
 - [x] **Cambio de moneda del repartidor** (`cash:exchange-own`): en «Mi caja», «Cambiar moneda» con dirección, monto, tasa obtenida (siempre CUP por 1 USD) y nota; funciona sin conexión y el saldo se mueve al momento. En el panel: «Registrar cambio» en nombre de un repartidor (`cash:write`), los cambios con tasa inusual (más allá de la tolerancia de Configuración, 20 % por defecto) en «Cambios de moneda para revisar» de Caja y en Inicio, con «Resolver» y nota (`cash:review`).
 - [x] **Asignar desde el detalle en la app**: una remesa pagada sin repartidor muestra «Asignar a repartidor» a quien tiene `remittances:assign`.
 - [x] **Importar y exportar clientes en CSV** (panel, solo ADMIN): «Exportar CSV» descarga todos los clientes con sus beneficiarios (una fila por beneficiario, `;` y UTF-8 para Excel); «Importar CSV» enseña una vista previa (nuevos, ya existentes y rechazados con su fila y motivo) y guarda solo al confirmar, en lotes de 500. Un cliente con dos direcciones son dos clientes con el mismo nombre y teléfono.
@@ -40,7 +39,8 @@ Decisión del negocio (2026-10-10): durante el día, **ventas y repartidores tra
 - [x] **Recordar usuario** en el login (app y panel): casilla «Recordar mi usuario», marcada por defecto; el correo se guarda en el almacenamiento seguro del dispositivo.
 - [x] **Entrar con huella** (app): tras entrar con contraseña, la app pregunta si usar la huella la próxima vez; si se acepta, guarda las credenciales en el almacenamiento seguro (Keystore) y muestra «Entrar con huella». Si la contraseña cambia, las olvida y pide la nueva. Sin huella registrada en el teléfono no se ofrece. Probado en emulador sin huella; falta probar con huella en un teléfono real.
 - [ ] Ajuste para dejar de usar la huella en un dispositivo (hoy: «Ahora no» al preguntar; se vuelve a preguntar en el siguiente login con contraseña).
-- [ ] Decidir qué más de ventas necesita estar en la app de día (alta de clientes y beneficiarios, buscar remesas, reasignar) y qué se queda solo en el panel.
+- [x] **Alta de remitentes y beneficiarios desde la app** (2026-10-12): «Nuevo remitente» y «Nuevo beneficiario» en «Nueva remesa» con `customers:write`; los formularios se movieron a `ottos_core`.
+- [ ] Decidir qué más de ventas necesita estar en la app de día (buscar remesas, reasignar) y qué se queda solo en el panel.
 
 ## Notificaciones de la app
 
@@ -117,7 +117,7 @@ Criterio de salida: no queda ninguna sección «Próximamente» en el menú y ca
 
 ## App courier
 
-La app tiene lista de asignadas, detalle, entregar (con o sin PIN), posponer y saldo propio, pero nunca se ha ejecutado en un dispositivo ni contra el backend.
+App «Ottos» para repartidores y ventas, probada en emulador contra el backend local y publicada en rc.2 (APK y TestFlight). Detalles técnicos en [apps/ottos_courier/README.md](apps/ottos_courier/README.md).
 
 - [x] Probada en un emulador Android contra el backend local: login, lista, detalle, recoger, entregar con PIN (incorrecto y correcto), aplazar y Mi caja. Arreglos que salieron: fecha propuesta al aplazar, municipio repetido en la dirección, y entregas y recogidas diferenciadas por color e icono.
 - [x] **Incidencias de entrega**: «No se pudo entregar/recoger» con motivo (nota obligatoria en «Otro motivo») en la app y en el detalle del panel; aviso en la lista de la app, en la lista y el detalle del panel; filtro «Con incidencia», tarjeta en Inicio e historial con el motivo. Motivos traducidos por código.
@@ -126,8 +126,8 @@ La app tiene lista de asignadas, detalle, entregar (con o sin PIN), posponer y s
 - [ ] Tests de los cubits de asignadas, remesa y caja.
 - [x] Llamar y escribir por WhatsApp desde el detalle.
 - [ ] Abrir la dirección en mapas desde el detalle.
-- [ ] Sin conexión: ver «App sin conexión (offline-first)».
-- [ ] Builds firmados de Android e iOS y forma de distribuirlos a los repartidores.
+- [x] Sin conexión: ver «App sin conexión (offline-first)».
+- [x] Builds firmados de Android (APK por ABI, clave en `~/.ottos-release/`) e iOS (TestFlight desde el Mac del usuario). En rc.2 la APK se pasó por WhatsApp.
 - [x] **Aviso y bloqueo de versiones** (contrato del backend `docs/contracts/app-version.md`): cabeceras `X-App-Platform` y `X-App-Build` en cada petición, aviso cerrable si hay versión nueva y pantalla fija si está por debajo de la mínima (o llega un 426), vaciando antes la cola sin conexión. Las APK separadas por ABI informan `abi*1000 + build`; la app usa el resto entre 1000.
 - [ ] Publicar Android en Play Store (decidido 2026-10-12) y dar al backend el enlace de Play Store y el de TestFlight como `downloadUrl`.
 
@@ -136,8 +136,8 @@ La app tiene lista de asignadas, detalle, entregar (con o sin PIN), posponer y s
 - [ ] Arreglar los scripts de Melos: hoy llaman a `melos`, que no está en el PATH; cambiarlos a `dart run melos` o ejecutar el comando directamente.
 - [ ] CI en GitHub Actions: `flutter analyze` y `flutter test` en cada push; los tests de integración en un job aparte con el backend en Docker.
 - [ ] Tests de widget de cada pantalla nueva y de los cubits/blocs del panel.
-- [ ] Build de producción del panel (`flutter build web`) y dónde se sirve (mismo dominio que la API o CORS configurado).
-- [ ] Variables por entorno (`OTTOS_API_URL`) documentadas para desarrollo, pruebas y producción.
+- [x] Build de producción del panel: imagen Docker con Caddy en su propio dominio, que reenvía `/api` al backend (sin CORS).
+- [x] Variables por entorno (`OTTOS_API_URL`) documentadas para desarrollo, pruebas y producción (README y CLAUDE.md).
 
 ## Prueba general de 1.0 (2026-10-11)
 
@@ -173,6 +173,7 @@ Decidido (2026-10-11): los arreglos que salgan de la prueba en staging van en `1
 - ~~**Lista de repartidores para asignar.**~~ Resuelto: `GET /couriers` con `remittances:assign`. Incluye al admin porque tiene todos los permisos; decidir si el panel lo oculta.
 - ~~**Respuesta 401 sin cuerpo.**~~ Resuelto: 401 y 403 traen `ProblemDetail`.
 - ~~**Errores de negocio en inglés.**~~ Resuelto: todos los errores traen un `code` estable y `CoreTexts.errorCodes` traduce los del flujo de remesas y clientes. Añadir traducciones a medida que se usen más códigos.
+- **Google Play en Cuba (abierto, 2026-10-13).** Se decidió distribuir Android por Play Store, pero Google Play no está disponible en Cuba, y las notificaciones y la fuente se diseñaron precisamente para no depender de Google. Antes de publicar, confirmar con el usuario dónde están los repartidores y cómo instalarán la app (cuenta de Google de fuera, VPN, o mantener la APK como alternativa).
 - **Monedas destino.** ¿Qué monedas se ofrecen al crear una remesa: se leen de los corredores (`/corridors`) o son fijas?
 - **Recogidas.** ¿Quién crea las remesas de tipo recogida y qué datos financieros debe ver cada rol? Ya tienen tasa y comisión propias en el backend.
 - ~~**Estados por tipo.**~~ Hecho: `CoreTexts.statusName(code, type:)`.

@@ -16,13 +16,14 @@ Usamos Git Flow tal como lo inicializa GitKraken (Preferences → Gitflow), con 
 | Rama de producción | `main` | Solo versiones publicadas; cada merge a `main` lleva un tag de versión |
 | Rama de desarrollo | `develop` | Integración del trabajo terminado; de aquí salen las releases |
 | Features | `feature/` | Funcionalidad o refactor nuevo; sale de `develop` y vuelve a `develop` |
+| Arreglos y documentación | `fix/`, `docs/` | Igual que `feature/` (salen de `develop` y vuelven a `develop`), para un arreglo que no es urgente en producción o solo documentación |
 | Releases | `release/` | Preparar una versión (subir número, últimos arreglos); sale de `develop`, se fusiona en `main` y en `develop` |
 | Hotfixes | `hotfix/` | Arreglo urgente de producción; sale de `main`, se fusiona en `main` y en `develop` |
 | Prefijo de tag | *(vacío)* | Los tags son la versión tal cual: `1.0.0-beta.1`, `1.0.0` |
 
 Reglas:
 
-- Nunca se hace commit directo en `main` ni en `develop`: todo entra por una rama `feature/`, `release/` o `hotfix/`.
+- Nunca se hace commit directo en `main` ni en `develop`: todo entra por una rama `feature/`, `fix/`, `docs/`, `release/` o `hotfix/`, fusionada con `--no-ff`.
 - Una rama, un propósito. Si aparece otro tema, va en otra rama.
 - Antes de fusionar: análisis y tests en verde en cada paquete (`flutter analyze` y
   `flutter test --exclude-tags integration` en `packages/ottos_core`, `apps/ottos_ops` y `apps/ottos_courier`) y la rama
@@ -130,8 +131,7 @@ la sección queda también allí.
 
 Nunca se editan las secciones de versiones ya publicadas.
 
-Mientras no exista la versión `1.0.0`, `CHANGELOG.md` se mantiene vacío (solo `## [Unreleased]`); las reglas de arriba
-empiezan a aplicarse con el trabajo que vaya a `1.0.0`.
+Las reglas se aplican desde `1.0.0-rc.1`, la primera versión publicada; lo anterior no tiene entradas.
 
 ## 2. Arquitectura del frontend
 
@@ -189,3 +189,18 @@ Vista (page/dialog)  →  Cubit/Bloc  →  Repository  →  ApiClient  →  API
 - Integración contra un backend en marcha en `packages/ottos_core/test/integration`, con la etiqueta `integration`:
   se saltan si no se definen `OTTOS_TEST_EMAIL` y `OTTOS_TEST_PASSWORD`. Escriben datos en la base de ese backend.
 - `flutter analyze` sin avisos y tests en verde en los tres paquetes antes de fusionar.
+
+## 3. Documentación
+
+La documentación es el contexto de quien llegue después, persona o agente. Va en la misma rama que el cambio:
+
+| Documento | Se actualiza cuando… |
+| --- | --- |
+| `CHANGELOG.md` | Cambia algo visible para quien usa las apps (ver [Changelog](#changelog)) |
+| `roadmap.md` | Se termina, añade o descarta una tarea, o cambia la versión actual |
+| `docs/decisiones.md` | Se toma una decisión de producto, plataforma o proceso: qué, cuándo y **por qué** |
+| `README.md` de cada paquete | Cambia su estructura, cómo se ejecuta o se publica, o un mecanismo importante |
+| `CLAUDE.md` | Cambian las reglas de trabajo, los entornos o la coordinación con otros agentes |
+
+Los contratos de API no se escriben aquí: viven en el repo del backend (`docs/contracts/`) y se enlazan.
+
