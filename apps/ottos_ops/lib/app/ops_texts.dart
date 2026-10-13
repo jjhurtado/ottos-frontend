@@ -158,6 +158,9 @@ abstract final class OpsTexts {
 
   // Cash
   static const businessCash = 'Caja del negocio';
+  static const businessCashHelp =
+      'Efectivo disponible en Cuba para las entregas: sube con depósitos y devoluciones de repartidores, baja con '
+      'fondos y retiros. Lo cobrado a los remitentes está en Reportes.';
   static const couriersCash = 'Efectivo de los repartidores';
   static const latestMovements = 'Últimos movimientos';
   static const cashMovements = 'Movimientos de caja';
@@ -180,6 +183,7 @@ abstract final class OpsTexts {
 
   /// Movement names from the business's point of view.
   static String movementTitle(CashMovementType type) => switch (type) {
+    // Only in old data: since 2026-10-13 registering a remittance moves no cash.
     CashMovementType.remittancePayment => 'Cobro de remesa',
     CashMovementType.courierFunding => 'Fondos a repartidor',
     CashMovementType.deliveryPayout => 'Entrega de remesa',

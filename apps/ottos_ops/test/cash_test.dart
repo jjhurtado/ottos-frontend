@@ -160,6 +160,8 @@ void main() {
 
       expect(find.text('Ana'), findsOneWidget);
       expect(find.text(OpsTexts.deposit), findsNothing);
+      // Says what the business cash is, so nobody looks there for what was charged.
+      expect(find.text(OpsTexts.businessCashHelp), findsOneWidget);
       expect(find.text(OpsTexts.fund), findsNothing);
     });
 
