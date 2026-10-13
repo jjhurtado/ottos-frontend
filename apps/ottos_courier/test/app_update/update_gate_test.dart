@@ -48,6 +48,7 @@ void main() {
 
     expect(find.text(CoreTexts.updateAvailable), findsOneWidget);
     expect(find.text('la app'), findsOneWidget);
+    expect(find.widgetWithText(FilledButton, CoreTexts.update), findsOneWidget);
     await tester.tap(find.text(CoreTexts.later));
     await tester.pumpAndSettle();
     expect(find.text(CoreTexts.updateAvailable), findsNothing);
@@ -61,7 +62,8 @@ void main() {
     refused.add(const AppVersion(minimumBuild: 5, latestBuild: 5, latestVersion: '1.0.1'));
     await tester.pumpAndSettle();
     expect(find.text(CoreTexts.updateRequiredTitle), findsOneWidget);
-    expect(find.text(CoreTexts.noDownloadLink), findsOneWidget, reason: 'no link configured yet');
+    // No link configured yet: the button still opens the store.
+    expect(find.widgetWithText(FilledButton, CoreTexts.update), findsOneWidget);
     expect(find.text(CoreTexts.later), findsNothing);
   });
 
@@ -75,5 +77,18 @@ void main() {
     addTearDown(again.close);
     await again.check();
     expect(again.update, AppUpdate.required);
+  });
+
+  test('without a link from the backend, update opens the store', () {
+    const none = AppVersion(minimumBuild: 5, latestBuild: 5);
+    expect(
+      updateUrl(none, platform: TargetPlatform.android),
+      'https://play.google.com/store/apps/details?id=com.remesadeotto.ottos',
+    );
+    expect(updateUrl(none, platform: TargetPlatform.iOS), 'itms-beta://');
+    expect(
+      updateUrl(const AppVersion(downloadUrl: 'https://otra/ottos'), platform: TargetPlatform.android),
+      'https://otra/ottos',
+    );
   });
 }

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:ottos_core/ottos_core.dart';
@@ -70,7 +71,18 @@ class _UpdateGateState extends State<UpdateGate> with WidgetsBindingObserver {
   }
 }
 
-Future<void> _download(String url) => launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+/// Where the new version is installed from: the backend's link or, while it has
+/// none, the store page (Play Store on Android, the TestFlight app on iPhone).
+@visibleForTesting
+String updateUrl(AppVersion version, {TargetPlatform? platform}) =>
+    version.downloadUrl ??
+    switch (platform ?? defaultTargetPlatform) {
+      TargetPlatform.iOS => 'itms-beta://',
+      _ => 'https://play.google.com/store/apps/details?id=com.remesadeotto.ottos',
+    };
+
+Future<void> _update(AppVersion version) =>
+    launchUrl(Uri.parse(updateUrl(version)), mode: LaunchMode.externalApplication);
 
 class _UpdateRequired extends StatelessWidget {
   const _UpdateRequired({required this.version});
@@ -80,7 +92,6 @@ class _UpdateRequired extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
-    final url = version.downloadUrl;
     return Material(
       color: Theme.of(context).colorScheme.surface,
       child: SafeArea(
@@ -104,14 +115,12 @@ class _UpdateRequired extends StatelessWidget {
                 Text(version.notes!, textAlign: TextAlign.center, style: textTheme.bodySmall),
               ],
               const SizedBox(height: 32),
-              if (url != null)
-                FilledButton.icon(
-                  onPressed: () => _download(url),
-                  icon: const Icon(Icons.download),
-                  label: const Text(CoreTexts.download),
-                )
-              else
-                const Text(CoreTexts.noDownloadLink, textAlign: TextAlign.center),
+              FilledButton.icon(
+                style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(52)),
+                onPressed: () => _update(version),
+                icon: const Icon(Icons.system_update),
+                label: const Text(CoreTexts.update),
+              ),
             ],
           ),
         ),
@@ -128,7 +137,6 @@ class _UpdateAvailable extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final url = version.downloadUrl;
     return Material(
       elevation: 6,
       borderRadius: BorderRadius.circular(16),
@@ -143,9 +151,10 @@ class _UpdateAvailable extends StatelessWidget {
             Align(
               alignment: Alignment.centerRight,
               child: Wrap(
+                spacing: 8,
                 children: [
                   TextButton(onPressed: onLater, child: const Text(CoreTexts.later)),
-                  if (url != null) TextButton(onPressed: () => _download(url), child: const Text(CoreTexts.download)),
+                  FilledButton(onPressed: () => _update(version), child: const Text(CoreTexts.update)),
                 ],
               ),
             ),

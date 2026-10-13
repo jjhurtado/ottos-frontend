@@ -3,6 +3,7 @@ import 'package:ottos_core/ottos_core.dart';
 
 import '../features/assigned/view/assigned_page.dart';
 import '../features/cash/view/cash_page.dart';
+import '../features/cash/view/courier_cash_page.dart';
 import '../features/new_remittance/view/new_remittance_page.dart';
 import '../features/remittance/view/remittance_page.dart';
 import '../shell/courier_shell.dart';
@@ -18,6 +19,9 @@ abstract final class Routes {
   static const newRemittance = '/remittances/new';
 
   static String remittance(String id) => '/remittances/$id';
+
+  /// A courier's balances and movements, for who manages the couriers' cash.
+  static String courierCash(String courierId) => '/cash/couriers/$courierId';
 }
 
 GoRouter buildRouter(AuthBloc authBloc) {
@@ -36,6 +40,9 @@ GoRouter buildRouter(AuthBloc authBloc) {
       if (sessionRedirect != null || !auth.isAuthenticated) return sessionRedirect;
       final user = auth.user!;
       if (state.matchedLocation == Routes.cash && !CourierShell.canSeeCash(user)) return Routes.assigned;
+      if (state.matchedLocation.startsWith('${Routes.cash}/couriers/') && !user.can(Permissions.cashRead)) {
+        return Routes.cash;
+      }
       if (state.matchedLocation == Routes.newRemittance && !user.can(Permissions.remittancesCreate)) {
         return Routes.assigned;
       }
@@ -56,6 +63,10 @@ GoRouter buildRouter(AuthBloc authBloc) {
       ),
       // Before '/remittances/:id', which would take 'new' as an id.
       GoRoute(path: Routes.newRemittance, builder: (_, _) => const NewRemittancePage()),
+      GoRoute(
+        path: '/cash/couriers/:id',
+        builder: (_, state) => CourierCashPage(courierId: state.pathParameters['id']!),
+      ),
       GoRoute(
         path: '/remittances/:id',
         builder: (_, state) => RemittancePage(remittanceId: state.pathParameters['id']!),

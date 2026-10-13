@@ -28,6 +28,7 @@ Decisión del negocio (2026-10-10): durante el día, **ventas y repartidores tra
 - [x] **Nueva remesa desde la app**: botón en la lista de remesas (con `remittances:create`). El mismo formulario que el panel: tipo, remitente, beneficiario, monto y moneda, con la cotización de su tipo (entrega o recogida).
 - [x] **Asignar repartidor al crearla**, solo si el usuario tiene `remittances:assign`; si no, el campo no aparece.
 - [x] **Caja desde la app**: entregar fondos y recibir devoluciones de un repartidor concreto (con `cash:write`). Quien no tiene el permiso ve solo su caja, como hoy.
+- [x] **Caja de cada repartidor desde la app** (2026-10-13): en «Caja», ventas toca un repartidor y ve su saldo y sus movimientos, igual que él en «Mi caja» (`GET /cash/couriers/{id}`, `cash:read`, últimos 100, solo con conexión), con «Entregar fondos» y «Registrar devolución» (`cash:write`).
 - [x] Ventas entra en la app (`remittances:read`): ve las remesas abiertas (las 100 últimas; el resto, en el panel) y la caja de los repartidores; el repartidor ve las suyas y su caja.
 - [x] Nombre y presentación de la app pensados para ventas y reparto: se llama «Ottos» (`com.remesadeotto.ottos`).
 - [x] **Cambio de moneda del repartidor** (`cash:exchange-own`): en «Mi caja», «Cambiar moneda» con dirección, monto, tasa obtenida (siempre CUP por 1 USD) y nota; funciona sin conexión y el saldo se mueve al momento. En el panel: «Registrar cambio» en nombre de un repartidor (`cash:write`), los cambios con tasa inusual (más allá de la tolerancia de Configuración, 20 % por defecto) en «Cambios de moneda para revisar» de Caja y en Inicio, con «Resolver» y nota (`cash:review`).
@@ -132,6 +133,7 @@ App «Ottos» para repartidores y ventas, probada en emulador contra el backend 
 - [x] Sin conexión: ver «App sin conexión (offline-first)».
 - [x] Builds firmados de Android (APK por ABI, clave en `~/.ottos-release/`) e iOS (TestFlight desde el Mac del usuario). En rc.2 la APK se pasó por WhatsApp.
 - [x] **Aviso y bloqueo de versiones** (contrato del backend `docs/contracts/app-version.md`): cabeceras `X-App-Platform` y `X-App-Build` en cada petición, aviso cerrable si hay versión nueva y pantalla fija si está por debajo de la mínima (o llega un 426), vaciando antes la cola sin conexión. Las APK separadas por ABI informan `abi*1000 + build`; la app usa el resto entre 1000.
+- [x] **Botón «Actualizar»** en el aviso y en la pantalla de bloqueo: abre el `downloadUrl` del backend o, si no hay, Play Store (Android) o la app TestFlight (iPhone).
 - [x] **Versión en el menú de la cuenta** (panel y app), elegida entre dos variantes en Claude Design.
 - [x] **Canvas de diseño al día** (2026-10-13): «Ottos · Panel web» y «Ottos · App móvil», redibujados desde capturas de las vistas reales.
 - [x] Panel › Auditoría: la fecha ya no se parte en cuatro líneas. App: el diálogo de «Nuevo remitente» se titula así y el login dice «Repartos y ventas» en vez de «App de repartidores».

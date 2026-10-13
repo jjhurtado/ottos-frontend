@@ -39,6 +39,7 @@ Everything shared with the panel (API client, repositories, models, dialogs, log
 - **Version gate** (contract `ottos/docs/contracts/app-version.md`). Every request carries `X-App-Platform` and
   `X-App-Build`. The app checks `GET /app/version` on start and on resume and caches the answer. Below the minimum
   build, or on a 426 `APP_UPDATE_REQUIRED`, it flushes the offline queue and shows a screen that cannot be closed.
+  «Actualizar» opens the backend's `downloadUrl`, or the Play Store page / TestFlight app when there is none.
   The build is the `pubspec.yaml` `+N`. Per-ABI APKs report `abi*1000 + N`, so `main.dart` keeps the remainder of 1000.
 - **Contacts through the system picker** (`flutter_native_contact_picker`, `lib/app/phone_contacts.dart`). New
   senders and beneficiaries can take name and phone from a contact. The system picker hands back only the chosen
