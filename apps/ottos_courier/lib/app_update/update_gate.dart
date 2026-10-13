@@ -77,6 +77,7 @@ class _UpdateGateState extends State<UpdateGate> with WidgetsBindingObserver {
 String updateUrl(AppVersion version, {TargetPlatform? platform}) =>
     version.downloadUrl ??
     switch (platform ?? defaultTargetPlatform) {
+      // TestFlight for now; the App Store link once the app is published there (roadmap.md).
       TargetPlatform.iOS => 'itms-beta://',
       _ => 'https://play.google.com/store/apps/details?id=com.remesadeotto.ottos',
     };
