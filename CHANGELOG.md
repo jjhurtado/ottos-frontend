@@ -6,7 +6,10 @@ Cambios notables del frontend de Ottos (panel de operaciones y app de repartidor
 
 ## [Unreleased]
 
-Necesita el backend 1.0.0-rc.3 (remesas anuladas y remesas antiguas a mano).
+## [1.0.0-rc.4] - 2026-10-13
+
+Necesita el backend 1.0.0-rc.3 (remesas anuladas y remesas antiguas a mano). Compilación 6 en Android e iPhone (la rc.3
+de iPhone ya usó la 5).
 
 ### Añadido
 
