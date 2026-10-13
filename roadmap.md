@@ -98,6 +98,13 @@ Objetivo: gestionar clientes y sus beneficiarios desde el panel. Va en paralelo 
 - [x] **Sección «Beneficiarios»** en el panel (2026-10-13): todos los beneficiarios, tengan cliente o no, con buscador por nombre o teléfono, edición y alta sin cliente (`customers:write`). Antes, los importados sueltos no se podían editar.
 - [x] **Crear cliente o beneficiario desde «Nueva remesa»** sin salir del formulario; el nuevo queda elegido.
 - [ ] Revisar en el navegador las pantallas de la ficha y los formularios (la extensión de Chrome no pudo hacer capturas; los tests de widget e integración pasan).
+- [ ] **Total en las listas de clientes y beneficiarios** (pedido 2026-10-13): que se vea en algún sitio cuántos hay en total
+  (y cuántos coinciden con la búsqueda), por ejemplo «339 beneficiarios» junto al título o al pie de la tabla.
+- [ ] **Paginado en las listas de clientes y beneficiarios** (pedido 2026-10-13): hoy solo se ven los 50 más recientes o
+  los 50 primeros que coinciden con la búsqueda, y con los datos reales (339 beneficiarios) ya no caben. Igual que en
+  Remesas: páginas con «1–50 de 339» y flechas. **Necesita el backend**: `GET /customers` y `GET /beneficiaries`
+  devuelven una lista de 50 como máximo, sin total; habría que acordar `page`/`size` y una respuesta con `totalItems`
+  (como en remesas), y con eso sale también el total del punto anterior.
 - [ ] **Eliminar y restaurar beneficiarios** (borrado lógico para todos los clientes) desde la sección «Beneficiarios»: el backend ya tiene `DELETE /beneficiaries/{id}` y `POST /beneficiaries/{id}/restore`. Aún no hace falta.
 - [ ] **Ver qué clientes le envían a un beneficiario** en la sección «Beneficiarios» (`GET /beneficiaries/{id}` devuelve sus clientes). Aún no hace falta.
 - [ ] Los tests de integración dejan clientes de prueba en la base local («Prueba Frontend Editada»); no hay endpoint para borrarlos. Valorar una base de datos aparte para tests.
