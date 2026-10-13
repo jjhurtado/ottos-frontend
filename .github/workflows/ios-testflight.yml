@@ -50,14 +50,18 @@ jobs:
           printf '%s' "$KEY_P8" > "$KEY_PATH"
           chmod 600 "$KEY_PATH"
 
-      # Flutter prepares the Xcode project (and its pods) with the backend and a
-      # build number TestFlight has not seen; Xcode signs it with the API key,
-      # creating the certificate and profile it needs, and uploads it.
+      # Flutter prepares the Xcode project (and its pods) with the backend;
+      # Xcode signs it with the API key, creating the certificate and profile it
+      # needs, and uploads it. The build number stays the pubspec's +N, the one
+      # the backend's version gate compares. The version name drops the
+      # pre-release tag: iOS takes at most three integers, and Flutter would
+      # turn 1.0.0-rc.3 into 1.0.0.3, which App Store Connect rejects.
       - name: Prepare the Xcode project
         working-directory: ${{ env.APP_DIR }}
         run: |
+          BUILD_NAME=$(sed -nE 's/^version: *([0-9]+\.[0-9]+\.[0-9]+).*/\1/p' pubspec.yaml)
           flutter build ios --release --config-only \
-            --build-number=${{ github.run_number }} \
+            --build-name="$BUILD_NAME" \
             --dart-define=OTTOS_API_URL=${{ inputs.api_url }}
 
       - name: Archive

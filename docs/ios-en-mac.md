@@ -59,13 +59,17 @@ Cierra Xcode.
 Desde `apps/ottos_courier`:
 
 ```sh
-flutter build ipa --release --dart-define=OTTOS_API_URL=https://api.remesadeotto.com
+flutter build ipa --release --build-name=1.0.0 --dart-define=OTTOS_API_URL=https://api.remesadeotto.com
 ```
 
 Tarda unos minutos. Al final deja el archivo en `build/ios/ipa/` (termina en `.ipa`).
 
 > Importante: compila siempre con ese `--dart-define`. Sin él, la app intentaría conectarse a este ordenador en vez de a
 > producción y no podría entrar.
+>
+> `--build-name` es la versión del `pubspec.yaml` sin la etiqueta (`1.0.0-rc.3` → `1.0.0`). El iPhone solo admite hasta
+> tres números: sin él, Flutter convierte `1.0.0-rc.3` en `1.0.0.3` y App Store Connect rechaza la subida. En TestFlight
+> las versiones se distinguen por el número de compilación.
 
 ## 6. Subir a TestFlight
 
@@ -94,7 +98,7 @@ git fetch --tags
 git checkout 1.0.0-rc.3          # el tag de la versión que toca
 flutter pub get
 cd apps/ottos_courier
-flutter build ipa --release --dart-define=OTTOS_API_URL=https://api.remesadeotto.com
+flutter build ipa --release --build-name=1.0.0 --dart-define=OTTOS_API_URL=https://api.remesadeotto.com
 ```
 
 Después, como en el paso 6: arrastra el `.ipa` a Transporter › **Deliver**. A quienes ya tienen la app por TestFlight
@@ -103,6 +107,10 @@ les llega la actualización solos; en el grupo externo, Apple puede volver a rev
 - **No pases `--build-number`.** La versión y el número de compilación salen del proyecto (`1.0.0-rc.3+4`: versión
   1.0.0-rc.3, compilación 4). Ese número es el que la app envía al servidor y el que el backend usa para avisar o
   bloquear versiones viejas; si se cambia a mano, dejan de coincidir.
+- **Sí pasa `--build-name`** con la versión sin la etiqueta (`1.0.0`), como en el paso 5.
+- Si App Store Connect dice que esa compilación ya existe, no la cambies a mano: la versión siguiente sube el `+N` en su
+  rama `release/`. Excepción ya hecha: la rc.3 de iPhone se subió como compilación **5**, porque la 4 la usó una prueba
+  con el código de la rc.2. La próxima versión necesita `+6` o más.
 - Si Xcode o CocoaPods se quejan tras cambiar de versión (la rc.3 trae un componente nuevo para elegir contactos), en
   `apps/ottos_courier/ios` ejecuta `pod install` y vuelve a compilar.
 - «Elegir de contactos» usa el selector de contactos de Apple: no hay que añadir ningún permiso ni texto en Xcode.
