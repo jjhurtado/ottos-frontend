@@ -180,7 +180,8 @@ y cada versión publicada lleva su tag en `main`, sin prefijo (`1.0.0-beta.1`). 
 | Menor | `1.X.0` | Cada fase siguiente, con su propio ciclo beta → rc → estable | Funcionalidad nueva compatible |
 | Mayor | `X.0.0` | Cambio incompatible (por ejemplo, exige una versión nueva del backend) | Solo con migración planificada |
 
-**Versión actual: `1.0.0-rc.3`** (2026-10-13), con el backend `1.0.0-rc.2`.
+**Versión actual: `1.0.0-rc.3`** (2026-10-13), con el backend `1.0.0-rc.2`. En iPhone (TestFlight) es `1.0.0 (5)`; la
+siguiente versión debe usar la compilación `+6` o más.
 
 Decidido (2026-10-11): los arreglos que salgan de la prueba en staging van en `1.0.0-rc.2` (rama `release/1.0.0-rc.2`); el tag `1.0.0-rc.1` publicado no se toca. Si staging no encuentra nada, se pasa de `1.0.0-rc.1` directamente a `1.0.0`. El backend versiona igual.
 
