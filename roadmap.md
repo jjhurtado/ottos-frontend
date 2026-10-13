@@ -102,9 +102,10 @@ Objetivo: gestionar clientes y sus beneficiarios desde el panel. Va en paralelo 
   (y cuántos coinciden con la búsqueda), por ejemplo «339 beneficiarios» junto al título o al pie de la tabla.
 - [ ] **Paginado en las listas de clientes y beneficiarios** (pedido 2026-10-13): hoy solo se ven los 50 más recientes o
   los 50 primeros que coinciden con la búsqueda, y con los datos reales (339 beneficiarios) ya no caben. Igual que en
-  Remesas: páginas con «1–50 de 339» y flechas. **Necesita el backend**: `GET /customers` y `GET /beneficiaries`
-  devuelven una lista de 50 como máximo, sin total; habría que acordar `page`/`size` y una respuesta con `totalItems`
-  (como en remesas), y con eso sale también el total del punto anterior.
+  Remesas: páginas con «1–50 de 339» y flechas. Contrato cerrado con el backend (2026-10-13,
+  `ottos/docs/contracts/customer-beneficiary-pages.md`, backend develop 30e8cd1, llega a producción con su próxima
+  versión): con `page` (desde 0) y `size` (1–100, 50 por defecto) responde `{items, page, size, totalItems}` como
+  remesas; sin `page`, la lista de siempre. Falta la parte del panel, que da también el total del punto anterior.
 - [ ] **Eliminar y restaurar beneficiarios** (borrado lógico para todos los clientes) desde la sección «Beneficiarios»: el backend ya tiene `DELETE /beneficiaries/{id}` y `POST /beneficiaries/{id}/restore`. Aún no hace falta.
 - [ ] **Ver qué clientes le envían a un beneficiario** en la sección «Beneficiarios» (`GET /beneficiaries/{id}` devuelve sus clientes). Aún no hace falta.
 - [ ] Los tests de integración dejan clientes de prueba en la base local («Prueba Frontend Editada»); no hay endpoint para borrarlos. Valorar una base de datos aparte para tests.
