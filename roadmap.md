@@ -131,8 +131,8 @@ App «Ottos» para repartidores y ventas, probada en emulador contra el backend 
 - [x] **Aviso y bloqueo de versiones** (contrato del backend `docs/contracts/app-version.md`): cabeceras `X-App-Platform` y `X-App-Build` en cada petición, aviso cerrable si hay versión nueva y pantalla fija si está por debajo de la mínima (o llega un 426), vaciando antes la cola sin conexión. Las APK separadas por ABI informan `abi*1000 + build`; la app usa el resto entre 1000.
 - [x] **Versión en el menú de la cuenta** (panel y app), elegida entre dos variantes en Claude Design.
 - [x] **Canvas de diseño al día** (2026-10-13): «Ottos · Panel web» y «Ottos · App móvil», redibujados desde capturas de las vistas reales.
-- [ ] Panel › Auditoría: la columna Fecha es tan estrecha que parte la fecha en cuatro líneas.
-- [ ] App › Nueva remesa: el botón dice «Nuevo remitente» pero el diálogo se titula «Nuevo cliente»; y el login sigue diciendo «App de repartidores» aunque la app se llama «Ottos» y la usa también ventas.
+- [x] Panel › Auditoría: la fecha ya no se parte en cuatro líneas. App: el diálogo de «Nuevo remitente» se titula así y el login dice «Repartos y ventas» en vez de «App de repartidores».
+- [x] **Elegir de contactos** al crear un remitente o un beneficiario en la app: abre el selector de contactos del teléfono (con su buscador) y rellena nombre y teléfono. No pide permiso de contactos: el sistema solo entrega el contacto elegido. El plugin (`flutter_native_contact_picker`) avisa de que usa el Kotlin antiguo de Gradle; vigilarlo al subir de Flutter.
 - [ ] Publicar Android en Play Store (decidido 2026-10-12) y dar al backend el enlace de Play Store y el de TestFlight como `downloadUrl`.
 
 ## Calidad e infraestructura

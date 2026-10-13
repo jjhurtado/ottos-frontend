@@ -186,6 +186,23 @@ void main() {
       expect(find.text(CourierTexts.newCustomer), findsNothing);
     });
 
+    testWidgets('the new sender is titled as such and can come from the phone contacts', (tester) async {
+      await pump(
+        tester,
+        {..._sales, Permissions.customersWrite},
+        NewRemittancePage(pickContact: () async => const PickedContact(name: 'Rosa Pérez', phone: '53 51234567')),
+      );
+      await tester.tap(find.text(CourierTexts.newCustomer));
+      await tester.pumpAndSettle();
+
+      expect(find.text(CourierTexts.newCustomer), findsNWidgets(2));
+      expect(find.text(CoreTexts.newCustomer), findsNothing);
+      await tester.tap(find.text(CoreTexts.pickFromContacts));
+      await tester.pumpAndSettle();
+      expect(find.text('Rosa Pérez'), findsOneWidget);
+      expect(find.text('5351234567'), findsOneWidget);
+    });
+
     testWidgets('who cannot assign does not see the courier', (tester) async {
       await pump(tester, _sales.difference({Permissions.remittancesAssign}), const NewRemittancePage());
 
