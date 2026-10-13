@@ -83,6 +83,7 @@ class _CashView extends StatelessWidget {
           ExchangesToReview(key: ValueKey(state.movements.firstOrNull?.id)),
           _Section(
             title: OpsTexts.businessCash,
+            help: OpsTexts.businessCashHelp,
             actions: [
               if (user.can(Permissions.cashAdjust)) ...[
                 OutlinedButton.icon(
@@ -154,11 +155,14 @@ class _CashView extends StatelessWidget {
 }
 
 class _Section extends StatelessWidget {
-  const _Section({required this.title, required this.child, this.actions = const []});
+  const _Section({required this.title, required this.child, this.actions = const [], this.help});
 
   final String title;
   final Widget child;
   final List<Widget> actions;
+
+  /// What the section counts, under the title.
+  final String? help;
 
   @override
   Widget build(BuildContext context) {
@@ -178,6 +182,7 @@ class _Section extends StatelessWidget {
                 ...actions,
               ],
             ),
+            if (help != null) ...[const SizedBox(height: 8), Text(help!, style: Theme.of(context).textTheme.bodySmall)],
             const SizedBox(height: 16),
             child,
           ],

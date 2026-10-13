@@ -19,6 +19,7 @@ Necesita el backend con el aviso de versiones (develop 3439c3b o posterior).
 
 ### Cambiado
 
+- Panel › Caja: la caja del negocio explica qué cuenta. Es el efectivo disponible en Cuba para las entregas: sube con depósitos y devoluciones de repartidores, y baja con fondos y retiros. Registrar una remesa ya no suma a la caja, porque se cobra fuera; lo cobrado está en Reportes. Necesita el backend con este cambio.
 - App: el aviso de versión nueva y la pantalla «Actualiza para continuar» tienen un botón «Actualizar» (antes «Descargar», o un texto para pedir el enlace). Abre la versión nueva en Play Store o, en iPhone, en TestFlight.
 
 ### Corregido
