@@ -104,6 +104,67 @@ class RemittanceFilter extends Equatable {
   };
 }
 
+/// An old remittance typed in by hand from its ticket (`POST /remittances/historical`):
+/// registered as completed on [occurredAt], with no courier and moving no cash.
+/// Amounts and the fee are in USD; in CUP the ticket's [rate] and
+/// [amountToDeliver] are required and kept as they were.
+class HistoricalRemittance extends Equatable {
+  const HistoricalRemittance({
+    required this.type,
+    required this.customerId,
+    required this.beneficiaryId,
+    required this.occurredAt,
+    required this.amount,
+    required this.fee,
+    this.targetCurrency = 'USD',
+    this.rate,
+    this.amountToDeliver,
+    this.notes,
+  });
+
+  final RemittanceType type;
+  final String customerId;
+  final String beneficiaryId;
+
+  /// Cuba's wall-clock time, sent without a zone.
+  final DateTime occurredAt;
+  final double amount;
+  final double fee;
+  final String targetCurrency;
+  final double? rate;
+  final double? amountToDeliver;
+  final String? notes;
+
+  bool get inCup => targetCurrency == 'CUP';
+
+  Map<String, dynamic> toJson() => {
+    'type': type.code,
+    'customerId': customerId,
+    'beneficiaryId': beneficiaryId,
+    'occurredAt': Formatters.apiLocalDateTime(occurredAt),
+    'targetCurrency': targetCurrency,
+    'amount': amount,
+    'fee': fee,
+    if (inCup) 'rate': rate,
+    if (inCup) 'amountToDeliver': amountToDeliver,
+    'notes': notes == null || notes!.trim().isEmpty ? null : notes!.trim(),
+  };
+
+  @override
+  List<Object?> get props => [
+    type,
+    customerId,
+    beneficiaryId,
+    occurredAt,
+    amount,
+    fee,
+    targetCurrency,
+    rate,
+    amountToDeliver,
+    notes,
+  ];
+}
+
 /// Data to register a remittance (`POST /remittances`). The source currency is
 /// always USD; the backend quotes the amount at today's rate.
 class NewRemittance extends Equatable {
@@ -255,4 +316,8 @@ class RemittanceRepository {
   Future<Remittance> voidRemittance(String id, {required String reason}) async => Remittance.fromJson(
     await _api.post<Map<String, dynamic>>('/remittances/$id/void', body: {'reason': reason.trim()}),
   );
+
+  /// Registers an old remittance from its ticket (`remittances:historical`).
+  Future<Remittance> registerHistorical(HistoricalRemittance remittance) async =>
+      Remittance.fromJson(await _api.post<Map<String, dynamic>>('/remittances/historical', body: remittance.toJson()));
 }

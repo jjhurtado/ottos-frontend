@@ -102,6 +102,30 @@ abstract final class OpsTexts {
   static const resolveNote = 'Nota *';
   static const reviewResolved = 'Revisión resuelta';
 
+  // Old remittance typed in from its ticket (admin)
+  static const historicalAction = 'Registrar remesa antigua';
+  static const historicalTitle = 'Registrar remesa antigua';
+  static const historicalHelp =
+      'Para remesas ya hechas que no están en el sistema, con los datos de su ticket. Queda como entregada o recogida '
+      'en esa fecha, sin repartidor y sin mover ninguna caja.';
+  static const historicalCustomerHint = 'Nombre o teléfono; si no se sabe, «Cliente histórico sin identificar»';
+  static const historicalDate = 'Fecha';
+  static const historicalPickDate = 'Elegir fecha';
+  static const historicalTime = 'Hora';
+  static const historicalCubaTime = 'Fecha y hora de Cuba, como en el ticket.';
+  static const historicalFutureDate = 'La fecha no puede ser futura.';
+  static const historicalDeliveredInUsd = 'Se entregó en USD';
+  static const historicalDeliveredInCup = 'Se entregó en CUP';
+  static const historicalPickupUsd = 'Las recogidas se registran en USD.';
+  static const historicalSent = 'Monto enviado';
+  static const historicalCollected = 'Monto recogido';
+  static const historicalFee = 'Comisión';
+  static const historicalRate = 'Tasa';
+  static const historicalToDeliver = 'CUP entregados';
+  static const historicalCupHelp = 'La tasa y los CUP del ticket, tal cual: no se recalculan.';
+  static const historicalInvalidNumber = 'Escribe un número válido.';
+  static String historicalRegistered(String code) => 'Remesa antigua $code registrada';
+
   // Voiding a remittance (admin)
   static const voidAction = 'Anular';
   static String voidTitle(String code) => 'Anular la remesa $code';

@@ -6,12 +6,13 @@ Cambios notables del frontend de Ottos (panel de operaciones y app de repartidor
 
 ## [Unreleased]
 
-Necesita el backend 1.0.0-rc.3 (remesas anuladas).
+Necesita el backend 1.0.0-rc.3 (remesas anuladas y remesas antiguas a mano).
 
 ### Añadido
 
 - Panel: el admin puede **anular** una remesa desde su detalle, en cualquier estado y con un motivo obligatorio. La remesa queda guardada con «Anulada por …», la fecha y el motivo, pero deja de contar en reportes, estadísticas y listas de trabajo y ya no se puede cambiar. Si movió efectivo, se devuelve solo a la caja de donde salió («Anulación de remesa»). En el listado de remesas, las anuladas llevan el chip «Anulada» y el filtro «Solo anuladas» las muestra. En Auditoría queda «Remesa anulada» con el motivo.
 - App: una remesa anulada muestra por qué y no ofrece acciones; ventas no la ve en su lista de remesas.
+- Panel: el admin puede **registrar una remesa antigua** a mano desde Remesas › «Registrar remesa antigua», con los datos de su ticket: entrega o recogida, remitente (o «Cliente histórico sin identificar»), beneficiario, fecha y hora, monto y comisión en USD y, si se entregó en CUP, la tasa y los CUP entregados tal cual. Queda entregada o recogida en esa fecha, sin repartidor y sin mover ninguna caja, y se abre su detalle.
 
 ## [1.0.0-rc.3] - 2026-10-13
 

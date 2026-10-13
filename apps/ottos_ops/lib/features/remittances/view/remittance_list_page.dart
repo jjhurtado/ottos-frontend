@@ -38,6 +38,14 @@ class _RemittanceListView extends StatelessWidget {
           Row(
             children: [
               Expanded(child: Text(OpsTexts.remittances, style: Theme.of(context).textTheme.headlineMedium)),
+              if (context.canDo(Permissions.remittancesHistorical)) ...[
+                TextButton.icon(
+                  onPressed: () => context.go(Routes.historicalRemittance),
+                  icon: const Icon(Icons.history_edu_outlined),
+                  label: const Text(OpsTexts.historicalAction),
+                ),
+                const SizedBox(width: 8),
+              ],
               if (context.canDo(Permissions.remittancesCreate))
                 FilledButton.icon(
                   onPressed: () => context.go(Routes.newRemittance),

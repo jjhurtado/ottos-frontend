@@ -10,6 +10,7 @@ import '../features/customers/view/customer_list_page.dart';
 import '../features/home/view/home_page.dart';
 import '../features/configuration/view/configuration_page.dart';
 import '../features/reports/view/reports_page.dart';
+import '../features/remittances/view/historical_remittance_page.dart';
 import '../features/remittances/view/new_remittance_page.dart';
 import '../features/remittances/view/remittance_detail_page.dart';
 import '../features/remittances/view/remittance_list_page.dart';
@@ -24,6 +25,8 @@ abstract final class Routes {
   static const login = '/login';
 
   static final newRemittance = '${Destinations.remittances.path}/new';
+
+  static final historicalRemittance = '${Destinations.remittances.path}/historical';
 
   static String remittance(String id) => '${Destinations.remittances.path}/$id';
 
@@ -58,6 +61,9 @@ GoRouter buildRouter(AuthBloc authBloc) {
       if (state.matchedLocation == Routes.newRemittance && !auth.user!.can(Permissions.remittancesCreate)) {
         return Destinations.remittances.path;
       }
+      if (state.matchedLocation == Routes.historicalRemittance && !auth.user!.can(Permissions.remittancesHistorical)) {
+        return Destinations.remittances.path;
+      }
       return null;
     },
     routes: [
@@ -74,7 +80,8 @@ GoRouter buildRouter(AuthBloc authBloc) {
             path: Destinations.remittances.path,
             builder: (_, state) => RemittanceListPage(initialFilter: _filterFrom(state.uri.queryParameters)),
             routes: [
-              // Before ':id', which would otherwise match "new".
+              // Before ':id', which would otherwise match "new" and "historical".
+              GoRoute(path: 'historical', builder: (_, _) => const HistoricalRemittancePage()),
               GoRoute(
                 path: 'new',
                 builder: (_, state) => NewRemittancePage(initialCustomerId: state.uri.queryParameters['customerId']),
