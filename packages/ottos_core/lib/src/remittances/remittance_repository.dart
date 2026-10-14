@@ -317,6 +317,16 @@ class RemittanceRepository {
     await _api.post<Map<String, dynamic>>('/remittances/$id/void', body: {'reason': reason.trim()}),
   );
 
+  /// Delivers (or collects) it from the business, without a courier
+  /// (`remittances:complete-from-business`): the business's cash pays it out
+  /// or takes it in, and an assigned courier loses it.
+  Future<Remittance> completeFromBusiness(String id, {String? note}) async => Remittance.fromJson(
+    await _api.post<Map<String, dynamic>>(
+      '/remittances/$id/complete-from-business',
+      body: {'note': note == null || note.trim().isEmpty ? null : note.trim()},
+    ),
+  );
+
   /// Registers an old remittance from its ticket (`remittances:historical`).
   Future<Remittance> registerHistorical(HistoricalRemittance remittance) async =>
       Remittance.fromJson(await _api.post<Map<String, dynamic>>('/remittances/historical', body: remittance.toJson()));

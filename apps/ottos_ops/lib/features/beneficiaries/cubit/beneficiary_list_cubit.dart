@@ -7,65 +7,81 @@ import 'package:ottos_core/ottos_core.dart';
 enum BeneficiaryListStatus { loading, success, failure }
 
 final class BeneficiaryListState extends Equatable {
-  const BeneficiaryListState({
-    this.status = BeneficiaryListStatus.loading,
-    this.query = '',
-    this.beneficiaries = const [],
-    this.error,
-  });
+  const BeneficiaryListState({this.status = BeneficiaryListStatus.loading, this.query = '', this.result, this.error});
 
   final BeneficiaryListStatus status;
   final String query;
-  final List<Beneficiary> beneficiaries;
+
+  /// The page on screen; kept while the next one loads.
+  final PageResult<Beneficiary>? result;
   final String? error;
 
+  List<Beneficiary> get beneficiaries => result?.items ?? const [];
+
   @override
-  List<Object?> get props => [status, query, beneficiaries, error];
+  List<Object?> get props => [status, query, result, error];
 }
 
-/// Every beneficiary, with a customer or not: the most recent ones without a
-/// query, matches by name or phone with one (the backend returns at most 50).
+/// Every active beneficiary, with a customer or not, by pages and the most
+/// recent first: all of them without a query, matches by name or phone with one.
 class BeneficiaryListCubit extends Cubit<BeneficiaryListState> {
-  BeneficiaryListCubit({required this._customers, this.searchDelay = const Duration(milliseconds: 300)})
-    : super(const BeneficiaryListState());
+  BeneficiaryListCubit({
+    required this._customers,
+    this.searchDelay = const Duration(milliseconds: 300),
+    this.pageSize = 50,
+  }) : super(const BeneficiaryListState());
 
   final CustomerRepository _customers;
 
   /// Wait after the last keystroke before searching.
   final Duration searchDelay;
+  final int pageSize;
   Timer? _timer;
   int _request = 0;
 
-  Future<void> load() => _search(state.query);
+  /// Loads [page], or the current one again.
+  Future<void> load({int? page}) => _search(state.query, page ?? state.result?.page ?? 0);
 
+  /// A new search starts at the first page.
   void queryChanged(String query) {
     _timer?.cancel();
-    _timer = Timer(searchDelay, () => _search(query));
+    _timer = Timer(searchDelay, () => _search(query, 0));
   }
 
-  /// Puts an edited or new beneficiary in the list without searching again.
-  void saved(Beneficiary beneficiary) {
+  /// An edited beneficiary changes in place; a new one is the most recent, so
+  /// the first page is loaded again to show it with the new total.
+  Future<void> saved(Beneficiary beneficiary) async {
+    final result = state.result;
     final index = state.beneficiaries.indexWhere((item) => item.id == beneficiary.id);
-    final beneficiaries = [...state.beneficiaries];
-    if (index == -1) {
-      beneficiaries.insert(0, beneficiary);
-    } else {
-      beneficiaries[index] = beneficiary;
-    }
-    emit(BeneficiaryListState(status: state.status, query: state.query, beneficiaries: beneficiaries));
+    if (result == null || index == -1) return load(page: 0);
+    final items = [...result.items]..[index] = beneficiary;
+    emit(
+      BeneficiaryListState(
+        status: state.status,
+        query: state.query,
+        result: PageResult(items: items, page: result.page, size: result.size, totalItems: result.totalItems),
+      ),
+    );
   }
 
-  Future<void> _search(String query) async {
+  Future<void> _search(String query, int page) async {
     final request = ++_request;
-    emit(BeneficiaryListState(query: query, beneficiaries: state.beneficiaries));
+    emit(BeneficiaryListState(query: query, result: state.result));
     try {
-      final beneficiaries = await _customers.searchBeneficiaries(query);
+      final result = await _customers.beneficiaryPage(query, page: page, size: pageSize);
       if (request == _request && !isClosed) {
-        emit(BeneficiaryListState(status: BeneficiaryListStatus.success, query: query, beneficiaries: beneficiaries));
+        emit(BeneficiaryListState(status: BeneficiaryListStatus.success, query: query, result: result));
       }
     } on ApiException catch (error) {
       if (request == _request && !isClosed) {
-        emit(BeneficiaryListState(status: BeneficiaryListStatus.failure, query: query, error: error.message));
+        emit(
+          BeneficiaryListState(
+            status: BeneficiaryListStatus.failure,
+            query: query,
+            result: state.result,
+            error: error.message,
+          ),
+        );
       }
     }
   }

@@ -1,6 +1,7 @@
 import '../api/api_client.dart';
 import '../models/customer.dart';
 import '../models/customer_transfer.dart';
+import '../models/page_result.dart';
 
 class CustomerRepository {
   CustomerRepository({required this._api});
@@ -12,6 +13,13 @@ class CustomerRepository {
     final json = await _api.get<List<dynamic>>('/customers', query: {'q': query.trim().isEmpty ? null : query.trim()});
     return json.map((item) => Customer.fromJson(item as Map<String, dynamic>)).toList();
   }
+
+  /// A [page] (from 0) of the customers whose name or phone contains [query],
+  /// the most recent first, with the total that match.
+  Future<PageResult<Customer>> customerPage(String query, {int page = 0, int size = 50}) async => PageResult.fromJson(
+    await _api.get<Map<String, dynamic>>('/customers', query: _pageQuery(query, page, size)),
+    Customer.fromJson,
+  );
 
   Future<Customer> get(String id) async => Customer.fromJson(await _api.get<Map<String, dynamic>>('/customers/$id'));
 
@@ -43,6 +51,20 @@ class CustomerRepository {
     );
     return json.map((item) => Beneficiary.fromJson(item as Map<String, dynamic>)).toList();
   }
+
+  /// A [page] (from 0) of the active beneficiaries whose name or phone
+  /// contains [query], the most recent first, with the total that match.
+  Future<PageResult<Beneficiary>> beneficiaryPage(String query, {int page = 0, int size = 50}) async =>
+      PageResult.fromJson(
+        await _api.get<Map<String, dynamic>>('/beneficiaries', query: _pageQuery(query, page, size)),
+        Beneficiary.fromJson,
+      );
+
+  static Map<String, dynamic> _pageQuery(String query, int page, int size) => {
+    'q': query.trim().isEmpty ? null : query.trim(),
+    'page': page,
+    'size': size,
+  };
 
   /// Creates a beneficiary without a customer; a customer is linked later, or by its first remittance.
   Future<Beneficiary> createBeneficiary(BeneficiaryInput input) async =>

@@ -92,6 +92,10 @@ class RemittanceDetailCubit extends Cubit<RemittanceDetailState> {
         : _remittances.deliverWithPin(_id, pin: pin, note: note),
   );
 
+  /// Delivers or collects it from the business's cash, without a courier.
+  Future<void> completeFromBusiness({String? note}) =>
+      _run(RemittanceAction.completed, () => _remittances.completeFromBusiness(_id, note: note));
+
   Future<void> postpone({required DateTime newDate, required String reason}) =>
       _run(RemittanceAction.postponed, () => _remittances.postpone(_id, newDate: newDate, reason: reason));
 

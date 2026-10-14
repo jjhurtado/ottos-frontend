@@ -162,6 +162,7 @@ class Remittance extends Equatable {
     this.createdAt,
     this.createdBy,
     this.completedAt,
+    this.completedFromBusiness = false,
     this.voided,
   });
 
@@ -205,6 +206,7 @@ class Remittance extends Equatable {
     createdAt: parseDateTime(json['createdAt']),
     createdBy: json['createdBy'] as String?,
     completedAt: parseDateTime(json['completedAt']),
+    completedFromBusiness: json['completedFromBusiness'] as bool? ?? false,
     voided: json['voided'] == null ? null : Voided.fromJson(json['voided'] as Map<String, dynamic>),
   );
 
@@ -280,6 +282,10 @@ class Remittance extends Equatable {
   final String? createdBy;
   final DateTime? completedAt;
 
+  /// Delivered or collected by sales or an admin, without a courier: the cash
+  /// came out of (or went into) the business's cash box.
+  final bool completedFromBusiness;
+
   /// Set when an admin voided it; null while it stands.
   final Voided? voided;
 
@@ -300,6 +306,7 @@ class Remittance extends Equatable {
     incident,
     review,
     completedAt,
+    completedFromBusiness,
     voided,
   ];
 }
