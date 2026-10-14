@@ -4,10 +4,10 @@ Actualizado: 2026-10-14
 
 ## Estado actual
 
-**Publicado: `1.0.0-rc.5`** (2026-10-13), con el backend `1.0.0-rc.4` (base de datos reconstruida, un esquema por
-módulo). Trae el informe mensual con la moneda del negocio (`deliveredCurrency`, `businessCurrency`), además de todo lo
-de la rc.4 (anular, remesas antiguas). Android: APK y App Bundle, compilación 7; iPhone: TestFlight desde el Mac del
-usuario como `1.0.0 (7)` ([docs/ios-en-mac.md](docs/ios-en-mac.md)).
+**Publicado: `1.0.0-rc.6`** (2026-10-14), solo el panel web, con el backend `1.0.0-rc.5`: listas de clientes y
+beneficiarios por páginas con total, y «Entregada por el negocio». La app del móvil sigue en la `1.0.0-rc.5`
+(Android compilación 7; iPhone TestFlight `1.0.0 (7)`, [docs/ios-en-mac.md](docs/ios-en-mac.md)); la próxima
+compilación móvil será la 9.
 
 Falta para `1.0.0`:
 

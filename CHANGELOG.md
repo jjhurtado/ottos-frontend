@@ -6,7 +6,10 @@ Cambios notables del frontend de Ottos (panel de operaciones y app de repartidor
 
 ## [Unreleased]
 
-Necesita el backend 1.0.0-rc.4 (listas por páginas) y, para «Entregada por el negocio», su próxima versión.
+## [1.0.0-rc.6] - 2026-10-14
+
+Necesita el backend 1.0.0-rc.5 (entregar o recoger desde el negocio; las listas por páginas ya venían en la rc.4). Solo
+cambia el panel web: la app del móvil no tiene cambios y no hay compilación nueva de Android ni de iPhone.
 
 ### Añadido
 
