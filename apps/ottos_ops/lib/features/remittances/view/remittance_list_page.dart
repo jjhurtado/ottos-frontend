@@ -288,7 +288,13 @@ class _RemittanceTable extends StatelessWidget {
                         DataCell(Text(remittance.municipalityName ?? '')),
                         DataCell(Text(Formatters.money(remittance.amount, remittance.sourceCurrency))),
                         DataCell(Text(Formatters.date(remittance.expectedDate))),
-                        DataCell(Text(remittance.courierName ?? OpsTexts.noCourier)),
+                        DataCell(
+                          Text(
+                            remittance.completedFromBusiness
+                                ? OpsTexts.byBusiness
+                                : remittance.courierName ?? OpsTexts.noCourier,
+                          ),
+                        ),
                       ],
                     ),
                 ],

@@ -199,6 +199,56 @@ void main() {
       expect(find.text(OpsTexts.voidAction), findsNothing);
     });
 
+    const byBusiness = {Permissions.remittancesRead, Permissions.remittancesCompleteFromBusiness};
+
+    testWidgets('sales delivers an assigned remittance from the business, with a confirmation', (tester) async {
+      when(() => remittances.completeFromBusiness('r1', note: 'En la oficina')).thenAnswer(
+        (_) async => const Remittance(
+          id: 'r1',
+          code: 'OT-1',
+          type: RemittanceType.delivery,
+          status: 'DELIVERED',
+          statusName: 'Entregada',
+          completedFromBusiness: true,
+        ),
+      );
+      await pumpDetail(tester, _remittance('ASSIGNED', courierId: 'k1'), byBusiness);
+
+      await tester.tap(find.text(OpsTexts.deliveredByBusiness));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Se le quita al repartidor'), findsOneWidget);
+      await tester.tap(find.text(CoreTexts.cancel));
+      await tester.pumpAndSettle();
+      verifyNever(() => remittances.completeFromBusiness(any(), note: any(named: 'note')));
+
+      await tester.tap(find.text(OpsTexts.deliveredByBusiness));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField).last, 'En la oficina');
+      await tester.tap(find.text(OpsTexts.byBusinessConfirm));
+      await tester.pumpAndSettle();
+
+      verify(() => remittances.completeFromBusiness('r1', note: 'En la oficina')).called(1);
+      expect(find.text(OpsTexts.completed), findsOneWidget);
+      expect(find.widgetWithText(FilledButton, OpsTexts.deliveredByBusiness), findsNothing);
+      expect(find.text(OpsTexts.deliveredByBusiness), findsOneWidget, reason: 'the summary says who delivered it');
+    });
+
+    testWidgets('a paid remittance can also be delivered by the business', (tester) async {
+      await pumpDetail(tester, _remittance('PAID'), byBusiness);
+      expect(find.text(OpsTexts.deliveredByBusiness), findsOneWidget);
+    });
+
+    for (final (name, remittance, permissions) in [
+      ('without the permission', _remittance('ASSIGNED', courierId: 'k1'), all),
+      ('once completed', _remittance('DELIVERED', courierId: 'k1'), byBusiness),
+      ('once voided', _remittance('PAID', voided: const Voided(reason: 'Duplicada')), byBusiness),
+    ]) {
+      testWidgets('no delivery by the business $name', (tester) async {
+        await pumpDetail(tester, remittance, permissions);
+        expect(find.text(OpsTexts.deliveredByBusiness), findsNothing);
+      });
+    }
+
     testWidgets('without the permission the review is shown but not resolved', (tester) async {
       await pumpDetail(
         tester,

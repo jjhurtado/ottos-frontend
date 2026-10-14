@@ -5,6 +5,7 @@ import 'package:ottos_core/ottos_core.dart';
 
 import '../../../app/destinations.dart';
 import '../../../app/ops_texts.dart';
+import '../../../widgets/complete_from_business_dialog.dart';
 import '../../../widgets/resolve_review_dialog.dart';
 import '../../../widgets/void_remittance_dialog.dart';
 import '../cubit/remittance_detail_cubit.dart';
@@ -160,6 +161,10 @@ class _ActionBar extends StatelessWidget {
     final open = !remittance.isVoided;
     final canAssign = open && workflow.canAssign(remittance.status, permissions);
     final canComplete = open && workflow.canComplete(remittance.status, permissions);
+    final canCompleteFromBusiness =
+        open &&
+        permissions.contains(Permissions.remittancesCompleteFromBusiness) &&
+        !workflow.isFinal(remittance.status);
     final canPostpone =
         open && permissions.contains(Permissions.remittancesPostpone) && !workflow.isFinal(remittance.status);
     // An incident is a failed attempt by the assigned courier.
@@ -170,7 +175,9 @@ class _ActionBar extends StatelessWidget {
         !workflow.isFinal(remittance.status);
     // Any status, delivered included: the backend reverses the cash it moved.
     final canVoid = open && permissions.contains(Permissions.remittancesVoid);
-    if (!canAssign && !canComplete && !canPostpone && !canReportIncident && !canVoid) return const SizedBox.shrink();
+    if (!canAssign && !canComplete && !canCompleteFromBusiness && !canPostpone && !canReportIncident && !canVoid) {
+      return const SizedBox.shrink();
+    }
 
     final enabled = !state.submitting;
     return Padding(
@@ -201,6 +208,17 @@ class _ActionBar extends StatelessWidget {
                   : null,
               icon: const Icon(Icons.check_circle_outline),
               label: Text(remittance.isPickup ? OpsTexts.markCollected : OpsTexts.markDelivered),
+            ),
+          if (canCompleteFromBusiness)
+            FilledButton.tonalIcon(
+              onPressed: enabled
+                  ? () async {
+                      final note = await askCompleteFromBusiness(context, remittance);
+                      if (note != null) await cubit.completeFromBusiness(note: note);
+                    }
+                  : null,
+              icon: const Icon(Icons.storefront_outlined),
+              label: Text(remittance.isPickup ? OpsTexts.collectedByBusiness : OpsTexts.deliveredByBusiness),
             ),
           if (canPostpone)
             OutlinedButton.icon(
@@ -286,7 +304,12 @@ class _SummaryCard extends StatelessWidget {
         InfoRow(label: OpsTexts.address, value: remittance.beneficiaryAddress),
         InfoRow(label: OpsTexts.municipality, value: remittance.municipalityName),
         InfoRow(label: OpsTexts.reference, value: remittance.beneficiaryReference),
-        InfoRow(label: OpsTexts.courier, value: remittance.courierName ?? OpsTexts.noCourier),
+        InfoRow(
+          label: OpsTexts.courier,
+          value: remittance.completedFromBusiness
+              ? (remittance.isPickup ? OpsTexts.collectedByBusiness : OpsTexts.deliveredByBusiness)
+              : remittance.courierName ?? OpsTexts.noCourier,
+        ),
         InfoRow(label: OpsTexts.expectedDate, value: Formatters.date(remittance.expectedDate)),
         if (remittance.postponements > 0) InfoRow(label: OpsTexts.postponements, value: '${remittance.postponements}'),
         InfoRow(label: OpsTexts.pin, value: remittance.pin),
