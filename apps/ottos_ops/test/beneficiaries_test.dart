@@ -43,9 +43,14 @@ void main() {
   });
 
   group('cubit', () {
-    test('lists the most recent, searches after the delay and keeps saved ones in place', () async {
-      when(() => customers.searchBeneficiaries('')).thenAnswer((_) async => const [_rosa, _suelto]);
-      when(() => customers.searchBeneficiaries('su')).thenAnswer((_) async => const [_suelto]);
+    PageResult<Beneficiary> page(List<Beneficiary> items, {int total = 2}) =>
+        PageResult(items: items, page: 0, size: 50, totalItems: total);
+
+    test('lists the first page, searches after the delay and keeps edited ones in place', () async {
+      when(() => customers.beneficiaryPage('', page: 0, size: 50))
+          .thenAnswer((_) async => page(const [_rosa, _suelto]));
+      when(() => customers.beneficiaryPage('su', page: 0, size: 50))
+          .thenAnswer((_) async => page(const [_suelto], total: 1));
       final cubit = BeneficiaryListCubit(customers: customers, searchDelay: Duration.zero);
       addTearDown(cubit.close);
 
@@ -53,20 +58,37 @@ void main() {
       expect(cubit.state.beneficiaries, const [_rosa, _suelto]);
 
       const renamed = Beneficiary(id: 'b2', fullName: 'Juana', phone: '5352220002');
-      cubit.saved(renamed);
+      await cubit.saved(renamed);
       expect(cubit.state.beneficiaries.map((b) => b.fullName), ['Rosa', 'Juana']);
-      const created = Beneficiary(id: 'b3', fullName: 'Nueva', phone: '5352220003');
-      cubit.saved(created);
-      expect(cubit.state.beneficiaries.first, created);
+      expect(cubit.state.result?.totalItems, 2);
+      verify(() => customers.beneficiaryPage('', page: 0, size: 50)).called(1);
 
       cubit.queryChanged('su');
       await Future<void>.delayed(const Duration(milliseconds: 10));
       expect(cubit.state.query, 'su');
       expect(cubit.state.beneficiaries, const [_suelto]);
+      expect(cubit.state.result?.totalItems, 1);
+    });
+
+    test('a new beneficiary loads the first page again', () async {
+      const created = Beneficiary(id: 'b3', fullName: 'Nueva', phone: '5352220003');
+      var calls = 0;
+      when(() => customers.beneficiaryPage('', page: 0, size: 50)).thenAnswer(
+        (_) async => ++calls == 1 ? page(const [_rosa, _suelto]) : page(const [created, _rosa, _suelto], total: 3),
+      );
+      final cubit = BeneficiaryListCubit(customers: customers);
+      addTearDown(cubit.close);
+
+      await cubit.load();
+      await cubit.saved(created);
+
+      expect(cubit.state.beneficiaries.first, created);
+      expect(cubit.state.result?.totalItems, 3);
     });
 
     test('reports a failed search', () async {
-      when(() => customers.searchBeneficiaries('')).thenThrow(const ApiException(CoreTexts.networkError));
+      when(() => customers.beneficiaryPage('', page: 0, size: 50))
+          .thenThrow(const ApiException(CoreTexts.networkError));
       final cubit = BeneficiaryListCubit(customers: customers);
       addTearDown(cubit.close);
 
@@ -112,7 +134,25 @@ void main() {
       await tester.pumpAndSettle();
     }
 
-    setUp(() => when(() => customers.searchBeneficiaries(any())).thenAnswer((_) async => const [_rosa, _suelto]));
+    setUp(
+      () => when(
+        () => customers.beneficiaryPage(
+          any(),
+          page: any(named: 'page'),
+          size: any(named: 'size'),
+        ),
+      ).thenAnswer((_) async => const PageResult(items: [_rosa, _suelto], page: 0, size: 50, totalItems: 120)),
+    );
+
+    testWidgets('shows the total and moves to the next page', (tester) async {
+      await pump(tester, {Permissions.customersRead});
+
+      expect(find.text(OpsTexts.pageOf(1, 2, 120)), findsOneWidget);
+      await tester.tap(find.byTooltip(OpsTexts.nextPage));
+      await tester.pumpAndSettle();
+
+      verify(() => customers.beneficiaryPage('', page: 1, size: 50)).called(1);
+    });
 
     testWidgets('a beneficiary without a customer can be edited', (tester) async {
       when(() => customers.updateBeneficiary('b2', any())).thenAnswer(

@@ -32,14 +32,19 @@ void main() {
   });
 
   group('customer list', () {
-    test('loads the most recent customers, then searches after the delay', () async {
-      when(() => customers.search('')).thenAnswer((_) async => const [_ana, _luis]);
-      when(() => customers.search('lu')).thenAnswer((_) async => const [_luis]);
+    PageResult<Customer> page(List<Customer> items, {int page = 0, int total = 2}) =>
+        PageResult(items: items, page: page, size: 50, totalItems: total);
+
+    test('loads the first page, then searches from the first page after the delay', () async {
+      when(() => customers.customerPage('', page: 0, size: 50)).thenAnswer((_) async => page(const [_ana, _luis]));
+      when(() => customers.customerPage('lu', page: 0, size: 50))
+          .thenAnswer((_) async => page(const [_luis], total: 1));
       final cubit = CustomerListCubit(customers: customers, searchDelay: Duration.zero);
       addTearDown(cubit.close);
 
       await cubit.load();
       expect(cubit.state.customers, const [_ana, _luis]);
+      expect(cubit.state.result?.totalItems, 2);
 
       cubit.queryChanged('l');
       cubit.queryChanged('lu');
@@ -48,18 +53,43 @@ void main() {
       expect(cubit.state.status, CustomerListStatus.success);
       expect(cubit.state.query, 'lu');
       expect(cubit.state.customers, const [_luis]);
-      verifyNever(() => customers.search('l'));
+      expect(cubit.state.result?.totalItems, 1);
+      verifyNever(
+        () => customers.customerPage(
+          'l',
+          page: any(named: 'page'),
+          size: any(named: 'size'),
+        ),
+      );
     });
 
-    test('reports a failed search', () async {
-      when(() => customers.search('')).thenThrow(const ApiException(CoreTexts.networkError));
+    test('moves between pages with the same query and reloads the current one', () async {
+      when(() => customers.customerPage('', page: 0, size: 1)).thenAnswer((_) async => page(const [_ana]));
+      when(() => customers.customerPage('', page: 1, size: 1))
+          .thenAnswer((_) async => const PageResult(items: [_luis], page: 1, size: 1, totalItems: 2));
+      final cubit = CustomerListCubit(customers: customers, pageSize: 1);
+      addTearDown(cubit.close);
+
+      await cubit.load();
+      await cubit.load(page: 1);
+      expect(cubit.state.customers, const [_luis]);
+
+      await cubit.load();
+      verify(() => customers.customerPage('', page: 1, size: 1)).called(2);
+    });
+
+    test('reports a failed search and keeps the page on screen', () async {
+      when(() => customers.customerPage('', page: 0, size: 50)).thenAnswer((_) async => page(const [_ana, _luis]));
+      when(() => customers.customerPage('', page: 1, size: 50)).thenThrow(const ApiException(CoreTexts.networkError));
       final cubit = CustomerListCubit(customers: customers);
       addTearDown(cubit.close);
 
       await cubit.load();
+      await cubit.load(page: 1);
 
       expect(cubit.state.status, CustomerListStatus.failure);
       expect(cubit.state.error, CoreTexts.networkError);
+      expect(cubit.state.customers, const [_ana, _luis]);
     });
   });
 

@@ -12,6 +12,7 @@ infraestructura (Railway, dominios).
 
 | Fecha | Decisión | Por qué |
 | --- | --- | --- |
+| 2026-10-14 | Clientes y Beneficiarios van por páginas de 50 con el total al pie, como Remesas. Un beneficiario editado cambia en su sitio; uno nuevo vuelve a cargar la primera página. El buscador de «Nueva remesa» sigue pidiendo la lista sin `page`. | Con 339 beneficiarios reales la lista de 50 ya no bastaba (petición del usuario). Lo nuevo es lo más reciente, así que aparece arriba con el total correcto; la búsqueda del formulario solo necesita las primeras coincidencias. |
 | 2026-10-13 | La versión en uso se muestra al final del menú de la cuenta, en el panel y en la app (se descartó un pie de pantalla siempre visible). | Saber qué versión tiene cada uno cuando reporta un problema, sin ocupar espacio en la pantalla principal. Elegido por el usuario entre dos variantes dibujadas en Claude Design. |
 | 2026-10-12 | Ventas crea remitentes y beneficiarios nuevos desde «Nueva remesa» en la app (con `customers:write`). Los formularios viven en `ottos_core` y los comparten panel y app. | Ventas registra remesas de día con la app y no podía dar de alta a un cliente nuevo sin ir al panel. |
 | 2026-10-11 | El admin no aparece en la lista de repartidores para asignar. | Tiene todos los permisos, así que el backend lo devolvía como repartidor; no reparte. Lo filtra el backend. |
