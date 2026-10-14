@@ -126,6 +126,22 @@ abstract final class OpsTexts {
   static const historicalInvalidNumber = 'Escribe un número válido.';
   static String historicalRegistered(String code) => 'Remesa antigua $code registrada';
 
+  // Delivered or collected by the business, without a courier (sales and admin)
+  static const deliveredByBusiness = 'Entregada por el negocio';
+  static const collectedByBusiness = 'Recogida por el negocio';
+  static String byBusinessTitle(String code, {required bool isPickup}) =>
+      isPickup ? 'Recogida por el negocio: $code' : 'Entregada por el negocio: $code';
+  static String byBusinessHelp(String amount, {required bool isPickup, required bool hasCourier}) => [
+    isPickup
+        ? 'Queda recogida sin repartidor y los $amount entran en la caja del negocio.'
+        : 'Queda entregada sin repartidor y los $amount salen de la caja del negocio, aunque se quede en negativo.',
+    if (hasCourier) 'Se le quita al repartidor: desaparece de su lista y de su teléfono.',
+    'No pide PIN.',
+  ].join(' ');
+  static const byBusinessNote = 'Nota (opcional)';
+  static const byBusinessConfirm = 'Confirmar';
+  static const byBusiness = 'El negocio';
+
   // Voiding a remittance (admin)
   static const voidAction = 'Anular';
   static String voidTitle(String code) => 'Anular la remesa $code';
@@ -371,6 +387,8 @@ abstract final class OpsTexts {
     Permissions.remittancesReview => 'Revisar remesas marcadas (entregas sin conexión)',
     Permissions.remittancesVoid => 'Anular remesas (deshace su caja)',
     Permissions.remittancesHistorical => 'Registrar remesas antiguas a mano',
+    Permissions.remittancesCompleteFromBusiness =>
+      'Entregar o recoger desde el negocio, sin repartidor (mueve su caja)',
     Permissions.auditRead => 'Ver el registro de auditoría',
     Permissions.reportsRead => 'Ver los reportes del negocio (resumen mensual)',
     Permissions.cashExchangeOwn => 'Cambiar moneda en su propia caja (repartidor)',

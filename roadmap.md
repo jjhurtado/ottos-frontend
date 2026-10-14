@@ -104,6 +104,11 @@ Objetivo: gestionar clientes y sus beneficiarios desde el panel. Va en paralelo 
   con «1–50 de 339» y flechas al pie, igual que Remesas; con búsqueda, el total de los que coinciden. Contrato
   `ottos/docs/contracts/customer-beneficiary-pages.md` (backend 1.0.0-rc.4, ya en producción); probado contra staging
   por API. El buscador de «Nueva remesa» sigue con la lista sin páginas.
+- [x] **Entregar o recoger desde el negocio, sin repartidor** (decisión del usuario, 2026-10-14): botón «Entregada por
+  el negocio» / «Recogida por el negocio» en el detalle de la remesa (`remittances:complete-from-business`, ADMIN y
+  SALES), con confirmación y nota opcional; mueve la caja del negocio y le quita la remesa al repartidor. Contrato
+  `ottos/docs/contracts/complete-from-business.md`; hecho en el panel, falta probarlo en staging cuando llegue el
+  backend.
 - [ ] **Eliminar y restaurar beneficiarios** (borrado lógico para todos los clientes) desde la sección «Beneficiarios»: el backend ya tiene `DELETE /beneficiaries/{id}` y `POST /beneficiaries/{id}/restore`. Aún no hace falta.
 - [ ] **Ver qué clientes le envían a un beneficiario** en la sección «Beneficiarios» (`GET /beneficiaries/{id}` devuelve sus clientes). Aún no hace falta.
 - [ ] Los tests de integración dejan clientes de prueba en la base local («Prueba Frontend Editada»); no hay endpoint para borrarlos. Valorar una base de datos aparte para tests.

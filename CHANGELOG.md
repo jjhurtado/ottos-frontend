@@ -6,10 +6,11 @@ Cambios notables del frontend de Ottos (panel de operaciones y app de repartidor
 
 ## [Unreleased]
 
-Necesita el backend 1.0.0-rc.4 (listas por páginas).
+Necesita el backend 1.0.0-rc.4 (listas por páginas) y, para «Entregada por el negocio», su próxima versión.
 
 ### Añadido
 
+- Panel › detalle de remesa: botón **«Entregada por el negocio»** («Recogida por el negocio» en las recogidas) para ventas y el admin, en remesas abiertas, asignadas o no. Pide confirmación con una nota opcional y no pide PIN. El dinero sale de la caja del negocio en las entregas (aunque quede en negativo) y entra en ella en las recogidas; si tenía repartidor, se le quita. Después, el detalle dice «Entregada por el negocio» y el listado, «El negocio». Ventas lo ve tras volver a entrar en el panel.
 - Panel › Clientes y Beneficiarios: las listas van por páginas de 50, como Remesas, con el total al pie («1–50 de 339») y flechas para pasar de página. Con una búsqueda, el total es el de los que coinciden y se vuelve a la primera página. Antes solo se veían los 50 más recientes o los 50 primeros que coincidían.
 
 ## [1.0.0-rc.5] - 2026-10-13

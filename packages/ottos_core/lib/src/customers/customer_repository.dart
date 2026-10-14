@@ -16,11 +16,10 @@ class CustomerRepository {
 
   /// A [page] (from 0) of the customers whose name or phone contains [query],
   /// the most recent first, with the total that match.
-  Future<PageResult<Customer>> customerPage(String query, {int page = 0, int size = 50}) async =>
-      PageResult.fromJson(
-        await _api.get<Map<String, dynamic>>('/customers', query: _pageQuery(query, page, size)),
-        Customer.fromJson,
-      );
+  Future<PageResult<Customer>> customerPage(String query, {int page = 0, int size = 50}) async => PageResult.fromJson(
+    await _api.get<Map<String, dynamic>>('/customers', query: _pageQuery(query, page, size)),
+    Customer.fromJson,
+  );
 
   Future<Customer> get(String id) async => Customer.fromJson(await _api.get<Map<String, dynamic>>('/customers/$id'));
 
