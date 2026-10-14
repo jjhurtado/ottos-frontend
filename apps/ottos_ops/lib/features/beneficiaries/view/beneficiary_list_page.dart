@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:ottos_core/ottos_core.dart';
 
 import '../../../app/ops_texts.dart';
+import '../../../widgets/pagination_bar.dart';
 import '../cubit/beneficiary_list_cubit.dart';
 
 /// Every beneficiary, including those without a customer (imported or created
@@ -86,6 +87,13 @@ class _BeneficiaryListView extends StatelessWidget {
                               )
                             : _BeneficiaryTable(beneficiaries: state.beneficiaries, canWrite: canWrite),
                       ),
+                      if (state.result case final result?) ...[
+                        const Divider(height: 1),
+                        PaginationBar(
+                          result: result,
+                          onPage: (page) => cubit.load(page: page),
+                        ),
+                      ],
                     ],
                   );
                 },

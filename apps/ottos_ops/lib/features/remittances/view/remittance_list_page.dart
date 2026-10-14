@@ -5,6 +5,7 @@ import 'package:ottos_core/ottos_core.dart';
 
 import '../../../app/ops_texts.dart';
 import '../../../app/router.dart';
+import '../../../widgets/pagination_bar.dart';
 import '../bloc/remittance_list_bloc.dart';
 
 class RemittanceListPage extends StatelessWidget {
@@ -80,7 +81,10 @@ class _RemittanceListView extends StatelessWidget {
                             : _RemittanceTable(items: result.items),
                       ),
                       const Divider(height: 1),
-                      _Pagination(result: result),
+                      PaginationBar(
+                        result: result,
+                        onPage: (page) => context.read<RemittanceListBloc>().add(RemittanceListPageRequested(page)),
+                      ),
                     ],
                   );
                 },
@@ -293,41 +297,6 @@ class _RemittanceTable extends StatelessWidget {
           ),
         );
       },
-    );
-  }
-}
-
-class _Pagination extends StatelessWidget {
-  const _Pagination({required this.result});
-
-  final PageResult<Remittance> result;
-
-  @override
-  Widget build(BuildContext context) {
-    final bloc = context.read<RemittanceListBloc>();
-    final first = result.totalItems == 0 ? 0 : result.page * result.size + 1;
-    final last = result.page * result.size + result.items.length;
-    final hasPrevious = result.page > 0;
-    final hasNext = result.page + 1 < result.totalPages;
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          Text(OpsTexts.pageOf(first, last, result.totalItems)),
-          const SizedBox(width: 8),
-          IconButton(
-            tooltip: OpsTexts.previousPage,
-            onPressed: hasPrevious ? () => bloc.add(RemittanceListPageRequested(result.page - 1)) : null,
-            icon: const Icon(Icons.chevron_left),
-          ),
-          IconButton(
-            tooltip: OpsTexts.nextPage,
-            onPressed: hasNext ? () => bloc.add(RemittanceListPageRequested(result.page + 1)) : null,
-            icon: const Icon(Icons.chevron_right),
-          ),
-        ],
-      ),
     );
   }
 }

@@ -6,6 +6,12 @@ Cambios notables del frontend de Ottos (panel de operaciones y app de repartidor
 
 ## [Unreleased]
 
+Necesita el backend 1.0.0-rc.4 (listas por páginas).
+
+### Añadido
+
+- Panel › Clientes y Beneficiarios: las listas van por páginas de 50, como Remesas, con el total al pie («1–50 de 339») y flechas para pasar de página. Con una búsqueda, el total es el de los que coinciden y se vuelve a la primera página. Antes solo se veían los 50 más recientes o los 50 primeros que coincidían.
+
 ## [1.0.0-rc.5] - 2026-10-13
 
 Necesita el backend 1.0.0-rc.4 (informe mensual con la moneda del negocio). Compilación 7 en Android e iPhone.

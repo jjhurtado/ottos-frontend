@@ -5,6 +5,7 @@ import 'package:ottos_core/ottos_core.dart';
 
 import '../../../app/ops_texts.dart';
 import '../../../app/router.dart';
+import '../../../widgets/pagination_bar.dart';
 import '../cubit/customer_list_cubit.dart';
 import 'customer_transfer.dart';
 
@@ -108,6 +109,13 @@ class _CustomerListView extends StatelessWidget {
                               )
                             : _CustomerTable(customers: state.customers),
                       ),
+                      if (state.result case final result?) ...[
+                        const Divider(height: 1),
+                        PaginationBar(
+                          result: result,
+                          onPage: (page) => cubit.load(page: page),
+                        ),
+                      ],
                     ],
                   );
                 },

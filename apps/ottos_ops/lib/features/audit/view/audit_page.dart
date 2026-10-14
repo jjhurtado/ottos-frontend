@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:ottos_core/ottos_core.dart';
 
 import '../../../app/ops_texts.dart';
+import '../../../widgets/pagination_bar.dart';
 import '../cubit/audit_cubit.dart';
 
 /// Who changed users and roles, and when (`audit:read`).
@@ -40,7 +41,10 @@ class AuditPage extends StatelessWidget {
                           if (state.status == AuditStatus.loading) const LinearProgressIndicator(),
                           Expanded(child: _Entries(items: page.items)),
                           const Divider(height: 1),
-                          _Pagination(result: page),
+                          PaginationBar(
+                            result: page,
+                            onPage: (index) => cubit.load(page: index),
+                          ),
                         ],
                       ),
                     },
@@ -216,37 +220,4 @@ class _Entries extends StatelessWidget {
     'REMITTANCE' => Icons.send_outlined,
     _ => Icons.person_outline,
   };
-}
-
-class _Pagination extends StatelessWidget {
-  const _Pagination({required this.result});
-
-  final PageResult<AuditEntry> result;
-
-  @override
-  Widget build(BuildContext context) {
-    final cubit = context.read<AuditCubit>();
-    final first = result.totalItems == 0 ? 0 : result.page * result.size + 1;
-    final last = result.page * result.size + result.items.length;
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          Text(OpsTexts.pageOf(first, last, result.totalItems)),
-          const SizedBox(width: 8),
-          IconButton(
-            tooltip: OpsTexts.previousPage,
-            onPressed: result.page > 0 ? () => cubit.load(page: result.page - 1) : null,
-            icon: const Icon(Icons.chevron_left),
-          ),
-          IconButton(
-            tooltip: OpsTexts.nextPage,
-            onPressed: result.page + 1 < result.totalPages ? () => cubit.load(page: result.page + 1) : null,
-            icon: const Icon(Icons.chevron_right),
-          ),
-        ],
-      ),
-    );
-  }
 }
