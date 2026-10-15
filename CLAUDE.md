@@ -34,6 +34,10 @@ del beneficiario. Este repo es el frontend en Flutter; el backend (Spring Boot) 
   para decidir van en uno temporal que se borra cuando el usuario elige.
 - **Idioma**: interfaz y documentación de producto en español; código, commits y READMEs técnicos en inglés.
 - **No publicar una versión** (rama `release/`, tag, APK/AAB, TestFlight) sin el «sí» explícito del usuario.
+- **Consultar antes al usuario** (D-026, por encima de su «luz verde» y en cualquier entorno): cualquier cambio que
+  altere la lógica actual (reglas, cálculos, validaciones, flujos del panel o de la app) y cualquier código o script que
+  cree, cambie o borre datos en la base. No hace falta para funcionalidades nuevas que no toquen lo existente.
+  Producción, además, necesita su orden explícita.
 
 ## Otros agentes
 
