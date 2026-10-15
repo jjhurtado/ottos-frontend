@@ -4,6 +4,17 @@ Cómo trabajamos en el frontend de Ottos: el flujo de Git y la arquitectura de l
 de agentes, sigue este documento. Las reglas de Git son las mismas que en el backend
 ([jjhurtado/ottos](https://github.com/jjhurtado/ottos), `STANDARDS.md`). Si algo no encaja, se cambia aquí primero y después en el código.
 
+## 0. Qué se consulta con el usuario
+
+Regla del usuario (D-026), por encima de la «luz verde» que da para trabajar sin supervisión y en cualquier entorno
+(local, staging o producción). Hay que preguntarle **antes** de:
+
+- Cambiar algo que ya existe: reglas, cálculos, validaciones o flujos del panel y de la app.
+- Ejecutar cualquier código o script que cree, cambie o borre datos en la base de datos.
+
+No hace falta preguntar para funcionalidades nuevas que no tocan lo existente. Publicar en producción sigue necesitando
+su orden explícita, aparte de esta consulta.
+
 ## 1. Git
 
 ### Flujo de ramas: Git Flow (configuración de GitKraken)
