@@ -38,6 +38,8 @@ del beneficiario. Este repo es el frontend en Flutter; el backend (Spring Boot) 
   altere la lógica actual (reglas, cálculos, validaciones, flujos del panel o de la app) y cualquier código o script que
   cree, cambie o borre datos en la base. No hace falta para funcionalidades nuevas que no toquen lo existente.
   Producción, además, necesita su orden explícita.
+- **Funcionalidad nueva, primero se discute** (por encima de la «luz verde»): antes de implementarla se le presenta al
+  usuario el diseño, los detalles técnicos y las dudas, y se implementa cuando lo ha acordado.
 
 ## Otros agentes
 
