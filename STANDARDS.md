@@ -15,6 +15,10 @@ Regla del usuario (D-026), por encima de la «luz verde» que da para trabajar s
 No hace falta preguntar para funcionalidades nuevas que no tocan lo existente. Publicar en producción sigue necesitando
 su orden explícita, aparte de esta consulta.
 
+Antes de cada **push a `main`** (versiones y hotfixes), infraestructura hace una **copia de la base de datos de
+producción** y responde con el nombre del archivo; sin esa confirmación no se hace el push (D-027). `main` despliega
+solo en producción, así que la copia va antes del push.
+
 Además, toda **funcionalidad nueva se discute con el usuario antes de implementarla**: se le presenta el diseño, los
 detalles técnicos y las dudas, y se implementa cuando lo ha acordado. También está por encima de la «luz verde».
 

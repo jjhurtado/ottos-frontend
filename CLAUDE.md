@@ -34,6 +34,9 @@ del beneficiario. Este repo es el frontend en Flutter; el backend (Spring Boot) 
   para decidir van en uno temporal que se borra cuando el usuario elige.
 - **Idioma**: interfaz y documentación de producto en español; código, commits y READMEs técnicos en inglés.
 - **No publicar una versión** (rama `release/`, tag, APK/AAB, TestFlight) sin el «sí» explícito del usuario.
+- **Copia de la base de datos antes de `main`** (D-027): `main` despliega solo en producción, así que antes de cada
+  push a `main` (versiones y hotfixes) se pide a infraestructura la copia de la base de datos de producción y se espera
+  el nombre del archivo. Sin esa confirmación no hay push.
 - **Consultar antes al usuario** (D-026, por encima de su «luz verde» y en cualquier entorno): cualquier cambio que
   altere la lógica actual (reglas, cálculos, validaciones, flujos del panel o de la app) y cualquier código o script que
   cree, cambie o borre datos en la base. No hace falta para funcionalidades nuevas que no toquen lo existente.
