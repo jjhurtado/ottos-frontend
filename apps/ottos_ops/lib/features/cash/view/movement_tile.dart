@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:ottos_core/ottos_core.dart';
 
 import '../../../app/ops_texts.dart';
+import '../../../widgets/page_header.dart';
 import '../../../app/router.dart';
 
 /// One ledger movement: what it was, when, its note and the signed amount
@@ -22,15 +23,24 @@ class MovementTile extends StatelessWidget {
     final courierId = movement.toType == 'COURIER' ? movement.toOwnerId : movement.fromOwnerId;
     final courier = courierId == null ? null : courierNames[courierId];
     final remittanceId = movement.remittanceId;
+    final title = courier == null
+        ? OpsTexts.movementTitle(movement.type)
+        : '${OpsTexts.movementTitle(movement.type)} · $courier';
+    final amount = Text(
+      '${incoming ? '+' : '−'}${Formatters.money(movement.signedAmount.abs(), movement.currency)}',
+      style: TextStyle(fontWeight: FontWeight.w600, color: incoming ? Colors.green.shade700 : colors.error),
+    );
+    final compact = isCompact(context);
     return ListTile(
       contentPadding: EdgeInsets.zero,
       leading: Icon(
         incoming ? Icons.south_west : Icons.north_east,
         color: incoming ? Colors.green.shade700 : colors.error,
       ),
-      title: Text(
-        courier == null ? OpsTexts.movementTitle(movement.type) : '${OpsTexts.movementTitle(movement.type)} · $courier',
-      ),
+      // On a phone the amount goes under the title, so the text keeps the width.
+      title: compact
+          ? Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(title), amount])
+          : Text(title),
       subtitle: Text(
         [
           Formatters.dateTime(movement.occurredAt),
@@ -38,10 +48,7 @@ class MovementTile extends StatelessWidget {
           movement.note,
         ].whereType<String>().where((s) => s.isNotEmpty).join(' · '),
       ),
-      trailing: Text(
-        '${incoming ? '+' : '−'}${Formatters.money(movement.signedAmount.abs(), movement.currency)}',
-        style: TextStyle(fontWeight: FontWeight.w600, color: incoming ? Colors.green.shade700 : colors.error),
-      ),
+      trailing: compact ? null : amount,
       onTap: remittanceId == null ? null : () => context.go(Routes.remittance(remittanceId)),
     );
   }

@@ -9,6 +9,7 @@ import 'package:ottos_core/ottos_core.dart';
 import 'package:ottos_ops/features/audit/view/audit_page.dart';
 import 'package:ottos_ops/features/beneficiaries/view/beneficiary_list_page.dart';
 import 'package:ottos_ops/features/cash/view/cash_page.dart';
+import 'package:ottos_ops/features/cash/view/courier_cash_page.dart';
 import 'package:ottos_ops/features/customers/view/customer_list_page.dart';
 import 'package:ottos_ops/features/remittances/view/remittance_list_page.dart';
 import 'package:ottos_ops/features/reports/view/reports_page.dart';
@@ -145,10 +146,18 @@ void main() {
     users = _MockUsers();
     roles = _MockRoles();
     when(
-      () => customers.customerPage(any(), page: any(named: 'page'), size: any(named: 'size')),
+      () => customers.customerPage(
+        any(),
+        page: any(named: 'page'),
+        size: any(named: 'size'),
+      ),
     ).thenAnswer((_) async => PageResult(items: _customers, page: 0, size: 50, totalItems: 339));
     when(
-      () => customers.beneficiaryPage(any(), page: any(named: 'page'), size: any(named: 'size')),
+      () => customers.beneficiaryPage(
+        any(),
+        page: any(named: 'page'),
+        size: any(named: 'size'),
+      ),
     ).thenAnswer((_) async => PageResult(items: _beneficiaries, page: 0, size: 50, totalItems: 339));
     when(() => remittances.workflow()).thenAnswer(
       (_) async => Workflow.fromJson({
@@ -160,7 +169,11 @@ void main() {
       }),
     );
     when(
-      () => remittances.search(any(), page: any(named: 'page'), size: any(named: 'size')),
+      () => remittances.search(
+        any(),
+        page: any(named: 'page'),
+        size: any(named: 'size'),
+      ),
     ).thenAnswer((_) async => PageResult(items: _remittances, page: 0, size: 50, totalItems: 2519));
     when(() => cash.businessBalances()).thenAnswer(
       (_) async => const [Balance(currency: 'CUP', amount: 1250000), Balance(currency: 'USD', amount: 15840)],
@@ -170,7 +183,10 @@ void main() {
         CourierCash(
           courierId: 'k1',
           name: 'Luis Alberto Fernández',
-          balances: [Balance(currency: 'CUP', amount: -82000), Balance(currency: 'USD', amount: 300)],
+          balances: [
+            Balance(currency: 'CUP', amount: -82000),
+            Balance(currency: 'USD', amount: 300),
+          ],
           negative: true,
         ),
       ],
@@ -192,17 +208,55 @@ void main() {
       ],
     );
     when(
-      () => cash.exchanges(review: any(named: 'review'), page: any(named: 'page'), size: any(named: 'size')),
+      () => cash.exchanges(
+        review: any(named: 'review'),
+        page: any(named: 'page'),
+        size: any(named: 'size'),
+      ),
     ).thenAnswer((_) async => const PageResult(items: [], page: 0, size: 20, totalItems: 0));
+    when(() => cash.courierStatement('k1')).thenAnswer(
+      (_) async => CourierStatement(
+        cash: const CourierCash(
+          courierId: 'k1',
+          name: 'Luis Alberto Fernández',
+          balances: [
+            Balance(currency: 'CUP', amount: -82000),
+            Balance(currency: 'USD', amount: 300),
+          ],
+          negative: true,
+        ),
+        movements: [
+          for (final (type, signed) in [
+            ('COURIER_FUNDING', 100000),
+            ('DELIVERY_PAYOUT', -182000),
+            ('COURIER_RETURN', -50),
+          ])
+            CashMovement.fromJson({
+              'id': type,
+              'type': type,
+              'amount': signed.abs(),
+              'signedAmount': signed,
+              'currency': signed.abs() > 1000 ? 'CUP' : 'USD',
+              'note': 'Entrega OT-ABC123 en Boyeros, La Habana',
+              'remittanceId': type == 'DELIVERY_PAYOUT' ? 'r1' : null,
+              'occurredAt': '2026-10-09T10:00:00Z',
+            }),
+        ],
+      ),
+    );
     when(() => reports.monthly(any(), any())).thenAnswer((_) async => MonthlyReport.fromJson(sampleJson));
     when(
-      () => audit.search(any(), page: any(named: 'page'), size: any(named: 'size')),
+      () => audit.search(
+        any(),
+        page: any(named: 'page'),
+        size: any(named: 'size'),
+      ),
     ).thenAnswer((_) async => PageResult(items: _audit, page: 0, size: 50, totalItems: 6));
     when(() => users.list()).thenAnswer((_) async => [..._users]);
     when(() => roles.list()).thenAnswer((_) async => const []);
   });
 
-  Future<void> pumpOnPhone(WidgetTester tester, String name, Widget page) async {
+  Future<void> pumpOnPhone(WidgetTester tester, String name, Widget page, {double height = 844}) async {
     final auth = _MockAuth();
     when(() => auth.sessionExpired).thenAnswer((_) => const Stream.empty());
     final authBloc = AuthBloc(authRepository: auth, accessPolicy: (_) => true)
@@ -214,12 +268,39 @@ void main() {
             name: 'Admin',
             type: '',
             roles: const [],
-            permissions: const {Permissions.usersRead, Permissions.usersWrite, Permissions.rolesRead, Permissions.rolesWrite, Permissions.ratesRead, Permissions.configurationRead, Permissions.configurationWrite, Permissions.customersRead, Permissions.customersWrite, Permissions.customersExport, Permissions.customersImport, Permissions.remittancesCreate, Permissions.remittancesRead, Permissions.remittancesReadFinancials, Permissions.remittancesAssign, Permissions.remittancesPostpone, Permissions.remittancesReview, Permissions.remittancesVoid, Permissions.remittancesHistorical, Permissions.remittancesCompleteFromBusiness, Permissions.auditRead, Permissions.reportsRead, Permissions.cashRead, Permissions.cashWrite, Permissions.cashAdjust, Permissions.cashReview},
+            permissions: const {
+              Permissions.usersRead,
+              Permissions.usersWrite,
+              Permissions.rolesRead,
+              Permissions.rolesWrite,
+              Permissions.ratesRead,
+              Permissions.configurationRead,
+              Permissions.configurationWrite,
+              Permissions.customersRead,
+              Permissions.customersWrite,
+              Permissions.customersExport,
+              Permissions.customersImport,
+              Permissions.remittancesCreate,
+              Permissions.remittancesRead,
+              Permissions.remittancesReadFinancials,
+              Permissions.remittancesAssign,
+              Permissions.remittancesPostpone,
+              Permissions.remittancesReview,
+              Permissions.remittancesVoid,
+              Permissions.remittancesHistorical,
+              Permissions.remittancesCompleteFromBusiness,
+              Permissions.auditRead,
+              Permissions.reportsRead,
+              Permissions.cashRead,
+              Permissions.cashWrite,
+              Permissions.cashAdjust,
+              Permissions.cashReview,
+            },
           ),
         ),
       );
     addTearDown(authBloc.close);
-    tester.view.physicalSize = _phone * 3;
+    tester.view.physicalSize = Size(_phone.width, height) * 3;
     tester.view.devicePixelRatio = 3;
     addTearDown(tester.view.reset);
     await tester.pumpWidget(
@@ -236,9 +317,7 @@ void main() {
         child: BlocProvider.value(
           value: authBloc,
           child: MaterialApp(
-            theme: OttosTheme.light().copyWith(
-              textTheme: OttosTheme.light().textTheme.apply(fontFamily: 'Roboto'),
-            ),
+            theme: OttosTheme.light().copyWith(textTheme: OttosTheme.light().textTheme.apply(fontFamily: 'Roboto')),
             localizationsDelegates: OttosLocalization.delegates,
             supportedLocales: OttosLocalization.supportedLocales,
             home: Scaffold(body: page),
@@ -261,9 +340,11 @@ void main() {
     ('reports', const ReportsPage()),
     ('audit', const AuditPage()),
     ('users', const UserListPage()),
+    ('courier_cash', const CourierCashPage(courierId: 'k1')),
   ]) {
     testWidgets('$name fits a phone', (tester) async {
-      await pumpOnPhone(tester, name, page);
+      // The cash pages scroll: tall enough to see every section.
+      await pumpOnPhone(tester, name, page, height: name.contains('cash') ? 1800 : 844);
       expect(tester.takeException(), isNull);
     });
   }
