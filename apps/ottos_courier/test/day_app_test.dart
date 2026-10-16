@@ -204,6 +204,7 @@ void main() {
       final codes = tester.widgetList<Text>(find.textContaining('OT-')).map((text) => text.data).toList();
       expect(codes, ['OT-OPEN', 'OT-DONE', 'OT-OLD'], reason: 'open first, then the latest completed');
       expect(find.textContaining('Completada el'), findsNWidgets(2));
+      expect(find.textContaining('${CourierTexts.delivered}:'), findsNWidgets(2), reason: 'done, not to do');
       final card = find.ancestor(of: find.text('OT-DONE'), matching: find.byType(Dismissible));
       expect(tester.widget<Dismissible>(card).direction, DismissDirection.none, reason: 'nothing to do on it');
       expect(find.text(CourierTexts.showMore), findsNothing, reason: 'a single page');

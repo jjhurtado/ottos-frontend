@@ -66,7 +66,8 @@ class _AssignedView extends StatelessWidget {
         return RefreshIndicator(
           onRefresh: cubit.refresh,
           child: ListView.separated(
-            padding: const EdgeInsets.all(12),
+            // Room at the end so «Nueva remesa» never covers the last card or «Ver más».
+            padding: EdgeInsets.fromLTRB(12, 12, 12, context.canDo(Permissions.remittancesCreate) ? 88 : 12),
             itemCount: state.items.length + (state.moreCompleted ? 2 : 1),
             separatorBuilder: (_, _) => const SizedBox(height: 8),
             itemBuilder: (context, index) {
@@ -255,7 +256,12 @@ class _AssignedCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
     final type = remittance.type;
-    final action = remittance.isPickup ? CourierTexts.toCollect : CourierTexts.toDeliver;
+    final action = switch ((remittance.isPickup, remittance.isCompleted)) {
+      (true, true) => CourierTexts.collected,
+      (true, false) => CourierTexts.toCollect,
+      (false, true) => CourierTexts.delivered,
+      (false, false) => CourierTexts.toDeliver,
+    };
     return Card(
       clipBehavior: Clip.antiAlias,
       child: InkWell(
