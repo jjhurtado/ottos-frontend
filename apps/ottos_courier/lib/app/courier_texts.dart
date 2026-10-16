@@ -72,6 +72,9 @@ abstract final class CourierTexts {
   static String daysLate(int days) => days == 1 ? '1 día de atraso' : '$days días de atraso';
   static const sortByDay = 'Del día';
   static const sortMostLate = 'Más atrasadas primero';
+  static const showCompleted = 'Completadas';
+  static const noRemittances = 'No hay remesas.';
+  static String completedOn(String date) => 'Completada el $date';
 
   // Remittance
   static const beneficiary = 'Beneficiario';

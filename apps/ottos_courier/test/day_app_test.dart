@@ -49,7 +49,7 @@ final _workflow = Workflow.fromJson({
   'transitions': const [],
 });
 
-Remittance _remittance(String code, String status) => Remittance(
+Remittance _remittance(String code, String status, {DateTime? completedAt}) => Remittance(
   id: code,
   code: code,
   type: RemittanceType.delivery,
@@ -58,6 +58,7 @@ Remittance _remittance(String code, String status) => Remittance(
   beneficiaryName: 'Rosa',
   cashAmount: 100,
   cashCurrency: 'USD',
+  completedAt: completedAt ?? (status == 'DELIVERED' ? DateTime(2026, 10, 14) : null),
 );
 
 void main() {
@@ -168,6 +169,63 @@ void main() {
 
       expect(find.text('OT-MINE'), findsOneWidget);
       expect(find.text(CourierTexts.newRemittance), findsNothing);
+    });
+
+    testWidgets('sales turn on «Completadas» to see the completed ones after the open ones', (tester) async {
+      when(() => remittances.workflow()).thenAnswer((_) async => _workflow);
+      when(() => remittances.search(any(), size: any(named: 'size'))).thenAnswer(
+        (_) async => PageResult(
+          items: [
+            _remittance('OT-OLD', 'DELIVERED', completedAt: DateTime(2026, 10, 1)),
+            _remittance('OT-DONE', 'DELIVERED'),
+            _remittance('OT-OPEN', 'PAID'),
+          ],
+          page: 0,
+          size: 100,
+          totalItems: 3,
+        ),
+      );
+
+      await pump(tester, _sales, const AssignedPage());
+      expect(find.text('OT-DONE'), findsNothing);
+
+      await tester.tap(find.widgetWithText(FilterChip, CourierTexts.showCompleted));
+      await tester.pumpAndSettle();
+
+      final codes = tester.widgetList<Text>(find.textContaining('OT-')).map((text) => text.data).toList();
+      expect(codes, ['OT-OPEN', 'OT-DONE', 'OT-OLD'], reason: 'open first, then the latest completed');
+      expect(find.textContaining('Completada el'), findsNWidgets(2));
+      final done = find.ancestor(of: find.text('OT-DONE'), matching: find.byType(Dismissible));
+      expect(tester.widget<Dismissible>(done).direction, DismissDirection.none, reason: 'nothing to do on it');
+
+      await tester.tap(find.widgetWithText(FilterChip, CourierTexts.showCompleted));
+      await tester.pumpAndSettle();
+      expect(find.text('OT-DONE'), findsNothing);
+    });
+
+    testWidgets('with everything completed, sales can still turn on «Completadas»', (tester) async {
+      when(() => remittances.workflow()).thenAnswer((_) async => _workflow);
+      when(() => remittances.search(any(), size: any(named: 'size'))).thenAnswer(
+        (_) async => PageResult(items: [_remittance('OT-DONE', 'DELIVERED')], page: 0, size: 100, totalItems: 1),
+      );
+
+      await pump(tester, _sales, const AssignedPage());
+      expect(find.text(CourierTexts.noAssigned), findsOneWidget);
+
+      await tester.tap(find.widgetWithText(FilterChip, CourierTexts.showCompleted));
+      await tester.pumpAndSettle();
+      expect(find.text('OT-DONE'), findsOneWidget);
+    });
+
+    testWidgets('a courier has no «Completadas» option', (tester) async {
+      when(() => remittances.assignedToMe()).thenAnswer((_) async => [_remittance('OT-MINE', 'PAID')]);
+      await pump(tester, _courierPermissions, const AssignedPage());
+      expect(find.text(CourierTexts.showCompleted), findsNothing);
+
+      when(() => remittances.assignedToMe()).thenAnswer((_) async => []);
+      await pump(tester, _courierPermissions, const AssignedPage());
+      expect(find.text(CourierTexts.noAssigned), findsOneWidget);
+      expect(find.text(CourierTexts.showCompleted), findsNothing);
     });
   });
 

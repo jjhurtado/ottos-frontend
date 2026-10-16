@@ -4,8 +4,13 @@ import 'sync_cubit.dart';
 
 /// Where the app reads remittances from and sends the courier's actions to.
 abstract interface class RemittanceSource {
-  /// The open remittances of the list.
-  Future<List<Remittance>> list();
+  /// The open remittances of the list; with [includeCompleted], also the
+  /// delivered and collected ones (only where [canShowCompleted]).
+  Future<List<Remittance>> list({bool includeCompleted = false});
+
+  /// Whether the list can also show the completed remittances: sales, who see
+  /// every remittance; the courier's list holds only open work.
+  bool get canShowCompleted;
 
   Future<Remittance> get(String id);
 
@@ -38,11 +43,15 @@ class OnlineSource implements RemittanceSource {
   static const openPageSize = 100;
 
   @override
-  Future<List<Remittance>> list() async {
+  bool get canShowCompleted => !onlyMine;
+
+  @override
+  Future<List<Remittance>> list({bool includeCompleted = false}) async {
     if (onlyMine) return _remittances.assignedToMe();
     final workflow = await _remittances.workflow();
     // Voided ones are not work: the backend keeps them out only of the courier's lists.
     final page = await _remittances.search(const RemittanceFilter(voided: false), size: openPageSize);
+    if (includeCompleted) return page.items;
     return page.items.where((remittance) => !workflow.isFinal(remittance.status)).toList();
   }
 
@@ -90,7 +99,10 @@ class OfflineSource implements RemittanceSource {
   final SyncCubit _sync;
 
   @override
-  Future<List<Remittance>> list() async {
+  bool get canShowCompleted => false;
+
+  @override
+  Future<List<Remittance>> list({bool includeCompleted = false}) async {
     final pending = await _sync.store.pending();
     // A completed one is gone for the courier even before it is sent.
     final completed = {

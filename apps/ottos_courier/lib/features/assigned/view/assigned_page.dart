@@ -35,6 +35,12 @@ class _AssignedView extends StatelessWidget {
       listenWhen: (_, current) => current.status == AssignedStatus.failure && current.items.isNotEmpty,
       listener: (context, state) => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(state.error!))),
       builder: (context, state) {
+        final selector = _SortSelector(
+          sort: state.sort,
+          onChanged: cubit.sortBy,
+          showCompleted: cubit.canShowCompleted ? state.showCompleted : null,
+          onShowCompleted: cubit.showCompleted,
+        );
         if (state.items.isEmpty) {
           return switch (state.status) {
             AssignedStatus.loading => const LoadingView(),
@@ -42,7 +48,17 @@ class _AssignedView extends StatelessWidget {
             AssignedStatus.success => RefreshIndicator(
               onRefresh: cubit.refresh,
               child: ListView(
-                children: const [SizedBox(height: 200, child: EmptyView(message: CourierTexts.noAssigned))],
+                padding: cubit.canShowCompleted ? const EdgeInsets.all(12) : null,
+                children: [
+                  // Sales can still turn on the completed ones when nothing is open.
+                  if (cubit.canShowCompleted) selector,
+                  SizedBox(
+                    height: 200,
+                    child: EmptyView(
+                      message: state.showCompleted ? CourierTexts.noRemittances : CourierTexts.noAssigned,
+                    ),
+                  ),
+                ],
               ),
             ),
           };
@@ -54,7 +70,7 @@ class _AssignedView extends StatelessWidget {
             itemCount: state.items.length + 1,
             separatorBuilder: (_, _) => const SizedBox(height: 8),
             itemBuilder: (context, index) {
-              if (index == 0) return _SortSelector(sort: state.sort, onChanged: cubit.sortBy);
+              if (index == 0) return selector;
               final remittance = state.items[index - 1];
               return _Swipeable(
                 remittance: remittance,
@@ -93,21 +109,32 @@ class _NewRemittanceButton extends StatelessWidget {
 }
 
 class _SortSelector extends StatelessWidget {
-  const _SortSelector({required this.sort, required this.onChanged});
+  const _SortSelector({required this.sort, required this.onChanged, this.showCompleted, this.onShowCompleted});
 
   final AssignedSort sort;
   final ValueChanged<AssignedSort> onChanged;
+
+  /// Whether the completed ones are shown; null hides the option (the courier).
+  final bool? showCompleted;
+  final ValueChanged<bool>? onShowCompleted;
 
   @override
   Widget build(BuildContext context) {
     return Wrap(
       spacing: 8,
+      runSpacing: 8,
       children: [
         for (final (option, label) in const [
           (AssignedSort.byDay, CourierTexts.sortByDay),
           (AssignedSort.mostLate, CourierTexts.sortMostLate),
         ])
           ChoiceChip(label: Text(label), selected: sort == option, onSelected: (_) => onChanged(option)),
+        if (showCompleted case final shown?)
+          FilterChip(
+            label: const Text(CourierTexts.showCompleted),
+            selected: shown,
+            onSelected: (selected) => onShowCompleted?.call(selected),
+          ),
       ],
     );
   }
@@ -126,6 +153,8 @@ class _Swipeable extends StatelessWidget {
     final canComplete = context.canDo(Permissions.remittancesDeliver);
     final canReportIncident = context.canDo(Permissions.remittancesReportIncident);
     final direction = switch ((canComplete, canReportIncident)) {
+      // A completed one has nothing left to do from the list.
+      _ when remittance.isCompleted => DismissDirection.none,
       (true, true) => DismissDirection.horizontal,
       (true, false) => DismissDirection.startToEnd,
       (false, true) => DismissDirection.endToStart,
@@ -272,12 +301,15 @@ class _AssignedCard extends StatelessWidget {
                           ),
                           Text(
                             switch (remittance.daysLate()) {
+                              _ when remittance.isCompleted => CourierTexts.completedOn(
+                                Formatters.date(remittance.completedAt),
+                              ),
                               0 => CourierTexts.dueOn(Formatters.date(remittance.expectedDate)),
                               final days => CourierTexts.daysLate(days),
                             },
                             style: textTheme.bodySmall?.copyWith(
-                              color: remittance.late ? OttosColors.danger : null,
-                              fontWeight: remittance.late ? FontWeight.w600 : null,
+                              color: remittance.late && !remittance.isCompleted ? OttosColors.danger : null,
+                              fontWeight: remittance.late && !remittance.isCompleted ? FontWeight.w600 : null,
                             ),
                           ),
                         ],
