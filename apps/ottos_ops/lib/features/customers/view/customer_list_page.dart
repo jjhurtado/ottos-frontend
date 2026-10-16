@@ -8,6 +8,7 @@ import '../../../app/router.dart';
 import '../../../widgets/pagination_bar.dart';
 import '../cubit/customer_list_cubit.dart';
 import 'customer_transfer.dart';
+import '../../../widgets/page_header.dart';
 
 class CustomerListPage extends StatelessWidget {
   const CustomerListPage({super.key});
@@ -29,20 +30,19 @@ class _CustomerListView extends StatelessWidget {
     final canWrite = context.canDo(Permissions.customersWrite);
     final cubit = context.read<CustomerListCubit>();
     return Padding(
-      padding: const EdgeInsets.all(24),
+      padding: pagePadding(context),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
-            children: [
-              Expanded(child: Text(OpsTexts.customers, style: Theme.of(context).textTheme.headlineMedium)),
+          PageHeader(
+            title: OpsTexts.customers,
+            actions: [
               if (context.canDo(Permissions.customersExport)) ...[
                 TextButton.icon(
                   onPressed: () => exportCustomers(context),
                   icon: const Icon(Icons.download_outlined),
                   label: const Text(OpsTexts.exportCsv),
                 ),
-                const SizedBox(width: 8),
               ],
               if (context.canDo(Permissions.customersImport)) ...[
                 TextButton.icon(
@@ -53,13 +53,11 @@ class _CustomerListView extends StatelessWidget {
                   icon: const Icon(Icons.upload_file_outlined),
                   label: const Text(OpsTexts.importCsv),
                 ),
-                const SizedBox(width: 8),
                 TextButton.icon(
                   onPressed: () => importBeneficiaries(context),
                   icon: const Icon(Icons.group_add_outlined),
                   label: const Text(OpsTexts.importBeneficiariesCsv),
                 ),
-                const SizedBox(width: 8),
               ],
               if (canWrite)
                 FilledButton.icon(
@@ -135,6 +133,22 @@ class _CustomerTable extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (isCompact(context)) {
+      return ListView.separated(
+        itemCount: customers.length,
+        separatorBuilder: (_, _) => const Divider(height: 1),
+        itemBuilder: (context, index) {
+          final customer = customers[index];
+          return ListTile(
+            onTap: () => context.go(Routes.customer(customer.id)),
+            title: Text(customer.fullName),
+            subtitle: Text([customer.phone, ?customer.address].join('\n')),
+            isThreeLine: customer.address != null,
+            trailing: customer.active ? null : const Text(OpsTexts.inactive),
+          );
+        },
+      );
+    }
     return SingleChildScrollView(
       child: SizedBox(
         width: double.infinity,

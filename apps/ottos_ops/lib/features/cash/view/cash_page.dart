@@ -8,6 +8,7 @@ import '../../../app/router.dart';
 import '../cubit/cash_overview_cubit.dart';
 import 'exchanges_to_review.dart';
 import 'movement_tile.dart';
+import '../../../widgets/page_header.dart';
 
 class CashPage extends StatelessWidget {
   const CashPage({super.key});
@@ -70,7 +71,7 @@ class _CashView extends StatelessWidget {
     return RefreshIndicator(
       onRefresh: cubit.load,
       child: ListView(
-        padding: const EdgeInsets.all(24),
+        padding: pagePadding(context),
         children: [
           Row(
             children: [
@@ -236,6 +237,40 @@ class _CourierCashTable extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final error = Theme.of(context).colorScheme.error;
+    if (isCompact(context)) {
+      return Column(
+        children: [
+          for (final courier in couriers) ...[
+            const Divider(height: 1),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              onTap: () => context.go(Routes.courierCash(courier.courierId)),
+              title: Row(
+                children: [
+                  Flexible(child: Text(courier.name)),
+                  if (courier.negative) ...[
+                    const SizedBox(width: 8),
+                    Tooltip(
+                      message: OpsTexts.courierOwes,
+                      child: Icon(Icons.warning_amber_rounded, size: 18, color: error),
+                    ),
+                  ],
+                ],
+              ),
+              subtitle: BalancesText(balances: courier.balances, empty: '—', negativeColor: error),
+            ),
+            if (canWrite)
+              Wrap(
+                spacing: 8,
+                children: [
+                  TextButton(onPressed: () => onFund(courier), child: const Text(OpsTexts.fund)),
+                  TextButton(onPressed: () => onReturn(courier), child: const Text(OpsTexts.registerReturn)),
+                ],
+              ),
+          ],
+        ],
+      );
+    }
     return SizedBox(
       width: double.infinity,
       child: DataTable(
