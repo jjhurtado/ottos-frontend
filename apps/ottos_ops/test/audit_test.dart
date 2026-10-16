@@ -92,6 +92,31 @@ void main() {
       );
     });
 
+    test('a remittance completed from the business says what and whether it had a courier', () {
+      final entry = _entry('REMITTANCE_COMPLETED_FROM_BUSINESS', {
+        'code': 'OT-6XAHP7',
+        'type': 'DELIVERY',
+        'amount': 76000,
+        'currency': 'CUP',
+        'previousCourierId': 'k1',
+        'note': 'Entregada en la oficina',
+      }, type: 'REMITTANCE');
+      expect(OpsTexts.auditAction(entry.action), 'Completada desde el negocio');
+      expect(OpsTexts.auditDetails(entry), [
+        '${CoreTexts.delivery} · ${Formatters.money(76000, 'CUP')}',
+        'Se le quitó al repartidor que la tenía',
+        'Nota: Entregada en la oficina',
+      ]);
+      final bare = _entry('REMITTANCE_COMPLETED_FROM_BUSINESS', {
+        'type': 'PICKUP',
+        'amount': 200,
+        'currency': 'USD',
+        'previousCourierId': null,
+        'note': null,
+      }, type: 'REMITTANCE');
+      expect(OpsTexts.auditDetails(bare), ['${CoreTexts.pickup} · ${Formatters.money(200, 'USD')}']);
+    });
+
     test('unknown actions keep their code and raw details', () {
       final entry = _entry('SOMETHING_NEW', {'field': 'x'});
       expect(OpsTexts.auditAction(entry.action), 'SOMETHING_NEW');

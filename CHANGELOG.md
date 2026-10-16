@@ -6,6 +6,10 @@ Cambios notables del frontend de Ottos (panel de operaciones y app de repartidor
 
 ## [Unreleased]
 
+### Añadido
+
+- Panel › Auditoría: la acción «Completada desde el negocio» (con el backend que la registra), con el tipo, el importe, si se le quitó al repartidor y la nota. También está en el filtro de acciones.
+
 No necesita cambios en el backend: funciona con el `1.0.0-rc.5`.
 
 ### Añadido
