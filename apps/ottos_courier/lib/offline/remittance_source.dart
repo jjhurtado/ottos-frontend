@@ -7,6 +7,14 @@ abstract interface class RemittanceSource {
   /// The open remittances of the list.
   Future<List<Remittance>> list();
 
+  /// Whether the list can also show the completed remittances: sales, who see
+  /// every remittance; the courier's list holds only open work.
+  bool get canShowCompleted;
+
+  /// The delivered and collected remittances, latest first, a page at a time.
+  /// Only where [canShowCompleted].
+  Future<PageResult<Remittance>> completed({int page = 0});
+
   Future<Remittance> get(String id);
 
   /// Remittances with an action not sent yet.
@@ -38,12 +46,35 @@ class OnlineSource implements RemittanceSource {
   static const openPageSize = 100;
 
   @override
+  bool get canShowCompleted => !onlyMine;
+
+  /// How many completed remittances each «Ver más» brings.
+  static const completedPageSize = 50;
+
+  @override
   Future<List<Remittance>> list() async {
     if (onlyMine) return _remittances.assignedToMe();
     final workflow = await _remittances.workflow();
     // Voided ones are not work: the backend keeps them out only of the courier's lists.
     final page = await _remittances.search(const RemittanceFilter(voided: false), size: openPageSize);
     return page.items.where((remittance) => !workflow.isFinal(remittance.status)).toList();
+  }
+
+  @override
+  Future<PageResult<Remittance>> completed({int page = 0}) async {
+    final finals = [for (final status in (await _remittances.workflow()).statuses) if (status.isFinal) status.code];
+    // With a single final status the backend pages exactly the completed ones.
+    final result = await _remittances.search(
+      RemittanceFilter(voided: false, status: finals.length == 1 ? finals.single : null),
+      page: page,
+      size: completedPageSize,
+    );
+    return PageResult(
+      items: [for (final remittance in result.items) if (finals.contains(remittance.status)) remittance],
+      page: result.page,
+      size: result.size,
+      totalItems: result.totalItems,
+    );
   }
 
   @override
@@ -88,6 +119,12 @@ class OfflineSource implements RemittanceSource {
   OfflineSource({required this._sync});
 
   final SyncCubit _sync;
+
+  @override
+  bool get canShowCompleted => false;
+
+  @override
+  Future<PageResult<Remittance>> completed({int page = 0}) => throw UnsupportedError('Only sales list completed ones');
 
   @override
   Future<List<Remittance>> list() async {

@@ -5,6 +5,7 @@ import 'package:ottos_core/ottos_core.dart';
 
 import '../../../app/destinations.dart';
 import '../../../app/ops_texts.dart';
+import '../../../widgets/page_header.dart';
 import 'movement_tile.dart';
 
 /// A courier's cash: balances, latest movements, and funding or returns.
@@ -85,7 +86,7 @@ class _CourierCashView extends StatelessWidget {
     }
 
     return ListView(
-      padding: const EdgeInsets.all(24),
+      padding: pagePadding(context),
       children: [
         Align(
           alignment: Alignment.centerLeft,

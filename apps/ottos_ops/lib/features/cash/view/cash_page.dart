@@ -8,6 +8,7 @@ import '../../../app/router.dart';
 import '../cubit/cash_overview_cubit.dart';
 import 'exchanges_to_review.dart';
 import 'movement_tile.dart';
+import '../../../widgets/page_header.dart';
 
 class CashPage extends StatelessWidget {
   const CashPage({super.key});
@@ -70,7 +71,7 @@ class _CashView extends StatelessWidget {
     return RefreshIndicator(
       onRefresh: cubit.load,
       child: ListView(
-        padding: const EdgeInsets.all(24),
+        padding: pagePadding(context),
         children: [
           Row(
             children: [
@@ -114,7 +115,7 @@ class _CashView extends StatelessWidget {
                 ? const Text(OpsTexts.noBalances)
                 : Wrap(
                     spacing: 16,
-                    runSpacing: 16,
+                    runSpacing: isCompact(context) ? 8 : 16,
                     children: [for (final balance in state.balances) _BalanceTile(balance: balance)],
                   ),
           ),
@@ -169,19 +170,16 @@ class _Section extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.all(isCompact(context) ? 16 : 20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Wrap(
-              spacing: 12,
-              runSpacing: 8,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              children: [
-                Text(title, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
-                ...actions,
-              ],
-            ),
+            Text(title, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
+            // Under the title, so they never squeeze it.
+            if (actions.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              Wrap(spacing: 12, runSpacing: 8, children: actions),
+            ],
             if (help != null) ...[const SizedBox(height: 8), Text(help!, style: Theme.of(context).textTheme.bodySmall)],
             const SizedBox(height: 16),
             child,
@@ -200,21 +198,43 @@ class _BalanceTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final currency = Text(balance.currency, style: textTheme.labelLarge);
+    final amount = Text(
+      Formatters.money(balance.amount, null),
+      style: textTheme.headlineSmall?.copyWith(
+        color: balance.amount < 0 ? colors.error : null,
+        fontWeight: FontWeight.w600,
+      ),
+    );
+    final decoration = BoxDecoration(color: colors.surfaceContainerHighest, borderRadius: BorderRadius.circular(12));
+    // On a phone, one full-width row per currency: big amounts never wrap.
+    if (isCompact(context)) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: decoration,
+        child: Row(
+          children: [
+            currency,
+            const SizedBox(width: 12),
+            Expanded(
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: FittedBox(fit: BoxFit.scaleDown, child: amount),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
     return Container(
       width: 220,
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: colors.surfaceContainerHighest, borderRadius: BorderRadius.circular(12)),
+      decoration: decoration,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(balance.currency, style: Theme.of(context).textTheme.labelLarge),
-          const SizedBox(height: 4),
-          Text(
-            Formatters.money(balance.amount, null),
-            style: Theme.of(context).textTheme.headlineSmall
-                ?.copyWith(color: balance.amount < 0 ? colors.error : null, fontWeight: FontWeight.w600),
-          ),
-        ],
+        children: [currency, const SizedBox(height: 4), amount],
       ),
     );
   }
@@ -236,6 +256,40 @@ class _CourierCashTable extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final error = Theme.of(context).colorScheme.error;
+    if (isCompact(context)) {
+      return Column(
+        children: [
+          for (final courier in couriers) ...[
+            const Divider(height: 1),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              onTap: () => context.go(Routes.courierCash(courier.courierId)),
+              title: Row(
+                children: [
+                  Flexible(child: Text(courier.name)),
+                  if (courier.negative) ...[
+                    const SizedBox(width: 8),
+                    Tooltip(
+                      message: OpsTexts.courierOwes,
+                      child: Icon(Icons.warning_amber_rounded, size: 18, color: error),
+                    ),
+                  ],
+                ],
+              ),
+              subtitle: BalancesText(balances: courier.balances, empty: '—', negativeColor: error),
+            ),
+            if (canWrite)
+              Wrap(
+                spacing: 8,
+                children: [
+                  TextButton(onPressed: () => onFund(courier), child: const Text(OpsTexts.fund)),
+                  TextButton(onPressed: () => onReturn(courier), child: const Text(OpsTexts.registerReturn)),
+                ],
+              ),
+          ],
+        ],
+      );
+    }
     return SizedBox(
       width: double.infinity,
       child: DataTable(

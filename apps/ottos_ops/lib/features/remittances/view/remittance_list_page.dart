@@ -7,6 +7,7 @@ import '../../../app/ops_texts.dart';
 import '../../../app/router.dart';
 import '../../../widgets/pagination_bar.dart';
 import '../bloc/remittance_list_bloc.dart';
+import '../../../widgets/page_header.dart';
 
 class RemittanceListPage extends StatelessWidget {
   const RemittanceListPage({super.key, this.initialFilter = const RemittanceFilter()});
@@ -32,20 +33,19 @@ class _RemittanceListView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(24),
+      padding: pagePadding(context),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
-            children: [
-              Expanded(child: Text(OpsTexts.remittances, style: Theme.of(context).textTheme.headlineMedium)),
+          PageHeader(
+            title: OpsTexts.remittances,
+            actions: [
               if (context.canDo(Permissions.remittancesHistorical)) ...[
                 TextButton.icon(
                   onPressed: () => context.go(Routes.historicalRemittance),
                   icon: const Icon(Icons.history_edu_outlined),
                   label: const Text(OpsTexts.historicalAction),
                 ),
-                const SizedBox(width: 8),
               ],
               if (context.canDo(Permissions.remittancesCreate))
                 FilledButton.icon(
@@ -108,70 +108,98 @@ class _FilterBar extends StatelessWidget {
       builder: (context, state) {
         final filter = state.filter;
         void change(RemittanceFilter next) => bloc.add(RemittanceListFilterChanged(next));
-        return Wrap(
-          spacing: 12,
-          runSpacing: 12,
-          crossAxisAlignment: WrapCrossAlignment.center,
+        final compact = isCompact(context);
+        final filters = [
+          SizedBox(
+            width: 220,
+            child: DropdownButtonFormField<String?>(
+              // Rebuilt with the type too: it names the final status.
+              key: ValueKey('status-${filter.status}-${filter.type}'),
+              initialValue: filter.status,
+              isExpanded: true,
+              decoration: const InputDecoration(labelText: OpsTexts.status, isDense: true),
+              items: [
+                const DropdownMenuItem(value: null, child: Text(OpsTexts.allStatuses)),
+                for (final status in state.statuses)
+                  DropdownMenuItem(
+                    value: status.code,
+                    child: Text(CoreTexts.statusName(status.code, type: filter.type, fallback: status.name)),
+                  ),
+              ],
+              onChanged: (status) => change(filter.copyWith(status: status)),
+            ),
+          ),
+          SizedBox(
+            width: 200,
+            child: DropdownButtonFormField<RemittanceType?>(
+              key: ValueKey('type-${filter.type}'),
+              initialValue: filter.type,
+              isExpanded: true,
+              decoration: const InputDecoration(labelText: OpsTexts.type, isDense: true),
+              items: const [
+                DropdownMenuItem(value: null, child: Text(OpsTexts.allTypes)),
+                DropdownMenuItem(value: RemittanceType.delivery, child: Text(CoreTexts.delivery)),
+                DropdownMenuItem(value: RemittanceType.pickup, child: Text(CoreTexts.pickup)),
+              ],
+              onChanged: (type) => change(filter.copyWith(type: type)),
+            ),
+          ),
+          FilterChip(
+            label: const Text(OpsTexts.onlyLate),
+            selected: filter.late == true,
+            onSelected: (selected) => change(filter.copyWith(late: selected ? true : null)),
+          ),
+          FilterChip(
+            label: const Text(OpsTexts.onlyToReview),
+            selected: filter.review == true,
+            onSelected: (selected) => change(filter.copyWith(review: selected ? true : null)),
+          ),
+          FilterChip(
+            label: const Text(OpsTexts.onlyIncidents),
+            selected: filter.incident == true,
+            onSelected: (selected) => change(filter.copyWith(incident: selected ? true : null)),
+          ),
+          FilterChip(
+            label: const Text(OpsTexts.onlyVoided),
+            selected: filter.voided == true,
+            onSelected: (selected) => change(filter.copyWith(voided: selected ? true : null)),
+          ),
+          if (!filter.isEmpty)
+            TextButton.icon(
+              onPressed: () => change(const RemittanceFilter()),
+              icon: const Icon(Icons.filter_alt_off_outlined),
+              label: const Text(OpsTexts.clearFilters),
+            ),
+        ];
+        if (!compact) {
+          return Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              const SizedBox(width: 260, child: _CodeSearchField()),
+              ...filters,
+            ],
+          );
+        }
+        // On a phone the filters fold away, so the list keeps most of the screen.
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const SizedBox(width: 260, child: _CodeSearchField()),
-            SizedBox(
-              width: 220,
-              child: DropdownButtonFormField<String?>(
-                // Rebuilt with the type too: it names the final status.
-                key: ValueKey('status-${filter.status}-${filter.type}'),
-                initialValue: filter.status,
-                decoration: const InputDecoration(labelText: OpsTexts.status, isDense: true),
-                items: [
-                  const DropdownMenuItem(value: null, child: Text(OpsTexts.allStatuses)),
-                  for (final status in state.statuses)
-                    DropdownMenuItem(
-                      value: status.code,
-                      child: Text(CoreTexts.statusName(status.code, type: filter.type, fallback: status.name)),
-                    ),
-                ],
-                onChanged: (status) => change(filter.copyWith(status: status)),
-              ),
+            const _CodeSearchField(),
+            ExpansionTile(
+              key: ValueKey('filters-${filter.isEmpty}'),
+              title: Text(filter.isEmpty ? OpsTexts.filters : OpsTexts.filtersOn),
+              initiallyExpanded: !filter.isEmpty,
+              tilePadding: EdgeInsets.zero,
+              childrenPadding: const EdgeInsets.only(bottom: 8),
+              shape: const Border(),
+              collapsedShape: const Border(),
+              expandedAlignment: Alignment.centerLeft,
+              children: [
+                Wrap(spacing: 12, runSpacing: 12, crossAxisAlignment: WrapCrossAlignment.center, children: filters),
+              ],
             ),
-            SizedBox(
-              width: 200,
-              child: DropdownButtonFormField<RemittanceType?>(
-                key: ValueKey('type-${filter.type}'),
-                initialValue: filter.type,
-                decoration: const InputDecoration(labelText: OpsTexts.type, isDense: true),
-                items: const [
-                  DropdownMenuItem(value: null, child: Text(OpsTexts.allTypes)),
-                  DropdownMenuItem(value: RemittanceType.delivery, child: Text(CoreTexts.delivery)),
-                  DropdownMenuItem(value: RemittanceType.pickup, child: Text(CoreTexts.pickup)),
-                ],
-                onChanged: (type) => change(filter.copyWith(type: type)),
-              ),
-            ),
-            FilterChip(
-              label: const Text(OpsTexts.onlyLate),
-              selected: filter.late == true,
-              onSelected: (selected) => change(filter.copyWith(late: selected ? true : null)),
-            ),
-            FilterChip(
-              label: const Text(OpsTexts.onlyToReview),
-              selected: filter.review == true,
-              onSelected: (selected) => change(filter.copyWith(review: selected ? true : null)),
-            ),
-            FilterChip(
-              label: const Text(OpsTexts.onlyIncidents),
-              selected: filter.incident == true,
-              onSelected: (selected) => change(filter.copyWith(incident: selected ? true : null)),
-            ),
-            FilterChip(
-              label: const Text(OpsTexts.onlyVoided),
-              selected: filter.voided == true,
-              onSelected: (selected) => change(filter.copyWith(voided: selected ? true : null)),
-            ),
-            if (!filter.isEmpty)
-              TextButton.icon(
-                onPressed: () => change(const RemittanceFilter()),
-                icon: const Icon(Icons.filter_alt_off_outlined),
-                label: const Text(OpsTexts.clearFilters),
-              ),
           ],
         );
       },

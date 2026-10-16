@@ -5,6 +5,7 @@ import 'package:ottos_core/ottos_core.dart';
 import '../../../app/ops_texts.dart';
 import '../../../widgets/pagination_bar.dart';
 import '../cubit/beneficiary_list_cubit.dart';
+import '../../../widgets/page_header.dart';
 
 /// Every beneficiary, including those without a customer (imported or created
 /// alone), which the customer page cannot reach.
@@ -28,13 +29,13 @@ class _BeneficiaryListView extends StatelessWidget {
     final canWrite = context.canDo(Permissions.customersWrite);
     final cubit = context.read<BeneficiaryListCubit>();
     return Padding(
-      padding: const EdgeInsets.all(24),
+      padding: pagePadding(context),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
-            children: [
-              Expanded(child: Text(OpsTexts.beneficiaries, style: Theme.of(context).textTheme.headlineMedium)),
+          PageHeader(
+            title: OpsTexts.beneficiaries,
+            actions: [
               if (canWrite)
                 FilledButton.icon(
                   onPressed: () async {
@@ -120,6 +121,26 @@ class _BeneficiaryTable extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (isCompact(context)) {
+      return ListView.separated(
+        itemCount: beneficiaries.length,
+        separatorBuilder: (_, _) => const Divider(height: 1),
+        itemBuilder: (context, index) {
+          final beneficiary = beneficiaries[index];
+          final phones = [
+            beneficiary.phone,
+            beneficiary.alternatePhone,
+          ].whereType<String>().where((phone) => phone.isNotEmpty).join(' · ');
+          return ListTile(
+            onTap: canWrite ? () => _edit(context, beneficiary) : null,
+            title: Text(beneficiary.fullName),
+            subtitle: Text('$phones\n${beneficiary.address}'),
+            isThreeLine: true,
+            trailing: canWrite ? const Icon(Icons.edit_outlined) : null,
+          );
+        },
+      );
+    }
     return SingleChildScrollView(
       child: SizedBox(
         width: double.infinity,

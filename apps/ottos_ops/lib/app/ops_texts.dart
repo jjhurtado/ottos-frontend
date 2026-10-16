@@ -32,6 +32,8 @@ abstract final class OpsTexts {
   static const onlyLate = 'Solo atrasadas';
   static const onlyIncidents = 'Con incidencia';
   static const onlyToReview = CoreTexts.toReview;
+  static const filters = 'Filtros';
+  static const filtersOn = 'Filtros (activos)';
   static const clearFilters = 'Quitar filtros';
   static const noRemittances = 'No hay remesas con estos filtros.';
   static const code = 'Código';

@@ -5,6 +5,7 @@ import 'package:ottos_core/ottos_core.dart';
 import '../../../app/ops_texts.dart';
 import '../cubit/user_list_cubit.dart';
 import 'user_dialogs.dart';
+import '../../../widgets/page_header.dart';
 
 class UserListPage extends StatelessWidget {
   const UserListPage({super.key});
@@ -26,13 +27,13 @@ class _UserListView extends StatelessWidget {
     final canWrite = context.canDo(Permissions.usersWrite);
     final cubit = context.read<UserListCubit>();
     return Padding(
-      padding: const EdgeInsets.all(24),
+      padding: pagePadding(context),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
-            children: [
-              Expanded(child: Text(OpsTexts.users, style: Theme.of(context).textTheme.headlineMedium)),
+          PageHeader(
+            title: OpsTexts.users,
+            actions: [
               if (canWrite)
                 FilledButton.icon(
                   onPressed: () async {
@@ -111,6 +112,24 @@ class _UserTable extends StatelessWidget {
   Widget build(BuildContext context) {
     final me = context.select((AuthBloc bloc) => bloc.state.user?.id);
     final outline = Theme.of(context).colorScheme.outline;
+    if (isCompact(context)) {
+      return ListView.separated(
+        itemCount: users.length,
+        separatorBuilder: (_, _) => const Divider(height: 1),
+        itemBuilder: (context, index) {
+          final user = users[index];
+          return ListTile(
+            textColor: user.active ? null : outline,
+            title: Text(user.id == me ? '${user.displayName} (${OpsTexts.you})' : user.displayName),
+            subtitle: Text(
+              '${user.email}\n${[...user.roles.map((role) => role.displayName), if (!user.active) OpsTexts.inactive].join(' · ')}',
+            ),
+            isThreeLine: true,
+            trailing: canWrite ? _menu(context, user, me) : null,
+          );
+        },
+      );
+    }
     return SingleChildScrollView(
       child: SizedBox(
         width: double.infinity,
@@ -143,21 +162,7 @@ class _UserTable extends StatelessWidget {
                     ),
                   ),
                   DataCell(Text(user.active ? OpsTexts.active : OpsTexts.inactive)),
-                  if (canWrite)
-                    DataCell(
-                      PopupMenuButton<_UserAction>(
-                        tooltip: OpsTexts.actions,
-                        onSelected: (action) => _run(context, user, action),
-                        itemBuilder: (_) => [
-                          const PopupMenuItem(value: _UserAction.edit, child: Text(OpsTexts.edit)),
-                          const PopupMenuItem(value: _UserAction.resetPassword, child: Text(OpsTexts.resetPassword)),
-                          if (user.active && user.id != me)
-                            const PopupMenuItem(value: _UserAction.deactivate, child: Text(OpsTexts.deactivate)),
-                          if (!user.active)
-                            const PopupMenuItem(value: _UserAction.activate, child: Text(OpsTexts.activate)),
-                        ],
-                      ),
-                    ),
+                  if (canWrite) DataCell(_menu(context, user, me)),
                 ],
               ),
           ],
@@ -165,6 +170,18 @@ class _UserTable extends StatelessWidget {
       ),
     );
   }
+
+  static Widget _menu(BuildContext context, StaffUser user, String? me) => PopupMenuButton<_UserAction>(
+    tooltip: OpsTexts.actions,
+    onSelected: (action) => _run(context, user, action),
+    itemBuilder: (_) => [
+      const PopupMenuItem(value: _UserAction.edit, child: Text(OpsTexts.edit)),
+      const PopupMenuItem(value: _UserAction.resetPassword, child: Text(OpsTexts.resetPassword)),
+      if (user.active && user.id != me)
+        const PopupMenuItem(value: _UserAction.deactivate, child: Text(OpsTexts.deactivate)),
+      if (!user.active) const PopupMenuItem(value: _UserAction.activate, child: Text(OpsTexts.activate)),
+    ],
+  );
 
   static Future<void> _run(BuildContext context, StaffUser user, _UserAction action) async {
     final cubit = context.read<UserListCubit>();
