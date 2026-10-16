@@ -67,10 +67,18 @@ class _AssignedView extends StatelessWidget {
           onRefresh: cubit.refresh,
           child: ListView.separated(
             padding: const EdgeInsets.all(12),
-            itemCount: state.items.length + 1,
+            itemCount: state.items.length + (state.moreCompleted ? 2 : 1),
             separatorBuilder: (_, _) => const SizedBox(height: 8),
             itemBuilder: (context, index) {
               if (index == 0) return selector;
+              if (index > state.items.length) {
+                return Center(
+                  child: TextButton(
+                    onPressed: state.status == AssignedStatus.loading ? null : cubit.moreCompleted,
+                    child: const Text(CourierTexts.showMore),
+                  ),
+                );
+              }
               final remittance = state.items[index - 1];
               return _Swipeable(
                 remittance: remittance,

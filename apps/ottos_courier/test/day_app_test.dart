@@ -171,19 +171,28 @@ void main() {
       expect(find.text(CourierTexts.newRemittance), findsNothing);
     });
 
-    testWidgets('sales turn on «Completadas» to see the completed ones after the open ones', (tester) async {
+    void stubSales({required List<Remittance> recent, required List<List<Remittance>> completedPages}) {
       when(() => remittances.workflow()).thenAnswer((_) async => _workflow);
-      when(() => remittances.search(any(), size: any(named: 'size'))).thenAnswer(
-        (_) async => PageResult(
-          items: [
-            _remittance('OT-OLD', 'DELIVERED', completedAt: DateTime(2026, 10, 1)),
-            _remittance('OT-DONE', 'DELIVERED'),
-            _remittance('OT-OPEN', 'PAID'),
-          ],
-          page: 0,
-          size: 100,
-          totalItems: 3,
-        ),
+      when(() => remittances.search(const RemittanceFilter(voided: false), size: 100)).thenAnswer(
+        (_) async => PageResult(items: recent, page: 0, size: 100, totalItems: recent.length),
+      );
+      for (final (index, items) in completedPages.indexed) {
+        when(
+          () => remittances.search(const RemittanceFilter(voided: false, status: 'DELIVERED'), page: index, size: 50),
+        ).thenAnswer(
+          (_) async => PageResult(items: items, page: index, size: 50, totalItems: 50 * (completedPages.length - 1) + 1),
+        );
+      }
+    }
+
+    testWidgets('sales turn on «Completadas» to see the completed ones after the open ones', (tester) async {
+      final done = _remittance('OT-DONE', 'DELIVERED');
+      final old = _remittance('OT-OLD', 'DELIVERED', completedAt: DateTime(2026, 10, 1));
+      stubSales(
+        recent: [old, done, _remittance('OT-OPEN', 'PAID')],
+        completedPages: [
+          [old, done],
+        ],
       );
 
       await pump(tester, _sales, const AssignedPage());
@@ -195,18 +204,44 @@ void main() {
       final codes = tester.widgetList<Text>(find.textContaining('OT-')).map((text) => text.data).toList();
       expect(codes, ['OT-OPEN', 'OT-DONE', 'OT-OLD'], reason: 'open first, then the latest completed');
       expect(find.textContaining('Completada el'), findsNWidgets(2));
-      final done = find.ancestor(of: find.text('OT-DONE'), matching: find.byType(Dismissible));
-      expect(tester.widget<Dismissible>(done).direction, DismissDirection.none, reason: 'nothing to do on it');
+      final card = find.ancestor(of: find.text('OT-DONE'), matching: find.byType(Dismissible));
+      expect(tester.widget<Dismissible>(card).direction, DismissDirection.none, reason: 'nothing to do on it');
+      expect(find.text(CourierTexts.showMore), findsNothing, reason: 'a single page');
 
       await tester.tap(find.widgetWithText(FilterChip, CourierTexts.showCompleted));
       await tester.pumpAndSettle();
       expect(find.text('OT-DONE'), findsNothing);
     });
 
+    testWidgets('«Ver más» brings the next page of completed ones', (tester) async {
+      stubSales(
+        recent: const [],
+        completedPages: [
+          [_remittance('OT-P1', 'DELIVERED', completedAt: DateTime(2026, 10, 10))],
+          [_remittance('OT-P2', 'DELIVERED', completedAt: DateTime(2026, 9, 10))],
+        ],
+      );
+
+      await pump(tester, _sales, const AssignedPage());
+      await tester.tap(find.widgetWithText(FilterChip, CourierTexts.showCompleted));
+      await tester.pumpAndSettle();
+      expect(find.text('OT-P1'), findsOneWidget);
+      expect(find.text('OT-P2'), findsNothing);
+
+      await tester.tap(find.text(CourierTexts.showMore));
+      await tester.pumpAndSettle();
+      expect(find.text('OT-P1'), findsOneWidget);
+      expect(find.text('OT-P2'), findsOneWidget);
+      expect(find.text(CourierTexts.showMore), findsNothing, reason: 'that was the last page');
+    });
+
     testWidgets('with everything completed, sales can still turn on «Completadas»', (tester) async {
-      when(() => remittances.workflow()).thenAnswer((_) async => _workflow);
-      when(() => remittances.search(any(), size: any(named: 'size'))).thenAnswer(
-        (_) async => PageResult(items: [_remittance('OT-DONE', 'DELIVERED')], page: 0, size: 100, totalItems: 1),
+      final done = _remittance('OT-DONE', 'DELIVERED');
+      stubSales(
+        recent: [done],
+        completedPages: [
+          [done],
+        ],
       );
 
       await pump(tester, _sales, const AssignedPage());

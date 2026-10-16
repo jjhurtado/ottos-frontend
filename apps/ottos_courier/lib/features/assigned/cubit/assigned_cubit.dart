@@ -24,6 +24,8 @@ final class AssignedState extends Equatable {
     this.items = const [],
     this.sort = AssignedSort.byDay,
     this.showCompleted = false,
+    this.completedPages = 1,
+    this.moreCompleted = false,
     this.pendingIds = const {},
     this.error,
   });
@@ -37,6 +39,10 @@ final class AssignedState extends Equatable {
   /// Also lists the delivered and collected remittances, after the open ones (sales).
   final bool showCompleted;
 
+  /// How many pages of completed ones are loaded, and whether there are more.
+  final int completedPages;
+  final bool moreCompleted;
+
   /// Remittances with an action not sent yet (no network).
   final Set<String> pendingIds;
   final String? error;
@@ -46,6 +52,8 @@ final class AssignedState extends Equatable {
     List<Remittance>? items,
     AssignedSort? sort,
     bool? showCompleted,
+    int? completedPages,
+    bool? moreCompleted,
     Set<String>? pendingIds,
     String? error,
   }) => AssignedState(
@@ -53,6 +61,8 @@ final class AssignedState extends Equatable {
     items: sorted(items ?? this.items, sort ?? this.sort),
     sort: sort ?? this.sort,
     showCompleted: showCompleted ?? this.showCompleted,
+    completedPages: completedPages ?? this.completedPages,
+    moreCompleted: moreCompleted ?? this.moreCompleted,
     pendingIds: pendingIds ?? this.pendingIds,
     error: error,
   );
@@ -85,7 +95,7 @@ final class AssignedState extends Equatable {
   }
 
   @override
-  List<Object?> get props => [status, items, sort, showCompleted, pendingIds, error];
+  List<Object?> get props => [status, items, sort, showCompleted, completedPages, moreCompleted, pendingIds, error];
 }
 
 /// The open remittances of the courier, or all of them for who sees every
@@ -101,12 +111,33 @@ class AssignedCubit extends Cubit<AssignedState> {
 
   /// Loads the list; keeps the current items visible while refreshing.
   Future<void> load() async {
-    if (state.items.isEmpty) emit(AssignedState(sort: state.sort, showCompleted: state.showCompleted));
+    if (state.items.isEmpty) {
+      emit(
+        AssignedState(sort: state.sort, showCompleted: state.showCompleted, completedPages: state.completedPages),
+      );
+    }
     try {
-      final items = await _source.list(includeCompleted: state.showCompleted);
+      final items = [...await _source.list()];
+      var moreCompleted = false;
+      if (state.showCompleted) {
+        final open = {for (final remittance in items) remittance.id};
+        for (var page = 0; page < state.completedPages; page++) {
+          final result = await _source.completed(page: page);
+          items.addAll(result.items.where((remittance) => !open.contains(remittance.id)));
+          moreCompleted = page + 1 < result.totalPages;
+          if (!moreCompleted) break;
+        }
+      }
       final pendingIds = await _source.pendingIds();
       if (isClosed) return;
-      emit(state.copyWith(status: AssignedStatus.success, items: items, pendingIds: pendingIds));
+      emit(
+        state.copyWith(
+          status: AssignedStatus.success,
+          items: items,
+          moreCompleted: moreCompleted,
+          pendingIds: pendingIds,
+        ),
+      );
     } on ApiException catch (error) {
       if (!isClosed) emit(state.copyWith(status: AssignedStatus.failure, error: error.message));
     }
@@ -125,9 +156,23 @@ class AssignedCubit extends Cubit<AssignedState> {
 
   /// Shows or hides the completed remittances and reloads.
   Future<void> showCompleted(bool show) async {
-    emit(state.copyWith(showCompleted: show));
+    emit(state.copyWith(showCompleted: show, completedPages: 1, moreCompleted: false));
     await load();
   }
+
+  /// The next page of completed ones («Ver más»).
+  Future<void> moreCompleted() async {
+    if (_loadingMore) return;
+    _loadingMore = true;
+    emit(state.copyWith(completedPages: state.completedPages + 1));
+    try {
+      await load();
+    } finally {
+      _loadingMore = false;
+    }
+  }
+
+  bool _loadingMore = false;
 
   /// Completes a remittance, checking [pin] when one was typed.
   Future<ActionOutcome> complete(Remittance remittance, {String? pin, String? note}) =>
