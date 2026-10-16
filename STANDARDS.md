@@ -15,6 +15,9 @@ Regla del usuario (D-026), por encima de la «luz verde» que da para trabajar s
 No hace falta preguntar para funcionalidades nuevas que no tocan lo existente. Publicar en producción sigue necesitando
 su orden explícita, aparte de esta consulta.
 
+Además, toda **funcionalidad nueva se discute con el usuario antes de implementarla**: se le presenta el diseño, los
+detalles técnicos y las dudas, y se implementa cuando lo ha acordado. También está por encima de la «luz verde».
+
 ## 1. Git
 
 ### Flujo de ramas: Git Flow (configuración de GitKraken)
