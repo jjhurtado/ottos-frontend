@@ -15,7 +15,8 @@ permissions, never on their role ([decisions](../../docs/decisiones.md#producto)
 | --- | --- |
 | `lib/main.dart` | Opens the offline store, reads the app identity (platform + build) and starts `CourierApp` |
 | `lib/app/` | App widget, router (go_router + permission guards), `CourierTexts`, biometrics |
-| `lib/shell/` | Bottom navigation (Remesas, Caja) |
+| `lib/shell/` | Bottom navigation (Remesas, Caja, and Reportes and Estadísticas for sales with `reports:read`) |
+| `lib/features/reports/` | Sales: the month's remittances and the statistics (shared views from core); «Exportar» shares the PDF or CSV with `share_plus` |
 | `lib/features/assigned/` | Remittance list: the courier's own or, for sales, every open one (last 100) |
 | `lib/features/remittance/` | Detail: deliver, pick up, PIN, incident, postpone, assign, call/WhatsApp |
 | `lib/features/new_remittance/` | Sales registers a remittance with its quote (shares `NewRemittanceCubit` with the panel) |
