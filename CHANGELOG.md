@@ -19,6 +19,10 @@ no muestra la insignia.
 - Panel › Auditoría: la acción «Remesa por la casa (sin comisión)», con el monto, remitente, beneficiario, comisión no cobrada y motivo; también en el filtro de acciones.
 - Panel › Roles: el permiso nuevo se llama «Registrar entregas por la casa (sin comisión)». Quien lo recibe tiene que salir y volver a entrar.
 
+### Corregido
+
+- Panel › Remesas: al registrar una remesa y volver a «Remesas», la lista no la mostraba hasta recargar la página. Ahora se actualiza sola al volver, y lo mismo tras anular, asignar, entregar o aplazar desde el detalle. También se actualizan Clientes al volver de la ficha de un cliente y Caja al volver del efectivo de un repartidor. La app del móvil ya lo hacía bien.
+
 ## [1.0.0-rc.7] - 2026-10-22
 
 Funciona con el backend 1.0.0-rc.5; la acción «Completada desde el negocio» de Auditoría solo aparece con el backend

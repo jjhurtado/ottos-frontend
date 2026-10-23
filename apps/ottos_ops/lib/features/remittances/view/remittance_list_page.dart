@@ -8,6 +8,7 @@ import '../../../app/router.dart';
 import '../../../widgets/pagination_bar.dart';
 import '../bloc/remittance_list_bloc.dart';
 import '../../../widgets/page_header.dart';
+import '../../../widgets/refresh_on_return.dart';
 
 class RemittanceListPage extends StatelessWidget {
   const RemittanceListPage({super.key, this.initialFilter = const RemittanceFilter()});
@@ -22,7 +23,16 @@ class RemittanceListPage extends StatelessWidget {
       create: (context) =>
           RemittanceListBloc(remittances: context.read<RemittanceRepository>(), initialFilter: initialFilter)
             ..add(const RemittanceListStarted()),
-      child: const _RemittanceListView(),
+      // Back from registering, voiding or changing one: reload the page shown.
+      child: Builder(
+        builder: (context) => RefreshOnReturn(
+          onReturn: () {
+            final bloc = context.read<RemittanceListBloc>();
+            bloc.add(RemittanceListPageRequested(bloc.state.result?.page ?? 0));
+          },
+          child: const _RemittanceListView(),
+        ),
+      ),
     );
   }
 }

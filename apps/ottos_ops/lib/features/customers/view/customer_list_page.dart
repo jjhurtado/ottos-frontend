@@ -9,6 +9,7 @@ import '../../../widgets/pagination_bar.dart';
 import '../cubit/customer_list_cubit.dart';
 import 'customer_transfer.dart';
 import '../../../widgets/page_header.dart';
+import '../../../widgets/refresh_on_return.dart';
 
 class CustomerListPage extends StatelessWidget {
   const CustomerListPage({super.key});
@@ -17,7 +18,13 @@ class CustomerListPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (context) => CustomerListCubit(customers: context.read<CustomerRepository>())..load(),
-      child: const _CustomerListView(),
+      // Back from a customer's page, where they may have changed: refresh.
+      child: Builder(
+        builder: (context) => RefreshOnReturn(
+          onReturn: context.read<CustomerListCubit>().load,
+          child: const _CustomerListView(),
+        ),
+      ),
     );
   }
 }
