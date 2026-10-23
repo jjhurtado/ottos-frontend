@@ -793,7 +793,7 @@ class _OnTheHouseSection extends StatelessWidget {
     final totals = statistics.totals;
     final onTheHouse = totals.onTheHouse;
     if (onTheHouse.remittances == 0) {
-      return const ReportNotice(title: ReportTexts.onTheHouseNone, message: ReportTexts.onTheHouseTableHelp);
+      return const ReportNotice(title: ReportTexts.onTheHouseNone);
     }
     final currency = statistics.businessCurrency;
     final share = totals.remittances == 0 ? 0.0 : onTheHouse.remittances / totals.remittances * 100;
