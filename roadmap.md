@@ -1,13 +1,14 @@
 # Ottos frontend · Roadmap
 
-Actualizado: 2026-10-14
+Actualizado: 2026-10-22
 
 ## Estado actual
 
-**Publicado: `1.0.0-rc.6`** (2026-10-14), solo el panel web, con el backend `1.0.0-rc.5`: listas de clientes y
-beneficiarios por páginas con total, y «Entregada por el negocio». La app del móvil sigue en la `1.0.0-rc.5`
-(Android compilación 7; iPhone TestFlight `1.0.0 (7)`, [docs/ios-en-mac.md](docs/ios-en-mac.md)); la próxima
-compilación móvil será la 9.
+**Publicado: `1.0.0-rc.7`** (2026-10-22), solo el panel web, con el backend `1.0.0-rc.6`: panel adaptado al móvil y
+«Completada desde el negocio» en Auditoría. La versión incluye para la app la compilación 9 («Completadas» en la lista
+de ventas), que aún no se ha distribuido: el usuario la pasará a mano a ventas en iPhone más adelante (Android no hace
+falta). Hasta entonces la app sigue en la `1.0.0-rc.5` (Android compilación 7; iPhone TestFlight `1.0.0 (7)`,
+[docs/ios-en-mac.md](docs/ios-en-mac.md)).
 
 Falta para `1.0.0`:
 
@@ -141,6 +142,7 @@ App «Ottos» para repartidores y ventas, probada en emulador contra el backend 
 - [x] **Incidencias de entrega**: «No se pudo entregar/recoger» con motivo (nota obligatoria en «Otro motivo») en la app y en el detalle del panel; aviso en la lista de la app, en la lista y el detalle del panel; filtro «Con incidencia», tarjeta en Inicio e historial con el motivo. Motivos traducidos por código.
 - [x] **Lista del repartidor**: las atrasadas y con incidencia van al final; orden «Más atrasadas primero» por días; días de atraso en la tarjeta; deslizar a la derecha para completar y a la izquierda para marcar una incidencia, siempre con confirmación; nombre del usuario en la barra; WhatsApp junto a Llamar; tras reportar una incidencia vuelve a la lista.
 - [x] Estados traducidos por código y tipo: una recogida completada dice «Recogida» y una entrega «Entregada» (en listas, detalle, historial, chips de la app); en filtros e Inicio, «Entregada o recogida». `statusName` del backend queda como respaldo.
+- [x] **«Completadas» en la lista de ventas** (2026-10-15): opción que añade, tras las pendientes, las entregadas y recogidas (las más recientes primero, de 50 en 50 con «Ver más»). Desmarcada por defecto; el repartidor no la tiene. Usa `GET /remittances` con el estado final, sin cambios en el backend.
 - [ ] Tests de los cubits de asignadas, remesa y caja.
 - [x] Llamar y escribir por WhatsApp desde el detalle.
 - [ ] Abrir la dirección en mapas desde el detalle.

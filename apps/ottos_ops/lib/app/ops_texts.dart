@@ -32,6 +32,8 @@ abstract final class OpsTexts {
   static const onlyLate = 'Solo atrasadas';
   static const onlyIncidents = 'Con incidencia';
   static const onlyToReview = CoreTexts.toReview;
+  static const filters = 'Filtros';
+  static const filtersOn = 'Filtros (activos)';
   static const clearFilters = 'Quitar filtros';
   static const noRemittances = 'No hay remesas con estos filtros.';
   static const code = 'Código';
@@ -456,7 +458,7 @@ abstract final class OpsTexts {
     'ROLE': ['ROLE_CREATED', 'ROLE_DESCRIBED', 'ROLE_PERMISSIONS_CHANGED', 'ROLE_DELETED'],
     'CUSTOMERS': ['CUSTOMERS_IMPORTED', 'CUSTOMERS_EXPORTED'],
     'BENEFICIARIES': ['BENEFICIARIES_IMPORTED'],
-    'REMITTANCE': ['REMITTANCE_VOIDED', 'HISTORICAL_REMITTANCE_CREATED'],
+    'REMITTANCE': ['REMITTANCE_VOIDED', 'HISTORICAL_REMITTANCE_CREATED', 'REMITTANCE_COMPLETED_FROM_BUSINESS'],
   };
 
   static String auditAction(String code) => switch (code) {
@@ -476,6 +478,7 @@ abstract final class OpsTexts {
     'BENEFICIARIES_IMPORTED' => 'Beneficiarios importados (CSV)',
     'REMITTANCE_VOIDED' => 'Remesa anulada',
     'HISTORICAL_REMITTANCE_CREATED' => 'Remesa antigua registrada',
+    'REMITTANCE_COMPLETED_FROM_BUSINESS' => 'Completada desde el negocio',
     _ => code,
   };
 
@@ -536,6 +539,17 @@ abstract final class OpsTexts {
         ].join(' · '),
         if (details['fee'] != null) 'Comisión: ${Formatters.money((details['fee'] as num).toDouble(), 'USD')}',
         if (details['occurredAt'] != null) 'Fecha: ${details['occurredAt']}',
+      ],
+      'REMITTANCE_COMPLETED_FROM_BUSINESS' => [
+        [
+          RemittanceType.fromCode(details['type'] as String?) == RemittanceType.pickup
+              ? CoreTexts.pickup
+              : CoreTexts.delivery,
+          if (details['amount'] != null)
+            Formatters.money((details['amount'] as num).toDouble(), details['currency'] as String?),
+        ].join(' · '),
+        if (details['previousCourierId'] != null) 'Se le quitó al repartidor que la tenía',
+        if (details['note'] case final String note when note.isNotEmpty) 'Nota: $note',
       ],
       _ => [for (final entry in details.entries) '${entry.key}: ${entry.value}'],
     };

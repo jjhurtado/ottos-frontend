@@ -5,6 +5,7 @@ import 'package:ottos_core/ottos_core.dart';
 import '../../../app/ops_texts.dart';
 import '../cubit/roles_cubit.dart';
 import 'role_dialog.dart';
+import '../../../widgets/page_header.dart';
 
 class RolesPage extends StatelessWidget {
   const RolesPage({super.key});
@@ -40,11 +41,11 @@ class _RolesView extends StatelessWidget {
     final canWrite = user.can(Permissions.rolesWrite);
     final cubit = context.read<RolesCubit>();
     return ListView(
-      padding: const EdgeInsets.all(24),
+      padding: pagePadding(context),
       children: [
-        Row(
-          children: [
-            Expanded(child: Text(OpsTexts.roles, style: Theme.of(context).textTheme.headlineMedium)),
+        PageHeader(
+          title: OpsTexts.roles,
+          actions: [
             if (canWrite)
               FilledButton.icon(
                 onPressed: () async {

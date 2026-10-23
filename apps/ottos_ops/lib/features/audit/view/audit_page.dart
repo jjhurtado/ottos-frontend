@@ -5,6 +5,7 @@ import 'package:ottos_core/ottos_core.dart';
 import '../../../app/ops_texts.dart';
 import '../../../widgets/pagination_bar.dart';
 import '../cubit/audit_cubit.dart';
+import '../../../widgets/page_header.dart';
 
 /// Who changed users and roles, and when (`audit:read`).
 class AuditPage extends StatelessWidget {
@@ -19,7 +20,7 @@ class AuditPage extends StatelessWidget {
           final cubit = context.read<AuditCubit>();
           final result = state.result;
           return Padding(
-            padding: const EdgeInsets.all(24),
+            padding: pagePadding(context),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [

@@ -6,6 +6,7 @@ import 'package:printing/printing.dart';
 import '../../../app/ops_texts.dart';
 import '../cubit/reports_cubit.dart';
 import 'monthly_report_pdf.dart';
+import '../../../widgets/page_header.dart';
 
 /// The monthly summary of sales, exportable as a PDF (`reports:read`).
 class ReportsPage extends StatelessWidget {
@@ -20,7 +21,7 @@ class ReportsPage extends StatelessWidget {
           final cubit = context.read<ReportsCubit>();
           final report = state.report;
           return ListView(
-            padding: const EdgeInsets.all(24),
+            padding: pagePadding(context),
             children: [
               _Header(state: state),
               const SizedBox(height: 4),
@@ -69,8 +70,8 @@ class _Header extends StatelessWidget {
       alignment: WrapAlignment.spaceBetween,
       children: [
         Text(OpsTexts.monthlyReport, style: Theme.of(context).textTheme.headlineMedium),
-        Row(
-          mainAxisSize: MainAxisSize.min,
+        Wrap(
+          crossAxisAlignment: WrapCrossAlignment.center,
           children: [
             IconButton(
               tooltip: OpsTexts.previousMonth,
@@ -118,6 +119,7 @@ class _ReportView extends StatelessWidget {
   Widget build(BuildContext context) {
     String usd(double amount) => Formatters.money(amount, report.businessCurrency);
     final delivered = report.delivered.map((money) => Formatters.money(money.amount, money.currency)).join(' · ');
+    final compact = isCompact(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -158,51 +160,81 @@ class _ReportView extends StatelessWidget {
         const SizedBox(height: 16),
         _Section(
           title: OpsTexts.byCurrency,
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: DataTable(
-              columns: [
-                const DataColumn(label: Text('Moneda')),
-                const DataColumn(label: Text(OpsTexts.reportRemittances), numeric: true),
-                const DataColumn(label: Text(OpsTexts.sent), numeric: true),
-                const DataColumn(label: Text(OpsTexts.fees), numeric: true),
-                const DataColumn(label: Text(OpsTexts.collected), numeric: true),
-                const DataColumn(label: Text(OpsTexts.delivered), numeric: true),
-                DataColumn(label: Text(OpsTexts.deliveredIn(report.businessCurrency)), numeric: true),
-              ],
-              rows: [
-                for (final line in report.byCurrency)
-                  DataRow(
-                    cells: [
-                      DataCell(Text(line.currency)),
-                      DataCell(Text('${line.remittances}')),
-                      DataCell(Text(usd(line.sent))),
-                      DataCell(Text(usd(line.fees))),
-                      DataCell(Text(usd(line.collected))),
-                      DataCell(Text(Formatters.money(line.delivered, line.currency))),
-                      DataCell(Text(usd(line.deliveredCurrency))),
+          child: compact
+              ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    for (final line in report.byCurrency)
+                      _Lines(
+                        title: line.currency,
+                        lines: [
+                          (OpsTexts.reportRemittances, '${line.remittances}'),
+                          (OpsTexts.sent, usd(line.sent)),
+                          (OpsTexts.fees, usd(line.fees)),
+                          (OpsTexts.collected, usd(line.collected)),
+                          (OpsTexts.delivered, Formatters.money(line.delivered, line.currency)),
+                          (OpsTexts.deliveredIn(report.businessCurrency), usd(line.deliveredCurrency)),
+                        ],
+                      ),
+                    _Lines(
+                      title: OpsTexts.totalRow,
+                      lines: [
+                        (OpsTexts.reportRemittances, '${report.deliveries}'),
+                        (OpsTexts.sent, usd(report.byCurrency.fold(0, (sum, line) => sum + line.sent))),
+                        (OpsTexts.fees, usd(report.deliveryFees)),
+                        (OpsTexts.collected, usd(report.collected)),
+                        (OpsTexts.deliveredIn(report.businessCurrency), usd(report.deliveredCurrency)),
+                      ],
+                    ),
+                  ],
+                )
+              : SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: DataTable(
+                    columns: [
+                      const DataColumn(label: Text('Moneda')),
+                      const DataColumn(label: Text(OpsTexts.reportRemittances), numeric: true),
+                      const DataColumn(label: Text(OpsTexts.sent), numeric: true),
+                      const DataColumn(label: Text(OpsTexts.fees), numeric: true),
+                      const DataColumn(label: Text(OpsTexts.collected), numeric: true),
+                      const DataColumn(label: Text(OpsTexts.delivered), numeric: true),
+                      DataColumn(label: Text(OpsTexts.deliveredIn(report.businessCurrency)), numeric: true),
+                    ],
+                    rows: [
+                      for (final line in report.byCurrency)
+                        DataRow(
+                          cells: [
+                            DataCell(Text(line.currency)),
+                            DataCell(Text('${line.remittances}')),
+                            DataCell(Text(usd(line.sent))),
+                            DataCell(Text(usd(line.fees))),
+                            DataCell(Text(usd(line.collected))),
+                            DataCell(Text(Formatters.money(line.delivered, line.currency))),
+                            DataCell(Text(usd(line.deliveredCurrency))),
+                          ],
+                        ),
+                      DataRow(
+                        cells: [
+                          const DataCell(Text(OpsTexts.totalRow, style: TextStyle(fontWeight: FontWeight.w700))),
+                          // Only deliveries go by currency: their count and fees.
+                          DataCell(Text('${report.deliveries}', style: const TextStyle(fontWeight: FontWeight.w700))),
+                          DataCell(
+                            Text(
+                              usd(report.byCurrency.fold(0, (sum, line) => sum + line.sent)),
+                              style: const TextStyle(fontWeight: FontWeight.w700),
+                            ),
+                          ),
+                          DataCell(Text(usd(report.deliveryFees), style: const TextStyle(fontWeight: FontWeight.w700))),
+                          DataCell(Text(usd(report.collected), style: const TextStyle(fontWeight: FontWeight.w700))),
+                          const DataCell(Text('—')),
+                          DataCell(
+                            Text(usd(report.deliveredCurrency), style: const TextStyle(fontWeight: FontWeight.w700)),
+                          ),
+                        ],
+                      ),
                     ],
                   ),
-                DataRow(
-                  cells: [
-                    const DataCell(Text(OpsTexts.totalRow, style: TextStyle(fontWeight: FontWeight.w700))),
-                    // Only deliveries go by currency: their count and fees.
-                    DataCell(Text('${report.deliveries}', style: const TextStyle(fontWeight: FontWeight.w700))),
-                    DataCell(
-                      Text(
-                        usd(report.byCurrency.fold(0, (sum, line) => sum + line.sent)),
-                        style: const TextStyle(fontWeight: FontWeight.w700),
-                      ),
-                    ),
-                    DataCell(Text(usd(report.deliveryFees), style: const TextStyle(fontWeight: FontWeight.w700))),
-                    DataCell(Text(usd(report.collected), style: const TextStyle(fontWeight: FontWeight.w700))),
-                    const DataCell(Text('—')),
-                    DataCell(Text(usd(report.deliveredCurrency), style: const TextStyle(fontWeight: FontWeight.w700))),
-                  ],
                 ),
-              ],
-            ),
-          ),
         ),
         const SizedBox(height: 16),
         Wrap(
@@ -210,47 +242,71 @@ class _ReportView extends StatelessWidget {
           runSpacing: 16,
           children: [
             SizedBox(
-              width: 560,
+              width: compact ? double.infinity : 560,
               child: _Section(
                 title: OpsTexts.byType,
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: DataTable(
-                    columns: const [
-                      DataColumn(label: Text(OpsTexts.type)),
-                      DataColumn(label: Text(OpsTexts.reportRemittances), numeric: true),
-                      DataColumn(label: Text(OpsTexts.collectedOrPicked), numeric: true),
-                      DataColumn(label: Text(OpsTexts.fees), numeric: true),
-                    ],
-                    rows: [
-                      for (final line in report.byType)
-                        DataRow(
-                          cells: [
-                            DataCell(
-                              Text(
-                                line.type == RemittanceType.pickup ? 'Recogidas' : 'Entregas',
-                                style: TextStyle(color: line.type.color, fontWeight: FontWeight.w500),
-                              ),
+                child: compact
+                    ? Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          for (final line in report.byType)
+                            _Lines(
+                              title: line.type == RemittanceType.pickup ? 'Recogidas' : 'Entregas',
+                              color: line.type.color,
+                              lines: [
+                                (OpsTexts.reportRemittances, '${line.remittances}'),
+                                (OpsTexts.collectedOrPicked, usd(line.collected)),
+                                (OpsTexts.fees, usd(line.fees)),
+                              ],
                             ),
-                            DataCell(Text('${line.remittances}')),
-                            DataCell(Text(usd(line.collected))),
-                            DataCell(Text(usd(line.fees))),
+                        ],
+                      )
+                    : SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: DataTable(
+                          columns: const [
+                            DataColumn(label: Text(OpsTexts.type)),
+                            DataColumn(label: Text(OpsTexts.reportRemittances), numeric: true),
+                            DataColumn(label: Text(OpsTexts.collectedOrPicked), numeric: true),
+                            DataColumn(label: Text(OpsTexts.fees), numeric: true),
+                          ],
+                          rows: [
+                            for (final line in report.byType)
+                              DataRow(
+                                cells: [
+                                  DataCell(
+                                    Text(
+                                      line.type == RemittanceType.pickup ? 'Recogidas' : 'Entregas',
+                                      style: TextStyle(color: line.type.color, fontWeight: FontWeight.w500),
+                                    ),
+                                  ),
+                                  DataCell(Text('${line.remittances}')),
+                                  DataCell(Text(usd(line.collected))),
+                                  DataCell(Text(usd(line.fees))),
+                                ],
+                              ),
                           ],
                         ),
-                    ],
-                  ),
-                ),
+                      ),
               ),
             ),
             SizedBox(
-              width: 420,
+              width: compact ? double.infinity : 420,
               child: _Section(
                 title: OpsTexts.monthEndStatus,
                 child: Column(
                   children: [
-                    InfoRow(label: OpsTexts.completedLabel, value: '${report.completed}', labelWidth: 260),
-                    InfoRow(label: OpsTexts.openLabel, value: '${report.open}', labelWidth: 260),
-                    InfoRow(label: OpsTexts.withIncidentLabel, value: '${report.withIncident}', labelWidth: 260),
+                    InfoRow(
+                      label: OpsTexts.completedLabel,
+                      value: '${report.completed}',
+                      labelWidth: compact ? 200 : 260,
+                    ),
+                    InfoRow(label: OpsTexts.openLabel, value: '${report.open}', labelWidth: compact ? 200 : 260),
+                    InfoRow(
+                      label: OpsTexts.withIncidentLabel,
+                      value: '${report.withIncident}',
+                      labelWidth: compact ? 200 : 260,
+                    ),
                   ],
                 ),
               ),
@@ -308,6 +364,32 @@ class _Total extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(help, style: textTheme.bodySmall?.copyWith(color: dark ? OttosColors.cream : null)),
+        ],
+      ),
+    );
+  }
+}
+
+/// A table row on a phone: its name, then one line per column.
+class _Lines extends StatelessWidget {
+  const _Lines({required this.title, required this.lines, this.color});
+
+  final String title;
+  final List<(String, String)> lines;
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: TextStyle(fontWeight: FontWeight.w700, color: color),
+          ),
+          for (final (label, value) in lines) InfoRow(label: label, value: value, labelWidth: 170),
         ],
       ),
     );
