@@ -6,14 +6,15 @@ Cambios notables del frontend de Ottos (panel de operaciones y app de repartidor
 
 ## [Unreleased]
 
+## [1.0.0-rc.7] - 2026-10-22
+
+Funciona con el backend 1.0.0-rc.5; la acción «Completada desde el negocio» de Auditoría solo aparece con el backend
+1.0.0-rc.6, que es el que la registra. Se publica el panel web. La app del móvil pasa a la compilación 9 (solo cambia
+para ventas), pero esa compilación todavía no se ha distribuido.
+
 ### Añadido
 
 - Panel › Auditoría: la acción «Completada desde el negocio» (con el backend que la registra), con el tipo, el importe, si se le quitó al repartidor y la nota. También está en el filtro de acciones.
-
-No necesita cambios en el backend: funciona con el `1.0.0-rc.5`.
-
-### Añadido
-
 - App › lista de ventas: opción **«Completadas»** junto a «Del día» y «Más atrasadas primero». Sin marcar, la lista es la de siempre. Marcada, debajo de las pendientes salen las entregadas y recogidas, de la más reciente a la más antigua, con «Completada el …» y «Entregado:» o «Recogido:»; «Ver más» trae las 50 siguientes. Se ve aunque no quede nada pendiente. El repartidor no la tiene.
 
 ### Corregido
