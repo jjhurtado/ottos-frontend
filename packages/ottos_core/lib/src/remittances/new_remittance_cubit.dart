@@ -35,7 +35,12 @@ final class NewRemittanceState extends Equatable {
     this.courier,
     this.pickupRate,
     this.pickupFee,
+    this.onTheHouse = false,
+    this.onTheHouseReason = '',
   });
+
+  /// Longest reason the backend takes.
+  static const onTheHouseReasonMaxLength = 500;
 
   final LoadStatus corridorsStatus;
 
@@ -70,8 +75,27 @@ final class NewRemittanceState extends Equatable {
   /// The fee typed for this pickup (may be 0); null applies the configured rule.
   final double? pickupFee;
 
+  /// A delivery on the house: no fee. Only deliveries, and only for who has
+  /// `remittances:on-the-house`; the page offers it accordingly.
+  final bool onTheHouse;
+
+  /// Why it goes on the house; required with [onTheHouse].
+  final String onTheHouseReason;
+
+  /// The reason is missing or too long while [onTheHouse] is on.
+  bool get onTheHouseReasonMissing => onTheHouse && onTheHouseReason.trim().isEmpty;
+
+  bool get onTheHouseReasonTooLong => onTheHouseReason.trim().length > onTheHouseReasonMaxLength;
+
   bool get canSubmit =>
-      customer != null && beneficiary != null && targetCurrency != null && quote != null && !submitting;
+      customer != null &&
+      beneficiary != null &&
+      targetCurrency != null &&
+      quote != null &&
+      !submitting &&
+      // Never register on the house with a quote that still charges a fee
+      // (e.g. a backend that does not know the field).
+      (!onTheHouse || (quote!.onTheHouse && !onTheHouseReasonMissing && !onTheHouseReasonTooLong));
 
   @override
   List<Object?> get props => [
@@ -93,6 +117,8 @@ final class NewRemittanceState extends Equatable {
     courier,
     pickupRate,
     pickupFee,
+    onTheHouse,
+    onTheHouseReason,
   ];
 }
 
@@ -177,6 +203,8 @@ class NewRemittanceCubit extends Cubit<NewRemittanceState> {
       type: type,
       pickupRate: null,
       pickupFee: null,
+      // Only deliveries go on the house.
+      onTheHouse: type == RemittanceType.delivery && state.onTheHouse,
       targetCurrencies: currencies,
       targetCurrency: currencies.contains(current) ? current : (currencies.isEmpty ? null : currencies.first),
     );
@@ -252,6 +280,17 @@ class NewRemittanceCubit extends Cubit<NewRemittanceState> {
     _scheduleQuote();
   }
 
+  /// Marks or unmarks the delivery as on the house; the quote is asked again
+  /// so the summary shows it without a fee.
+  void onTheHouseChanged(bool onTheHouse) {
+    final value = onTheHouse && state.type == RemittanceType.delivery;
+    if (value == state.onTheHouse) return;
+    _emit(onTheHouse: value, error: null);
+    _scheduleQuote();
+  }
+
+  void onTheHouseReasonChanged(String reason) => _emit(onTheHouseReason: reason);
+
   void amountChanged(double? amount) {
     _emit(amount: amount);
     _scheduleQuote();
@@ -263,6 +302,7 @@ class NewRemittanceCubit extends Cubit<NewRemittanceState> {
     final amount = state.amount;
     final currency = state.targetCurrency;
     final type = state.type;
+    final onTheHouse = type == RemittanceType.delivery && state.onTheHouse;
     if (amount == null || amount <= 0 || currency == null) {
       _emit(quote: null, quoteStatus: LoadStatus.success);
       return;
@@ -277,6 +317,7 @@ class NewRemittanceCubit extends Cubit<NewRemittanceState> {
           type: type,
           rate: type == RemittanceType.pickup ? state.pickupRate : null,
           fee: type == RemittanceType.pickup ? state.pickupFee : null,
+          onTheHouse: onTheHouse,
         );
         if (request == _quoteRequest && !isClosed) _emit(quote: quote, quoteStatus: LoadStatus.success);
       } on ApiException catch (error) {
@@ -299,6 +340,8 @@ class NewRemittanceCubit extends Cubit<NewRemittanceState> {
           rate: state.type == RemittanceType.pickup ? state.pickupRate : null,
           fee: state.type == RemittanceType.pickup ? state.pickupFee : null,
           notes: notes == null || notes.trim().isEmpty ? null : notes.trim(),
+          onTheHouse: state.onTheHouse,
+          onTheHouseReason: state.onTheHouse ? state.onTheHouseReason.trim() : null,
         ),
         idempotencyKey: _idempotencyKey,
       );
@@ -340,6 +383,8 @@ class NewRemittanceCubit extends Cubit<NewRemittanceState> {
     Object? courier = _keep,
     Object? pickupRate = _keep,
     Object? pickupFee = _keep,
+    bool? onTheHouse,
+    String? onTheHouseReason,
   }) {
     final s = state;
     emit(
@@ -362,6 +407,8 @@ class NewRemittanceCubit extends Cubit<NewRemittanceState> {
         courier: courier == _keep ? s.courier : courier as Courier?,
         pickupRate: pickupRate == _keep ? s.pickupRate : pickupRate as double?,
         pickupFee: pickupFee == _keep ? s.pickupFee : pickupFee as double?,
+        onTheHouse: onTheHouse ?? s.onTheHouse,
+        onTheHouseReason: onTheHouseReason ?? s.onTheHouseReason,
       ),
     );
   }

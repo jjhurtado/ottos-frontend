@@ -54,6 +54,10 @@ abstract final class CoreTexts {
     'RATE_NOT_ALLOWED': 'Solo las recogidas pueden llevar su propia tasa.',
     'APP_UPDATE_REQUIRED': 'Esta versión de la app ya no funciona. Actualízala para continuar.',
     'FEE_NOT_ALLOWED': 'Solo las recogidas pueden llevar su propia comisión.',
+    'ON_THE_HOUSE_NOT_ALLOWED':
+        'No tienes permiso para registrar remesas por la casa. Si te lo acaban de dar, sal y vuelve a entrar.',
+    'ON_THE_HOUSE_DELIVERY_ONLY': 'Solo las entregas pueden ir por la casa.',
+    'ON_THE_HOUSE_REASON_REQUIRED': 'Escribe el motivo de por la casa.',
     'CUSTOMER_ALREADY_REGISTERED': 'Ya hay un cliente con ese nombre, teléfono y dirección.',
     'BENEFICIARY_INACTIVE': 'Coincide con un beneficiario borrado; restáuralo en el panel.',
     'INVALID_PHONE': 'El teléfono no es válido.',
@@ -287,4 +291,18 @@ abstract final class CoreTexts {
   static const voidedHelp = 'No cuenta en reportes ni listas de trabajo, y ya no se puede cambiar.';
   static const delivery = 'Entrega';
   static const pickup = 'Recogida';
+
+  // On the house: deliveries without a fee
+  static const onTheHouse = 'Por la casa';
+  static const onTheHouseCheckbox = 'Por la casa (sin comisión)';
+  static const onTheHouseCheckboxHelp =
+      'No se cobra comisión; la tasa y el monto mínimo son los de siempre. No se puede cambiar después.';
+  static const onTheHouseReason = 'Motivo de por la casa';
+  static const onTheHouseReasonHint = 'Por ejemplo: familiar del dueño';
+  static const onTheHouseReasonRequired = 'Escribe el motivo';
+  static String onTheHouseReasonTooLong(int max) => 'Como mucho $max caracteres';
+  static const waivedFee = 'Comisión no cobrada';
+  static const registerOnTheHouse = 'Registrar por la casa';
+  static const onTheHouseNotQuoted =
+      'El servidor no aplicó «por la casa» en la cotización. Recarga la página o avisa al administrador.';
 }

@@ -77,7 +77,8 @@ class RateRepository {
     ),
   );
 
-  /// Deliveries and pickups have their own rate and fee.
+  /// Deliveries and pickups have their own rate and fee. [onTheHouse] quotes
+  /// a delivery without a fee, telling the fee left uncharged.
   Future<Quote> quote({
     required String sourceCurrency,
     required String targetCurrency,
@@ -85,6 +86,7 @@ class RateRepository {
     RemittanceType type = RemittanceType.delivery,
     double? rate,
     double? fee,
+    bool onTheHouse = false,
   }) async => Quote.fromJson(
     await _api.post<Map<String, dynamic>>(
       '/quotes',
@@ -96,6 +98,7 @@ class RateRepository {
         // Only pickups take their own rate.
         'rate': ?rate,
         'fee': ?fee,
+        if (onTheHouse) 'onTheHouse': true,
       },
     ),
   );
