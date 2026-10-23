@@ -18,16 +18,47 @@ class CourierShell extends StatelessWidget {
   /// Their own cash (couriers) or the couriers' cash (sales).
   static bool canSeeCash(CurrentUser user) => user.can(Permissions.cashReadOwn) || user.can(Permissions.cashRead);
 
+  /// Reports and statistics: only sales (who see every remittance, not just
+  /// their assigned ones) with `reports:read`. Never a courier.
+  static bool canSeeReports(CurrentUser user) =>
+      user.can(Permissions.reportsRead) && !user.can(Permissions.remittancesReadAssigned);
+
   @override
   Widget build(BuildContext context) {
     final user = context.select((AuthBloc bloc) => bloc.state.user);
     final canSeeCash = user != null && CourierShell.canSeeCash(user);
+    final canSeeReports = user != null && CourierShell.canSeeReports(user);
     // Sales see every open remittance; couriers, theirs.
     final remittancesTitle = user != null && !user.can(Permissions.remittancesReadAssigned)
         ? CourierTexts.remittances
         : CourierTexts.myRemittances;
     final cashTitle = user != null && !user.can(Permissions.cashReadOwn) ? CourierTexts.cash : CourierTexts.myCash;
-    final onCash = location == Routes.cash;
+    final sections = [
+      (
+        path: Routes.assigned,
+        label: remittancesTitle,
+        icon: Icons.local_shipping_outlined,
+        selectedIcon: Icons.local_shipping,
+      ),
+      if (canSeeCash)
+        (
+          path: Routes.cash,
+          label: cashTitle,
+          icon: Icons.account_balance_wallet_outlined,
+          selectedIcon: Icons.account_balance_wallet,
+        ),
+      if (canSeeReports) ...[
+        (path: Routes.reports, label: ReportTexts.reports, icon: Icons.insights_outlined, selectedIcon: Icons.insights),
+        (
+          path: Routes.statistics,
+          label: ReportTexts.statistics,
+          icon: Icons.bar_chart_outlined,
+          selectedIcon: Icons.bar_chart,
+        ),
+      ],
+    ];
+    final selected = sections.indexWhere((section) => section.path == location);
+    final current = selected < 0 ? 0 : selected;
     final sync = context.syncCubit;
     final version = context.read<AppConfig>().version;
     return Scaffold(
@@ -35,7 +66,7 @@ class CourierShell extends StatelessWidget {
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(onCash ? cashTitle : remittancesTitle),
+            Text(sections[current].label),
             if (user != null)
               Text(
                 user.name,
@@ -82,21 +113,17 @@ class CourierShell extends StatelessWidget {
           Expanded(child: child),
         ],
       ),
-      bottomNavigationBar: canSeeCash
+      bottomNavigationBar: sections.length > 1
           ? NavigationBar(
-              selectedIndex: onCash ? 1 : 0,
-              onDestinationSelected: (index) => context.go(index == 1 ? Routes.cash : Routes.assigned),
+              selectedIndex: current,
+              onDestinationSelected: (index) => context.go(sections[index].path),
               destinations: [
-                NavigationDestination(
-                  icon: const Icon(Icons.local_shipping_outlined),
-                  selectedIcon: const Icon(Icons.local_shipping),
-                  label: remittancesTitle,
-                ),
-                NavigationDestination(
-                  icon: const Icon(Icons.account_balance_wallet_outlined),
-                  selectedIcon: const Icon(Icons.account_balance_wallet),
-                  label: cashTitle,
-                ),
+                for (final section in sections)
+                  NavigationDestination(
+                    icon: Icon(section.icon),
+                    selectedIcon: Icon(section.selectedIcon),
+                    label: section.label,
+                  ),
               ],
             )
           : null,
