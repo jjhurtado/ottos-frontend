@@ -6,6 +6,7 @@ Actualizado: 2026-10-23
 
 **En `develop` (sin publicar):** remesas **por la casa** (sin comisión) en el panel y en la app, con el backend `V3`
 (contrato `ottos/docs/contracts/on-the-house.md`). Probándose en staging; no hay compilación móvil nueva todavía.
+Corregido también en `develop`: el listado de remesas del panel no mostraba la remesa recién registrada al volver.
 
 **Publicado: `1.0.0-rc.7`** (2026-10-22), solo el panel web, con el backend `1.0.0-rc.6`: panel adaptado al móvil y
 «Completada desde el negocio» en Auditoría. La versión incluye para la app la compilación 9 («Completadas» en la lista
@@ -87,7 +88,7 @@ Objetivo: que una persona de ventas registre una remesa, un supervisor la asigne
 - [x] **Entregar desde el panel** (con o sin PIN) y **aplazar** con nueva fecha y motivo. Los diálogos ahora están en `ottos_core` y los comparten panel y app courier.
 - [x] **Botones según el workflow**: solo las transiciones que `GET /remittance-workflow` permite desde el estado actual y con los permisos del usuario.
 - [x] **Mensajes de éxito y error** tras cada acción; el detalle recarga remesa e historial. Los errores del backend se traducen por su `code`.
-- [ ] Al volver al listado o al inicio después de una acción, comprobar que muestran el estado nuevo (hoy se recargan al entrar).
+- [x] **Al volver al listado** después de registrar, anular o cambiar una remesa, la lista recarga la página que estaba viendo (`RefreshOnReturn`); lo mismo en Clientes y en Caja al volver del detalle. Inicio ya se recargaba al entrar.
 - [x] **Prueba de extremo a extremo** automatizada (`packages/ottos_core/test/integration`): cotizar → crear (reintento idempotente) → asignar → PIN incorrecto rechazado → entregar → historial.
 - [ ] **Prueba en el navegador** del recorrido completo con tres usuarios: ventas, supervisor y repartidor (en la app courier). Hoy solo hay usuario admin y dos repartidores de prueba.
 

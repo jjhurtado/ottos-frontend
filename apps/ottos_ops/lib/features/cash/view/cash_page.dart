@@ -9,6 +9,7 @@ import '../cubit/cash_overview_cubit.dart';
 import 'exchanges_to_review.dart';
 import 'movement_tile.dart';
 import '../../../widgets/page_header.dart';
+import '../../../widgets/refresh_on_return.dart';
 
 class CashPage extends StatelessWidget {
   const CashPage({super.key});
@@ -17,15 +18,21 @@ class CashPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (context) => CashOverviewCubit(cash: context.read<CashRepository>())..load(),
-      child: BlocBuilder<CashOverviewCubit, CashOverviewState>(
-        builder: (context, state) => switch (state.status) {
-          CashOverviewStatus.loading => const LoadingView(),
-          CashOverviewStatus.failure => ErrorView(
-            message: state.error!,
-            onRetry: context.read<CashOverviewCubit>().load,
+      // Back from a courier's cash, where money may have moved: refresh.
+      child: Builder(
+        builder: (context) => RefreshOnReturn(
+          onReturn: context.read<CashOverviewCubit>().load,
+          child: BlocBuilder<CashOverviewCubit, CashOverviewState>(
+            builder: (context, state) => switch (state.status) {
+              CashOverviewStatus.loading => const LoadingView(),
+              CashOverviewStatus.failure => ErrorView(
+                message: state.error!,
+                onRetry: context.read<CashOverviewCubit>().load,
+              ),
+              CashOverviewStatus.success => _CashView(state: state),
+            },
           ),
-          CashOverviewStatus.success => _CashView(state: state),
-        },
+        ),
       ),
     );
   }
