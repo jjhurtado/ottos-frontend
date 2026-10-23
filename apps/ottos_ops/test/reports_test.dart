@@ -163,5 +163,28 @@ void main() {
       final button = tester.widget<FilledButton>(find.widgetWithText(FilledButton, OpsTexts.exportPdf));
       expect(button.onPressed, isNull);
     });
+
+    testWidgets('shows the on the house block, also in the PDF', (tester) async {
+      final json = {
+        ...sampleJson,
+        'onTheHouse': {'remittances': 2, 'amount': 237.00, 'waivedFees': 30.00},
+      };
+      when(() => reports.monthly(any(), any())).thenAnswer((_) async => MonthlyReport.fromJson(json));
+      await pump(tester);
+
+      expect(find.text(OpsTexts.onTheHouseReport), findsOneWidget);
+      expect(find.text(Formatters.money(30, 'USD')), findsOneWidget);
+      expect(find.text(OpsTexts.onTheHouseHelp(2, Formatters.money(237, 'USD'))), findsOneWidget);
+
+      final bytes = await tester.runAsync(
+        () => buildMonthlyReportPdf(MonthlyReport.fromJson(json), month: DateTime(2026, 10)),
+      );
+      expect(String.fromCharCodes(bytes!).contains('/Count 1'), isTrue, reason: 'still one page');
+    });
+
+    testWidgets('a backend without the block shows none', (tester) async {
+      await pump(tester);
+      expect(find.text(OpsTexts.onTheHouseReport), findsNothing);
+    });
   });
 }

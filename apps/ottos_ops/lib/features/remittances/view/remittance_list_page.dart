@@ -164,6 +164,12 @@ class _FilterBar extends StatelessWidget {
             selected: filter.voided == true,
             onSelected: (selected) => change(filter.copyWith(voided: selected ? true : null)),
           ),
+          FilterChip(
+            avatar: const Icon(Icons.volunteer_activism_outlined, size: 18, color: OttosColors.onTheHouse),
+            label: const Text(OpsTexts.onlyOnTheHouse),
+            selected: filter.onTheHouse == true,
+            onSelected: (selected) => change(filter.copyWith(onTheHouse: selected ? true : null)),
+          ),
           if (!filter.isEmpty)
             TextButton.icon(
               onPressed: () => change(const RemittanceFilter()),
@@ -348,6 +354,7 @@ class _StatusCell extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         RemittanceStatusChip(remittance: remittance),
+        if (remittance.onTheHouse) ...[const SizedBox(width: 6), const OnTheHouseBadge()],
         if (remittance.review case final review?) ...[
           const SizedBox(width: 6),
           Tooltip(

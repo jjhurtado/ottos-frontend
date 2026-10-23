@@ -153,6 +153,7 @@ abstract final class OpsTexts {
   static const voidReasonLabel = 'Motivo *';
   static const voidedDone = 'Remesa anulada';
   static const onlyVoided = 'Solo anuladas';
+  static const onlyOnTheHouse = 'Solo por la casa';
 
   static String eventTitle(String type) => switch (type) {
     'CREATED' => 'Remesa registrada',
@@ -391,6 +392,7 @@ abstract final class OpsTexts {
     Permissions.remittancesHistorical => 'Registrar remesas antiguas a mano',
     Permissions.remittancesCompleteFromBusiness =>
       'Entregar o recoger desde el negocio, sin repartidor (mueve su caja)',
+    Permissions.remittancesOnTheHouse => 'Registrar entregas por la casa (sin comisión)',
     Permissions.auditRead => 'Ver el registro de auditoría',
     Permissions.reportsRead => 'Ver los reportes del negocio (resumen mensual)',
     Permissions.cashExchangeOwn => 'Cambiar moneda en su propia caja (repartidor)',
@@ -458,7 +460,12 @@ abstract final class OpsTexts {
     'ROLE': ['ROLE_CREATED', 'ROLE_DESCRIBED', 'ROLE_PERMISSIONS_CHANGED', 'ROLE_DELETED'],
     'CUSTOMERS': ['CUSTOMERS_IMPORTED', 'CUSTOMERS_EXPORTED'],
     'BENEFICIARIES': ['BENEFICIARIES_IMPORTED'],
-    'REMITTANCE': ['REMITTANCE_VOIDED', 'HISTORICAL_REMITTANCE_CREATED', 'REMITTANCE_COMPLETED_FROM_BUSINESS'],
+    'REMITTANCE': [
+      'REMITTANCE_ON_THE_HOUSE',
+      'REMITTANCE_VOIDED',
+      'HISTORICAL_REMITTANCE_CREATED',
+      'REMITTANCE_COMPLETED_FROM_BUSINESS',
+    ],
   };
 
   static String auditAction(String code) => switch (code) {
@@ -479,6 +486,7 @@ abstract final class OpsTexts {
     'REMITTANCE_VOIDED' => 'Remesa anulada',
     'HISTORICAL_REMITTANCE_CREATED' => 'Remesa antigua registrada',
     'REMITTANCE_COMPLETED_FROM_BUSINESS' => 'Completada desde el negocio',
+    'REMITTANCE_ON_THE_HOUSE' => 'Remesa por la casa (sin comisión)',
     _ => code,
   };
 
@@ -551,6 +559,17 @@ abstract final class OpsTexts {
         if (details['previousCourierId'] != null) 'Se le quitó al repartidor que la tenía',
         if (details['note'] case final String note when note.isNotEmpty) 'Nota: $note',
       ],
+      'REMITTANCE_ON_THE_HOUSE' => [
+        [
+          if (details['amount'] != null)
+            Formatters.money((details['amount'] as num).toDouble(), details['currency'] as String?),
+          if (details['customerName'] != null) 'de ${details['customerName']}',
+          if (details['beneficiaryName'] != null) 'para ${details['beneficiaryName']}',
+        ].join(' '),
+        if (details['waivedFee'] != null)
+          '${CoreTexts.waivedFee}: ${Formatters.money((details['waivedFee'] as num).toDouble(), details['currency'] as String?)}',
+        'Motivo: ${text(details['reason'])}',
+      ],
       _ => [for (final entry in details.entries) '${entry.key}: ${entry.value}'],
     };
   }
@@ -586,6 +605,9 @@ abstract final class OpsTexts {
   static const totalRow = 'Total';
   static const noSales = 'No hay remesas registradas este mes.';
   static String deliveriesAndPickups(int deliveries, int pickups) => '$deliveries entregas · $pickups recogidas';
+  static const onTheHouseReport = 'Por la casa (comisiones no cobradas)';
+  static String onTheHouseHelp(int count, String amount) =>
+      '${count == 1 ? '1 entrega' : '$count entregas'} sin comisión · $amount enviados';
   static String reportPeriod(String from, String to, String currency) =>
       'Del $from al $to · hora de Cuba · importes en $currency';
   static String generatedOn(String when) => 'Generado el $when';

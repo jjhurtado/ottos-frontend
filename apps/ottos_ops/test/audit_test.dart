@@ -117,6 +117,35 @@ void main() {
       expect(OpsTexts.auditDetails(bare), ['${CoreTexts.pickup} · ${Formatters.money(200, 'USD')}']);
     });
 
+    test('on the house reads who sent what to whom, the fee not charged and why', () {
+      final entry = _entry('REMITTANCE_ON_THE_HOUSE', {
+        'code': 'OT-7K3F9Q',
+        'type': 'DELIVERY',
+        'amount': 37.00,
+        'currency': 'USD',
+        'waivedFee': 10.00,
+        'customerId': 'c1',
+        'customerName': 'Ana Pérez',
+        'beneficiaryId': 'b1',
+        'beneficiaryName': 'Rosa Martínez',
+        'reason': 'Su madre',
+      }, type: 'REMITTANCE');
+      expect(OpsTexts.auditAction(entry.action), 'Remesa por la casa (sin comisión)');
+      expect(OpsTexts.auditActions['REMITTANCE'], contains('REMITTANCE_ON_THE_HOUSE'));
+      expect(OpsTexts.auditDetails(entry), [
+        '${Formatters.money(37, 'USD')} de Ana Pérez para Rosa Martínez',
+        '${CoreTexts.waivedFee}: ${Formatters.money(10, 'USD')}',
+        'Motivo: Su madre',
+      ]);
+    });
+
+    test('the permission of on the house reads in Spanish', () {
+      expect(
+        OpsTexts.permissionLabel(const PermissionInfo(code: Permissions.remittancesOnTheHouse, module: 'remittances')),
+        'Registrar entregas por la casa (sin comisión)',
+      );
+    });
+
     test('unknown actions keep their code and raw details', () {
       final entry = _entry('SOMETHING_NEW', {'field': 'x'});
       expect(OpsTexts.auditAction(entry.action), 'SOMETHING_NEW');
