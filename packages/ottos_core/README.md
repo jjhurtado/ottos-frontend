@@ -16,7 +16,8 @@ other; anything they share comes here. Layers and conventions are in [STANDARDS.
 | `widgets/` | Dialogs and widgets both apps use: deliver/postpone/incident, assign, customer and beneficiary forms, cash operations, exchange, banners, status chips |
 | `l10n/core_texts.dart` | Shared UI texts (Spanish) and the translation of backend error codes, statuses, roles and permissions |
 | `theme/` | Colors and Material theme |
-| `utils/` | Formatters, CSV, phones, auth redirect for go_router |
+| `reports/` | Besides the repository: the reports' cubits, the month's remittances and statistics views, and the PDF (`pdf`) and CSV builders, shared by the panel and the app. `ReportTexts` holds their texts |
+| `utils/` | Formatters, CSV, phones, `CubaTime` (Havana wall clock, whatever the device zone), auth redirect for go_router |
 
 ## Rules worth knowing
 

@@ -6,6 +6,8 @@ import '../features/cash/view/cash_page.dart';
 import '../features/cash/view/courier_cash_page.dart';
 import '../features/new_remittance/view/new_remittance_page.dart';
 import '../features/remittance/view/remittance_page.dart';
+import '../features/reports/view/reports_page.dart';
+import '../features/reports/view/statistics_page.dart';
 import '../shell/courier_shell.dart';
 import 'courier_texts.dart';
 import 'device_biometrics.dart';
@@ -15,6 +17,8 @@ abstract final class Routes {
   static const login = '/login';
   static const assigned = '/';
   static const cash = '/cash';
+  static const reports = '/reports';
+  static const statistics = '/statistics';
 
   static const newRemittance = '/remittances/new';
 
@@ -40,6 +44,10 @@ GoRouter buildRouter(AuthBloc authBloc) {
       if (sessionRedirect != null || !auth.isAuthenticated) return sessionRedirect;
       final user = auth.user!;
       if (state.matchedLocation == Routes.cash && !CourierShell.canSeeCash(user)) return Routes.assigned;
+      if ((state.matchedLocation == Routes.reports || state.matchedLocation == Routes.statistics) &&
+          !CourierShell.canSeeReports(user)) {
+        return Routes.assigned;
+      }
       if (state.matchedLocation.startsWith('${Routes.cash}/couriers/') && !user.can(Permissions.cashRead)) {
         return Routes.cash;
       }
@@ -59,6 +67,8 @@ GoRouter buildRouter(AuthBloc authBloc) {
         routes: [
           GoRoute(path: Routes.assigned, builder: (_, _) => const AssignedPage()),
           GoRoute(path: Routes.cash, builder: (_, _) => const CashPage()),
+          GoRoute(path: Routes.reports, builder: (_, _) => const ReportsPage()),
+          GoRoute(path: Routes.statistics, builder: (_, _) => const StatisticsPage()),
         ],
       ),
       // Before '/remittances/:id', which would take 'new' as an id.

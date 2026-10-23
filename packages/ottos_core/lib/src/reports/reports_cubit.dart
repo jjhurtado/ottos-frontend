@@ -1,6 +1,9 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:ottos_core/ottos_core.dart';
+
+import '../api/api_exception.dart';
+import '../models/monthly_report.dart';
+import 'report_repository.dart';
 
 enum ReportsStatus { loading, success, failure }
 

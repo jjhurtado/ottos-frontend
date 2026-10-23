@@ -4,7 +4,8 @@ Actualizado: 2026-10-23
 
 ## Estado actual
 
-**En `develop` (sin publicar):** remesas **por la casa** (sin comisión) en el panel y en la app, con el backend `V3`
+**En `develop` (sin publicar):** remesas del mes a detalle, exportar (PDF a detalle y CSV) y **Estadísticas** en el panel
+y en la app para ventas (ver «Informes a detalle y estadísticas»). Remesas **por la casa** (sin comisión) en el panel y en la app, con el backend `V3`
 (contrato `ottos/docs/contracts/on-the-house.md`). Probándose en staging; no hay compilación móvil nueva todavía.
 Corregido también en `develop`: el listado de remesas del panel no mostraba la remesa recién registrada al volver.
 
@@ -196,12 +197,25 @@ y cada versión publicada lleva su tag en `main`, sin prefijo (`1.0.0-beta.1`). 
 
 Decidido (2026-10-11): los arreglos que salgan de la prueba en staging van en `1.0.0-rc.2` (rama `release/1.0.0-rc.2`); el tag `1.0.0-rc.1` publicado no se toca. Si staging no encuentra nada, se pasa de `1.0.0-rc.1` directamente a `1.0.0`. El backend versiona igual.
 
-## Informes a detalle y estadísticas (en diseño, 2026-10-23)
+## Informes a detalle y estadísticas (2026-10-23)
 
-Propuesta en el canvas «Ottos · Panel web» (artboards «PROPUESTA»), pendiente de que el usuario la revise; aún sin
-código. Sección «Remesas del mes» en Reportes, menú «Exportar» (resumen general en PDF, resumen a detalle en PDF y
-remesas en CSV) y una página nueva **Estadísticas**, solo en el panel web. Sin datos personales en ninguna de ellas;
-permiso `reports:read`. Necesita dos endpoints nuevos del backend, por cerrar con él.
+Aprobado por el usuario sobre la propuesta del canvas y hecho en `develop` con el backend `develop` (contratos
+`ottos/docs/contracts/monthly-report.md` § Detalle y `statistics.md`). Sin datos personales; permiso `reports:read`.
+
+- [x] Panel › Reportes: sección «Remesas del mes» bajo el resumen (buscar por código, filtros de tipo, estado,
+  repartidor, por la casa y anuladas, orden por fecha, páginas de 50 y totales de lo filtrado; anuladas en gris con
+  su motivo). En el móvil, tarjetas.
+- [x] Panel › Reportes: menú «Exportar» con el resumen general (PDF de siempre), el resumen a detalle (PDF A4
+  horizontal: resumen, entregas, recogidas y anuladas) y las remesas en CSV. Los totales del PDF y del CSV cuadran
+  con el resumen (test).
+- [x] Panel › Estadísticas (menú lateral): mes actual, mes anterior, últimos 3 meses o personalizado (≤ 366 días);
+  ventas por semana, por día de la semana, importe medio con comparación y evolución, municipios (10 y «Otros») y
+  por la casa. «Pocos datos» con menos de 10 remesas.
+- [x] App › ventas con `reports:read`: «Reportes» y «Estadísticas» en la barra inferior (el repartidor nunca);
+  «Exportar» comparte el PDF o el CSV desde el teléfono (`share_plus`).
+- [x] Con un backend sin los endpoints (404), aviso amable en esas vistas; el resto igual. La app no exige actualizar.
+- [ ] Probarlo en staging con datos reales (panel) y, con la próxima compilación de la app, en un teléfono (compartir
+  el PDF y el CSV). Preparar el aviso de versión opcional cuando haya compilación.
 
 ### Pendientes futuros
 

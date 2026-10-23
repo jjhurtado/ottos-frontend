@@ -16,6 +16,7 @@ abstract final class OpsTexts {
   static const roles = 'Roles y permisos';
   static const audit = 'Auditoría';
   static const reports = 'Reportes';
+  static const statistics = ReportTexts.statistics;
 
   // Home
   static String greeting(String name) => 'Hola, $name';
@@ -394,7 +395,7 @@ abstract final class OpsTexts {
       'Entregar o recoger desde el negocio, sin repartidor (mueve su caja)',
     Permissions.remittancesOnTheHouse => 'Registrar entregas por la casa (sin comisión)',
     Permissions.auditRead => 'Ver el registro de auditoría',
-    Permissions.reportsRead => 'Ver los reportes del negocio (resumen mensual)',
+    Permissions.reportsRead => 'Ver los reportes del negocio (resumen mensual, remesas del mes y estadísticas)',
     Permissions.cashExchangeOwn => 'Cambiar moneda en su propia caja (repartidor)',
     Permissions.cashReview => 'Revisar cambios de moneda marcados',
     Permissions.customersExport => 'Exportar clientes y beneficiarios (CSV)',
@@ -574,44 +575,40 @@ abstract final class OpsTexts {
     };
   }
 
-  // Monthly report
-  static const monthlyReport = 'Resumen mensual';
-  static const exportPdf = 'Exportar PDF';
-  static const previousMonth = 'Mes anterior';
-  static const nextMonth = 'Mes siguiente';
-  static const reportRemittances = 'Remesas';
-  static const totalCollected = 'Total cobrado';
-  static const totalCollectedHelp = 'Entregas: monto enviado + comisión, pagado por los remitentes';
-  static const pickupsCollected = 'Recogido por los repartidores';
-  static String pickupsHelp(int count, String fees) => '$count recogidas · $fees de comisiones';
-  static String earningsHelp(String deliveries, String pickups, String rounding) =>
-      'Entregas $deliveries · recogidas $pickups · además $rounding por redondeo al entregar';
-  static const collectedOrPicked = 'Cobrado o recogido';
-  static const totalDelivered = 'Total entregado';
-  static const difference = 'Diferencia';
-  static const differenceHelp = 'Cobrado − entregado, solo entregas';
-  static const earnings = 'Ganancias (comisiones)';
-  static const byCurrency = 'Entregas por moneda';
-  static const byType = 'Por tipo';
-  static const monthEndStatus = 'Estado al cierre del mes';
-  static const sent = 'Enviado';
-  static const fees = 'Comisiones';
-  static const collected = 'Cobrado';
-  static const delivered = 'Entregado';
-  static String deliveredIn(String currency) => 'Entregado en $currency';
-  static const completedLabel = 'Completadas';
-  static const openLabel = 'Abiertas (pagadas o asignadas)';
-  static const withIncidentLabel = 'Con incidencia';
-  static const totalRow = 'Total';
-  static const noSales = 'No hay remesas registradas este mes.';
-  static String deliveriesAndPickups(int deliveries, int pickups) => '$deliveries entregas · $pickups recogidas';
-  static const onTheHouseReport = 'Por la casa (comisiones no cobradas)';
-  static String onTheHouseHelp(int count, String amount) =>
-      '${count == 1 ? '1 entrega' : '$count entregas'} sin comisión · $amount enviados';
-  static String reportPeriod(String from, String to, String currency) =>
-      'Del $from al $to · hora de Cuba · importes en $currency';
-  static String generatedOn(String when) => 'Generado el $when';
-  static String reportFileName(String month) => 'resumen-mensual-$month.pdf';
+  // Monthly report: the shared texts (ReportTexts), so the panel and the app read the same.
+  static const monthlyReport = ReportTexts.monthlyReport;
+  static const export = ReportTexts.export;
+  static const previousMonth = ReportTexts.previousMonth;
+  static const nextMonth = ReportTexts.nextMonth;
+  static const reportRemittances = ReportTexts.reportRemittances;
+  static const totalCollected = ReportTexts.totalCollected;
+  static const totalCollectedHelp = ReportTexts.totalCollectedHelp;
+  static const pickupsCollected = ReportTexts.pickupsCollected;
+  static const pickupsHelp = ReportTexts.pickupsHelp;
+  static const earningsHelp = ReportTexts.earningsHelp;
+  static const collectedOrPicked = ReportTexts.collectedOrPicked;
+  static const totalDelivered = ReportTexts.totalDelivered;
+  static const difference = ReportTexts.difference;
+  static const differenceHelp = ReportTexts.differenceHelp;
+  static const earnings = ReportTexts.earnings;
+  static const byCurrency = ReportTexts.byCurrency;
+  static const byType = ReportTexts.byType;
+  static const monthEndStatus = ReportTexts.monthEndStatus;
+  static const sent = ReportTexts.sent;
+  static const fees = ReportTexts.fees;
+  static const collected = ReportTexts.collected;
+  static const delivered = ReportTexts.delivered;
+  static const deliveredIn = ReportTexts.deliveredIn;
+  static const completedLabel = ReportTexts.completedLabel;
+  static const openLabel = ReportTexts.openLabel;
+  static const withIncidentLabel = ReportTexts.withIncidentLabel;
+  static const totalRow = ReportTexts.totalRow;
+  static const noSales = ReportTexts.noSales;
+  static const deliveriesAndPickups = ReportTexts.deliveriesAndPickups;
+  static const onTheHouseReport = ReportTexts.onTheHouseReport;
+  static const onTheHouseHelp = ReportTexts.onTheHouseHelp;
+  static const reportPeriod = ReportTexts.reportPeriod;
+  static const generatedOn = ReportTexts.generatedOn;
 
   // Currency exchanges
   static const registerExchange = 'Registrar cambio';

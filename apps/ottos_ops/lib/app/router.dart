@@ -10,6 +10,7 @@ import '../features/customers/view/customer_list_page.dart';
 import '../features/home/view/home_page.dart';
 import '../features/configuration/view/configuration_page.dart';
 import '../features/reports/view/reports_page.dart';
+import '../features/reports/view/statistics_page.dart';
 import '../features/remittances/view/historical_remittance_page.dart';
 import '../features/remittances/view/new_remittance_page.dart';
 import '../features/remittances/view/remittance_detail_page.dart';
@@ -118,6 +119,7 @@ GoRouter buildRouter(AuthBloc authBloc) {
           GoRoute(path: Destinations.roles.path, builder: (_, _) => const RolesPage()),
           GoRoute(path: Destinations.audit.path, builder: (_, _) => const AuditPage()),
           GoRoute(path: Destinations.reports.path, builder: (_, _) => const ReportsPage()),
+          GoRoute(path: Destinations.statistics.path, builder: (_, _) => const StatisticsPage()),
         ],
       ),
     ],

@@ -17,7 +17,8 @@ permission **and** the workflow allows it from the current status.
 | Beneficiarios | `features/beneficiaries` | `customers:read` | Every beneficiary, with or without a customer: search, edit and create without a customer (`customers:write`) |
 | Caja | `features/cash` | `cash:read` | Business cash, each courier's cash, fund/return, deposits, exchanges on behalf of a courier and to review |
 | Configuración | `features/configuration` | `configuration:read` | Rates and commissions (deliveries and pickups separately), minimum amount, delivery days, exchange tolerance, calculator |
-| Reportes | `features/reports` | `reports:read` | Monthly sales summary and its one-page A4 PDF (built in the browser) |
+| Reportes | `features/reports` | `reports:read` | Monthly sales summary, the month's remittances without personal data, and «Exportar»: summary PDF, detail PDF (A4 landscape) and CSV, built in the browser |
+| Estadísticas | `features/reports` | `reports:read` | Sales by week and day of the week, average amount, municipalities and on the house, for a chosen period |
 | Usuarios / Roles | `features/users`, `features/roles` | `users:read`, `roles:read` | Users, roles and permissions in Spanish; you can only grant permissions you hold |
 | Auditoría | `features/audit` | `audit:read` | Who changed what and when |
 
