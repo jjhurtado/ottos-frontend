@@ -73,6 +73,28 @@ class ReportTypeLine extends Equatable {
   List<Object?> get props => [type, remittances, collected, fees];
 }
 
+/// Deliveries sent on the house in a month, voided ones aside, in USD.
+class ReportOnTheHouse extends Equatable {
+  const ReportOnTheHouse({this.remittances = 0, this.amount = 0, this.waivedFees = 0});
+
+  factory ReportOnTheHouse.fromJson(Map<String, dynamic> json) => ReportOnTheHouse(
+    remittances: json['remittances'] as int? ?? 0,
+    amount: parseDecimal(json['amount']) ?? 0,
+    waivedFees: parseDecimal(json['waivedFees']) ?? 0,
+  );
+
+  final int remittances;
+
+  /// What they sent.
+  final double amount;
+
+  /// The fees not charged.
+  final double waivedFees;
+
+  @override
+  List<Object?> get props => [remittances, amount, waivedFees];
+}
+
 /// The month's sales (`GET /reports/monthly`): remittances counted by their
 /// registration date, amounts in USD unless they say otherwise.
 class MonthlyReport extends Equatable {
@@ -98,6 +120,7 @@ class MonthlyReport extends Equatable {
     this.delivered = const [],
     this.byCurrency = const [],
     this.byType = const [],
+    this.onTheHouse,
   });
 
   factory MonthlyReport.fromJson(Map<String, dynamic> json) {
@@ -132,6 +155,10 @@ class MonthlyReport extends Equatable {
       byType: [
         for (final item in json['byType'] as List? ?? const []) ReportTypeLine.fromJson(item as Map<String, dynamic>),
       ],
+      onTheHouse: switch (json['onTheHouse']) {
+        final Map<String, dynamic> block => ReportOnTheHouse.fromJson(block),
+        _ => null,
+      },
     );
   }
 
@@ -180,6 +207,9 @@ class MonthlyReport extends Equatable {
   final List<Money> delivered;
   final List<ReportCurrencyLine> byCurrency;
   final List<ReportTypeLine> byType;
+
+  /// Deliveries on the house; null with a backend from before they existed.
+  final ReportOnTheHouse? onTheHouse;
 
   @override
   List<Object?> get props => [month, generatedAt, remittances, collected, fees, deliveredCurrency, difference];

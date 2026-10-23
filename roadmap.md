@@ -1,8 +1,11 @@
 # Ottos frontend · Roadmap
 
-Actualizado: 2026-10-22
+Actualizado: 2026-10-23
 
 ## Estado actual
+
+**En `develop` (sin publicar):** remesas **por la casa** (sin comisión) en el panel y en la app, con el backend `V3`
+(contrato `ottos/docs/contracts/on-the-house.md`). Probándose en staging; no hay compilación móvil nueva todavía.
 
 **Publicado: `1.0.0-rc.7`** (2026-10-22), solo el panel web, con el backend `1.0.0-rc.6`: panel adaptado al móvil y
 «Completada desde el negocio» en Auditoría. La versión incluye para la app la compilación 9 («Completadas» en la lista
@@ -43,6 +46,7 @@ Decisión del negocio (2026-10-10): durante el día, **ventas y repartidores tra
 - [x] **Entrar con huella** (app): tras entrar con contraseña, la app pregunta si usar la huella la próxima vez; si se acepta, guarda las credenciales en el almacenamiento seguro (Keystore) y muestra «Entrar con huella». Si la contraseña cambia, las olvida y pide la nueva. Sin huella registrada en el teléfono no se ofrece. Probado en emulador sin huella; falta probar con huella en un teléfono real.
 - [ ] Ajuste para dejar de usar la huella en un dispositivo (hoy: «Ahora no» al preguntar; se vuelve a preguntar en el siguiente login con contraseña).
 - [x] **Alta de remitentes y beneficiarios desde la app** (2026-10-12): «Nuevo remitente» y «Nuevo beneficiario» en «Nueva remesa» con `customers:write`; los formularios se movieron a `ottos_core`.
+- [x] **Remesas por la casa** (2026-10-23, `remittances:on-the-house`, que el usuario da o quita desde Roles): casilla «Por la casa (sin comisión)» en la nueva remesa (panel y app), solo entregas, motivo obligatorio, cotización con `onTheHouse` (comisión 0 y «Comisión no cobrada»); insignia en listas y detalles (también del repartidor), filtro «Solo por la casa», detalle con motivo y comisión no cobrada, acción de Auditoría y bloque del resumen mensual y su PDF. Falta: probarlo en staging y, con la próxima compilación de la app, el aviso de versión opcional.
 - [ ] Decidir qué más de ventas necesita estar en la app de día (buscar remesas, reasignar) y qué se queda solo en el panel.
 
 ## Notificaciones de la app

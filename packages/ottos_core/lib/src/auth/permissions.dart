@@ -25,6 +25,9 @@ abstract final class Permissions {
   static const remittancesVoid = 'remittances:void';
   static const remittancesHistorical = 'remittances:historical';
   static const remittancesCompleteFromBusiness = 'remittances:complete-from-business';
+
+  /// Register a delivery on the house, without a fee.
+  static const remittancesOnTheHouse = 'remittances:on-the-house';
   static const auditRead = 'audit:read';
   static const reportsRead = 'reports:read';
   static const cashRead = 'cash:read';

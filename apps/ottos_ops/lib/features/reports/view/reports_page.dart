@@ -155,6 +155,13 @@ class _ReportView extends StatelessWidget {
               ),
               highlight: true,
             ),
+            // Only with a backend that sends it; it always does since its V3.
+            if (report.onTheHouse case final onTheHouse?)
+              _Total(
+                label: OpsTexts.onTheHouseReport,
+                value: usd(onTheHouse.waivedFees),
+                help: OpsTexts.onTheHouseHelp(onTheHouse.remittances, usd(onTheHouse.amount)),
+              ),
           ],
         ),
         const SizedBox(height: 16),

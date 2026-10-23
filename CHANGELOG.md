@@ -6,6 +6,19 @@ Cambios notables del frontend de Ottos (panel de operaciones y app de repartidor
 
 ## [Unreleased]
 
+Las remesas por la casa necesitan el backend con la migración `V3` (en staging desde el 2026-10-23). Con un backend
+anterior no aparece nada nuevo y todo funciona como antes. La app no exige actualizar: una versión antigua simplemente
+no muestra la insignia.
+
+### Añadido
+
+- Panel y app › Nueva remesa: casilla **«Por la casa (sin comisión)»** en las entregas, solo para quien tiene el permiso «Registrar entregas por la casa». Al marcarla pide un motivo (obligatorio, hasta 500 caracteres), el resumen se recalcula con comisión 0, total igual al monto y la «Comisión no cobrada», y el botón pasa a «Registrar por la casa». La tasa y el monto mínimo son los de siempre. No se puede marcar ni desmarcar después de registrarla. Las recogidas no la tienen.
+- Panel › Remesas: insignia «Por la casa» en el listado y en el detalle; el detalle muestra además la comisión no cobrada y el motivo. Nuevo filtro «Solo por la casa».
+- App › remesas: insignia «Por la casa» en la lista y en el detalle, también para el repartidor.
+- Panel › Reportes: el resumen mensual y su PDF muestran el bloque «Por la casa» con las comisiones no cobradas, cuántas entregas fueron y cuánto se envió (sin anuladas).
+- Panel › Auditoría: la acción «Remesa por la casa (sin comisión)», con el monto, remitente, beneficiario, comisión no cobrada y motivo; también en el filtro de acciones.
+- Panel › Roles: el permiso nuevo se llama «Registrar entregas por la casa (sin comisión)». Quien lo recibe tiene que salir y volver a entrar.
+
 ## [1.0.0-rc.7] - 2026-10-22
 
 Funciona con el backend 1.0.0-rc.5; la acción «Completada desde el negocio» de Auditoría solo aparece con el backend

@@ -25,6 +25,7 @@ class RemittanceFilter extends Equatable {
     this.from,
     this.to,
     this.voided,
+    this.onTheHouse,
   });
 
   final String? status;
@@ -46,6 +47,9 @@ class RemittanceFilter extends Equatable {
   /// true: only voided remittances; false: without them; null: all.
   final bool? voided;
 
+  /// true: only deliveries on the house; false: without them; null: all.
+  final bool? onTheHouse;
+
   static const _keep = Object();
 
   /// Copies the filter; pass `null` explicitly to clear a field.
@@ -56,6 +60,7 @@ class RemittanceFilter extends Equatable {
     Object? incident = _keep,
     Object? review = _keep,
     Object? voided = _keep,
+    Object? onTheHouse = _keep,
   }) => RemittanceFilter(
     status: status == _keep ? this.status : status as String?,
     type: type == _keep ? this.type : type as RemittanceType?,
@@ -69,6 +74,7 @@ class RemittanceFilter extends Equatable {
     from: from,
     to: to,
     voided: voided == _keep ? this.voided : voided as bool?,
+    onTheHouse: onTheHouse == _keep ? this.onTheHouse : onTheHouse as bool?,
   );
 
   bool get isEmpty => toQuery().values.every((value) => value == null);
@@ -86,6 +92,7 @@ class RemittanceFilter extends Equatable {
     from,
     to,
     voided,
+    onTheHouse,
   ];
 
   Map<String, dynamic> toQuery() => {
@@ -101,6 +108,7 @@ class RemittanceFilter extends Equatable {
     'from': from == null ? null : Formatters.apiDate(from!),
     'to': to == null ? null : Formatters.apiDate(to!),
     'voided': voided,
+    'onTheHouse': onTheHouse,
   };
 }
 
@@ -177,6 +185,8 @@ class NewRemittance extends Equatable {
     this.notes,
     this.rate,
     this.fee,
+    this.onTheHouse = false,
+    this.onTheHouseReason,
   });
 
   final RemittanceType type;
@@ -185,6 +195,11 @@ class NewRemittance extends Equatable {
   final double amount;
   final String targetCurrency;
   final String? notes;
+
+  /// A delivery on the house: no fee (`remittances:on-the-house`), with
+  /// [onTheHouseReason] required. False sends neither field, as before.
+  final bool onTheHouse;
+  final String? onTheHouseReason;
 
   /// A pickup's own rate (units of [targetCurrency] per 1 USD); null uses the
   /// configured one. Deliveries never send it.
@@ -203,10 +218,23 @@ class NewRemittance extends Equatable {
     'notes': notes,
     'rate': ?rate,
     'fee': ?fee,
+    if (onTheHouse) 'onTheHouse': true,
+    if (onTheHouse) 'onTheHouseReason': onTheHouseReason?.trim(),
   };
 
   @override
-  List<Object?> get props => [type, customerId, beneficiaryId, amount, targetCurrency, notes, rate, fee];
+  List<Object?> get props => [
+    type,
+    customerId,
+    beneficiaryId,
+    amount,
+    targetCurrency,
+    notes,
+    rate,
+    fee,
+    onTheHouse,
+    onTheHouseReason,
+  ];
 }
 
 class RemittanceRepository {

@@ -178,6 +178,25 @@ Future<Uint8List> buildMonthlyReportPdf(MonthlyReport report, {required DateTime
               ),
             ],
           ),
+          if (report.onTheHouse case final onTheHouse?) ...[
+            pw.SizedBox(height: 8),
+            pw.Row(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                pw.Expanded(
+                  child: box(
+                    OpsTexts.onTheHouseReport,
+                    _usd(onTheHouse.waivedFees),
+                    OpsTexts.onTheHouseHelp(onTheHouse.remittances, _usd(onTheHouse.amount)),
+                  ),
+                ),
+                pw.SizedBox(width: 8),
+                pw.Expanded(child: pw.SizedBox()),
+                pw.SizedBox(width: 8),
+                pw.Expanded(child: pw.SizedBox()),
+              ],
+            ),
+          ],
           pw.SizedBox(height: 18),
           heading(OpsTexts.byCurrency),
           pw.SizedBox(height: 6),

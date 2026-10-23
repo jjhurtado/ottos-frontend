@@ -164,6 +164,9 @@ class Remittance extends Equatable {
     this.completedAt,
     this.completedFromBusiness = false,
     this.voided,
+    this.onTheHouse = false,
+    this.waivedFee,
+    this.onTheHouseReason,
   });
 
   factory Remittance.fromJson(Map<String, dynamic> json) => Remittance(
@@ -208,6 +211,9 @@ class Remittance extends Equatable {
     completedAt: parseDateTime(json['completedAt']),
     completedFromBusiness: json['completedFromBusiness'] as bool? ?? false,
     voided: json['voided'] == null ? null : Voided.fromJson(json['voided'] as Map<String, dynamic>),
+    onTheHouse: json['onTheHouse'] as bool? ?? false,
+    waivedFee: parseDecimal(json['waivedFee']),
+    onTheHouseReason: json['onTheHouseReason'] as String?,
   );
 
   final String id;
@@ -291,6 +297,18 @@ class Remittance extends Equatable {
 
   bool get isVoided => voided != null;
 
+  /// A delivery sent "on the house", without a fee. False when the backend
+  /// does not send it (before its V3), like every remittance before then.
+  final bool onTheHouse;
+
+  /// The fee the configured rule would have charged; null unless [onTheHouse]
+  /// and the user sees the financial data.
+  final double? waivedFee;
+
+  /// Why it went on the house; null unless [onTheHouse] and the user sees
+  /// the financial data.
+  final String? onTheHouseReason;
+
   bool get isCompleted => completedAt != null;
 
   bool get isPickup => type == RemittanceType.pickup;
@@ -308,6 +326,7 @@ class Remittance extends Equatable {
     completedAt,
     completedFromBusiness,
     voided,
+    onTheHouse,
   ];
 }
 

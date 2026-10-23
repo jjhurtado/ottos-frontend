@@ -272,6 +272,41 @@ void main() {
       expect(find.textContaining(CoreTexts.incidentReason(IncidentReason.refused)), findsOneWidget);
       expect(find.text('No quiere el dinero'), findsOneWidget);
     });
+
+    testWidgets('on the house shows its badge, the fee not charged and the reason', (tester) async {
+      await tester.binding.setSurfaceSize(const Size(1400, 1400));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      await pumpDetail(
+        tester,
+        Remittance(
+          id: 'r1',
+          code: 'OT-1',
+          type: RemittanceType.delivery,
+          status: 'PAID',
+          statusName: _workflow.nameOf('PAID'),
+          sourceCurrency: 'USD',
+          amount: 37,
+          fee: 0,
+          total: 37,
+          onTheHouse: true,
+          waivedFee: 10,
+          onTheHouseReason: 'Su madre',
+        ),
+        {Permissions.remittancesRead},
+      );
+
+      expect(find.byType(OnTheHouseBadge), findsOneWidget);
+      expect(find.text('${Formatters.money(0, 'USD')} · ${CoreTexts.onTheHouse}'), findsOneWidget);
+      expect(find.text(CoreTexts.waivedFee), findsOneWidget);
+      expect(find.text(Formatters.money(10, 'USD')), findsOneWidget);
+      expect(find.text('Su madre'), findsOneWidget);
+    });
+
+    testWidgets('a normal remittance has no badge', (tester) async {
+      await pumpDetail(tester, _remittance('PAID'), {Permissions.remittancesRead});
+      expect(find.byType(OnTheHouseBadge), findsNothing);
+      expect(find.text(CoreTexts.waivedFee), findsNothing);
+    });
   });
 
   group('cubit', () {
