@@ -195,6 +195,19 @@ y cada versión publicada lleva su tag en `main`, sin prefijo (`1.0.0-beta.1`). 
 
 Decidido (2026-10-11): los arreglos que salgan de la prueba en staging van en `1.0.0-rc.2` (rama `release/1.0.0-rc.2`); el tag `1.0.0-rc.1` publicado no se toca. Si staging no encuentra nada, se pasa de `1.0.0-rc.1` directamente a `1.0.0`. El backend versiona igual.
 
+## Informes a detalle y estadísticas (en diseño, 2026-10-23)
+
+Propuesta en el canvas «Ottos · Panel web» (artboards «PROPUESTA»), pendiente de que el usuario la revise; aún sin
+código. Sección «Remesas del mes» en Reportes, menú «Exportar» (resumen general en PDF, resumen a detalle en PDF y
+remesas en CSV) y una página nueva **Estadísticas**, solo en el panel web. Sin datos personales en ninguna de ellas;
+permiso `reports:read`. Necesita dos endpoints nuevos del backend, por cerrar con él.
+
+### Pendientes futuros
+
+- [ ] **Estadísticas: entregas por repartidor** (2026-10-23). El usuario no lo quiere ahora; queda para el futuro.
+- [ ] **Informe a detalle: columna del vendedor que registró cada remesa** (2026-10-23). Fuera de la primera versión
+  del PDF a detalle y del CSV, por decisión del usuario.
+
 ## Dependencias con el backend y preguntas abiertas
 
 - **Cambio incompatible del backend (resuelto):** las tasas y comisiones se movieron a `/api/v1/configuration/…` y `rates:write` se sustituyó por `configuration:read` y `configuration:write`. El frontend ya lo sigue. Las sesiones iniciadas antes del cambio tienen los permisos viejos y deben volver a entrar.
