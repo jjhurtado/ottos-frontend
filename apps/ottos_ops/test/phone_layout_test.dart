@@ -245,6 +245,8 @@ void main() {
       ),
     );
     when(() => reports.monthly(any(), any())).thenAnswer((_) async => MonthlyReport.fromJson(sampleJson));
+    when(() => reports.monthlyRemittances(any(), any()))
+        .thenAnswer((_) async => MonthlyReportDetail.fromJson(const {'month': '2026-10'}));
     when(
       () => audit.search(
         any(),
