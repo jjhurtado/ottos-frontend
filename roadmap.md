@@ -1,13 +1,14 @@
 # Ottos frontend · Roadmap
 
-Actualizado: 2026-10-15
+Actualizado: 2026-10-22
 
 ## Estado actual
 
-**Publicado: `1.0.0-rc.6`** (2026-10-14), solo el panel web, con el backend `1.0.0-rc.5`: listas de clientes y
-beneficiarios por páginas con total, y «Entregada por el negocio». La app del móvil sigue en la `1.0.0-rc.5`
-(Android compilación 7; iPhone TestFlight `1.0.0 (7)`, [docs/ios-en-mac.md](docs/ios-en-mac.md)); la próxima
-compilación móvil será la 9.
+**Publicado: `1.0.0-rc.7`** (2026-10-22), solo el panel web, con el backend `1.0.0-rc.6`: panel adaptado al móvil y
+«Completada desde el negocio» en Auditoría. La versión incluye para la app la compilación 9 («Completadas» en la lista
+de ventas), que aún no se ha distribuido: el usuario la pasará a mano a ventas en iPhone más adelante (Android no hace
+falta). Hasta entonces la app sigue en la `1.0.0-rc.5` (Android compilación 7; iPhone TestFlight `1.0.0 (7)`,
+[docs/ios-en-mac.md](docs/ios-en-mac.md)).
 
 Falta para `1.0.0`:
 
@@ -16,9 +17,6 @@ Falta para `1.0.0`:
 - Pasar al backend el enlace de TestFlight y el de Play Store para el aviso de versión.
 - Probar la huella en un teléfono real.
 - Gestionar la primera remesa real con las apps.
-
-En `develop`, para la próxima versión (en staging, pendiente de la orden del usuario para producción): «Completadas»
-en la lista de ventas de la app y el panel adaptado al móvil.
 
 Las decisiones y sus motivos están en [docs/decisiones.md](docs/decisiones.md).
 
