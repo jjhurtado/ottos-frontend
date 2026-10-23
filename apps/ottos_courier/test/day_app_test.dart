@@ -320,6 +320,27 @@ void main() {
       expect(find.text(CourierTexts.courier), findsNothing);
       verifyNever(() => remittances.couriers());
     });
+
+    testWidgets('who may sends a delivery on the house, with a reason; never a pickup', (tester) async {
+      await tester.binding.setSurfaceSize(const Size(420, 1600));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      await pump(tester, {..._sales, Permissions.remittancesOnTheHouse}, const NewRemittancePage());
+
+      await tester.tap(find.text(CoreTexts.onTheHouseCheckbox));
+      await tester.pumpAndSettle();
+      expect(find.text(CoreTexts.onTheHouseReason), findsOneWidget);
+      expect(find.widgetWithText(FilledButton, CoreTexts.registerOnTheHouse), findsOneWidget);
+
+      await tester.tap(find.text(CoreTexts.pickup));
+      await tester.pumpAndSettle();
+      expect(find.text(CoreTexts.onTheHouseCheckbox), findsNothing);
+      expect(find.widgetWithText(FilledButton, CourierTexts.register), findsOneWidget);
+    });
+
+    testWidgets('without the permission there is no on the house box', (tester) async {
+      await pump(tester, _sales, const NewRemittancePage());
+      expect(find.text(CoreTexts.onTheHouseCheckbox), findsNothing);
+    });
   });
 
   group('cash', () {
@@ -502,6 +523,22 @@ void main() {
 
       expect(find.byType(VoidedBanner), findsOneWidget);
       expect(find.text(CourierTexts.assignToCourier), findsNothing);
+    });
+
+    testWidgets('a delivery on the house shows its badge to the courier', (tester) async {
+      when(() => remittances.get('r1')).thenAnswer(
+        (_) async => const Remittance(
+          id: 'r1',
+          code: 'OT-1',
+          type: RemittanceType.delivery,
+          status: 'ASSIGNED',
+          statusName: '',
+          courierId: 'u1',
+          onTheHouse: true,
+        ),
+      );
+      await pump(tester, _courierPermissions, const RemittancePage(remittanceId: 'r1'));
+      expect(find.byType(OnTheHouseBadge), findsOneWidget);
     });
 
     testWidgets('a courier cannot assign', (tester) async {

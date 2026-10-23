@@ -134,6 +134,7 @@ class _FormState extends State<_Form> {
             const SizedBox(height: 16),
             PickupRateField(state: state),
             PickupFeeField(state: state),
+            OnTheHouseField(state: state),
             _QuoteSummary(state: state),
             if (state.couriers.isNotEmpty) ...[
               const SizedBox(height: 16),
@@ -166,14 +167,17 @@ class _FormState extends State<_Form> {
             ],
             const SizedBox(height: 24),
             FilledButton(
-              style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(52)),
+              style: FilledButton.styleFrom(
+                minimumSize: const Size.fromHeight(52),
+                backgroundColor: state.onTheHouse ? OttosColors.onTheHouse : null,
+              ),
               onPressed: state.canSubmit ? () => cubit.submit(notes: _notes.text) : null,
               child: state.submitting
                   ? const SizedBox.square(
                       dimension: 22,
                       child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                     )
-                  : const Text(CourierTexts.register),
+                  : Text(state.onTheHouse ? CoreTexts.registerOnTheHouse : CourierTexts.register),
             ),
           ],
         );
@@ -393,7 +397,15 @@ class _QuoteSummary extends StatelessWidget {
                 ].join(' · '),
               ),
             ] else ...[
-              InfoRow(label: CourierTexts.fee, value: Formatters.money(quote!.fee, quote.sourceCurrency)),
+              InfoRow(
+                label: CourierTexts.fee,
+                value: [
+                  Formatters.money(quote!.fee, quote.sourceCurrency),
+                  if (quote.onTheHouse) CoreTexts.onTheHouse,
+                ].join(' · '),
+              ),
+              if (quote.onTheHouse && quote.waivedFee != null)
+                InfoRow(label: CoreTexts.waivedFee, value: Formatters.money(quote.waivedFee, quote.sourceCurrency)),
               InfoRow(label: CourierTexts.total, value: Formatters.money(quote.total, quote.sourceCurrency)),
               InfoRow(
                 label: CourierTexts.rate,
@@ -406,6 +418,10 @@ class _QuoteSummary extends StatelessWidget {
                 label: CourierTexts.amountToDeliver,
                 value: Formatters.money(quote.amountToDeliver, quote.targetCurrency),
               ),
+              if (state.onTheHouse && !quote.onTheHouse) ...[
+                const SizedBox(height: 8),
+                Text(CoreTexts.onTheHouseNotQuoted, style: TextStyle(color: colors.error)),
+              ],
             ],
           ],
         ),

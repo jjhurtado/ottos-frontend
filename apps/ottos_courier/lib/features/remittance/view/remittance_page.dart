@@ -88,7 +88,14 @@ class _RemittanceView extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                RemittanceTypeBadge(type: remittance.type, onDark: true),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 6,
+                  children: [
+                    RemittanceTypeBadge(type: remittance.type, onDark: true),
+                    if (remittance.onTheHouse) const OnTheHouseBadge(onDark: true),
+                  ],
+                ),
                 const SizedBox(height: 12),
                 Text(
                   remittance.isPickup ? CourierTexts.toCollect : CourierTexts.toDeliver,

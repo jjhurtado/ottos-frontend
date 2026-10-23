@@ -290,6 +290,7 @@ class _AssignedCard extends StatelessWidget {
                         runSpacing: 6,
                         children: [
                           RemittanceTypeBadge(type: type),
+                          if (remittance.onTheHouse) const OnTheHouseBadge(),
                           if (remittance.incident case final incident?) IncidentBadge(incident: incident),
                           if (unsent) const _UnsentBadge(),
                           if (remittance.review != null) const ReviewBadge(),
