@@ -175,7 +175,7 @@ class _FilterBar extends StatelessWidget {
             onSelected: (selected) => change(filter.copyWith(voided: selected ? true : null)),
           ),
           FilterChip(
-            avatar: const Icon(Icons.volunteer_activism_outlined, size: 18, color: OttosColors.onTheHouse),
+            avatar: const Icon(Icons.home_outlined, size: 18, color: OttosColors.onTheHouse),
             label: const Text(OpsTexts.onlyOnTheHouse),
             selected: filter.onTheHouse == true,
             onSelected: (selected) => change(filter.copyWith(onTheHouse: selected ? true : null)),

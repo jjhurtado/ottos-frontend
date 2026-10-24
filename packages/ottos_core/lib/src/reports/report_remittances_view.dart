@@ -78,7 +78,9 @@ class _Content extends StatelessWidget {
       children: [
         _Filters(state: state, compact: compact),
         const SizedBox(height: 12),
-        _TotalsStrip(totals: state.totals, currency: state.detail!.businessCurrency),
+        compact
+            ? _TotalsTiles(totals: state.totals, currency: state.detail!.businessCurrency)
+            : _TotalsStrip(totals: state.totals, currency: state.detail!.businessCurrency),
         const SizedBox(height: 12),
         if (filtered.isEmpty)
           const SizedBox(height: 120, child: EmptyView(message: ReportTexts.noRemittancesFound))
@@ -561,6 +563,80 @@ class _RemittanceCard extends StatelessWidget {
             ],
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// The totals of what is shown on a phone: a tile per figure, two to a row,
+/// each in its own tint, and the note under them.
+class _TotalsTiles extends StatelessWidget {
+  const _TotalsTiles({required this.totals, required this.currency});
+
+  final ReportTotals totals;
+  final String currency;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    String money(double value) => Formatters.money(value, currency);
+    Widget tile(String label, String value, Color color, {bool valueFirst = false}) {
+      final labelText = Text(label, style: textTheme.bodySmall?.copyWith(color: const Color(0xFF44474E)));
+      final valueText = Text(
+        value,
+        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: OttosColors.navy),
+      );
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(12)),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: valueFirst
+              ? [valueText, const SizedBox(height: 2), labelText]
+              : [labelText, const SizedBox(height: 2), valueText],
+        ),
+      );
+    }
+
+    Widget pair(Widget first, Widget second) => Row(
+      children: [
+        Expanded(child: first),
+        const SizedBox(width: 8),
+        Expanded(child: second),
+      ],
+    );
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFD9DCE3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          pair(
+            tile(
+              totals.remittances == 1 ? 'remesa' : 'remesas',
+              '${totals.remittances}',
+              const Color(0xFFF5F6FA),
+              valueFirst: true,
+            ),
+            tile(ReportTexts.sent, money(totals.sent), const Color(0xFFEEF7F9)),
+          ),
+          const SizedBox(height: 8),
+          pair(
+            tile(ReportTexts.collected, money(totals.collected), const Color(0xFFE3F1E6)),
+            tile(ReportTexts.picked, money(totals.pickupCollected), const Color(0xFFEDE6F8)),
+          ),
+          const SizedBox(height: 8),
+          tile(ReportTexts.fees, money(totals.fees), const Color(0xFFF7EBD8)),
+          const SizedBox(height: 6),
+          Text(
+            ReportTexts.filteredTotalsNote(totals.voided),
+            style: textTheme.bodySmall?.copyWith(fontSize: 11, color: const Color(0xFF6B6F7B)),
+          ),
+        ],
       ),
     );
   }

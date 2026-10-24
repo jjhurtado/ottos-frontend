@@ -78,6 +78,10 @@ void main() {
 
       expect(find.text('OT-K7Q2MA'), findsOneWidget);
       expect(find.text(ReportTexts.filters), findsOneWidget);
+      // The totals as tiles: one per figure, the voided one left out.
+      expect(find.text(Formatters.money(402, 'USD')), findsOneWidget);
+      expect(find.text(Formatters.money(35, 'USD')), findsOneWidget);
+      expect(find.text(ReportTexts.filteredTotalsNote(1)), findsOneWidget);
       expect(find.textContaining('Entrega · 1 oct · Plaza de la Revolución · Pedro Díaz'), findsOneWidget);
       expect(find.text(ReportTexts.voidedOn('12 oct', reasonWithSeparator)), findsOneWidget);
     });
