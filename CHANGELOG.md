@@ -6,13 +6,12 @@ Cambios notables del frontend de Ottos (panel de operaciones y app de repartidor
 
 ## [Unreleased]
 
-Las remesas del mes a detalle y las estadísticas necesitan el backend con `GET /reports/monthly/remittances` y
-`GET /reports/statistics` (en staging desde el 2026-10-23). Con un backend anterior esas vistas muestran un aviso de
-que aún no están disponibles y todo lo demás funciona como antes. La app no exige actualizar.
+## [1.0.0-rc.8] - 2026-10-24
 
-Las remesas por la casa necesitan el backend con la migración `V3` (en staging desde el 2026-10-23). Con un backend
-anterior no aparece nada nuevo y todo funciona como antes. La app no exige actualizar: una versión antigua simplemente
-no muestra la insignia.
+Necesita el backend 1.0.0-rc.8 (por la casa, remesas del mes a detalle y estadísticas). Con un backend anterior las
+remesas del mes y las estadísticas muestran un aviso de que aún no están disponibles, por la casa no aparece y todo lo
+demás funciona como antes. Se publica el panel web; la app pasa a la compilación 10 (iPhone la genera el usuario en su
+Mac) y no exige actualizar: una versión antigua sigue funcionando, solo que sin estas novedades.
 
 ### Añadido
 

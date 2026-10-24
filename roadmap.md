@@ -4,16 +4,14 @@ Actualizado: 2026-10-23
 
 ## Estado actual
 
-**En `develop` (sin publicar):** remesas del mes a detalle, exportar (PDF a detalle y CSV) y **Estadísticas** en el panel
-y en la app para ventas (ver «Informes a detalle y estadísticas»). Remesas **por la casa** (sin comisión) en el panel y en la app, con el backend `V3`
-(contrato `ottos/docs/contracts/on-the-house.md`). Probándose en staging; no hay compilación móvil nueva todavía.
-Corregido también en `develop`: el listado de remesas del panel no mostraba la remesa recién registrada al volver.
+**Publicado: `1.0.0-rc.8`** (2026-10-24), con el backend `1.0.0-rc.8`: remesas **por la casa** (sin comisión), remesas
+del mes a detalle, exportar (PDF a detalle y CSV) y **Estadísticas**, en el panel y en la app para ventas (ver
+«Informes a detalle y estadísticas»). Se publica el panel web. La app pasa a la compilación 10, aviso **opcional**: el
+usuario genera la de iPhone en su Mac ([docs/ios-en-mac.md](docs/ios-en-mac.md)); Android se probó con APK de prueba
+contra staging. Cuando haya compilación distribuida, se pasa al backend para el aviso de versión.
 
-**Publicado: `1.0.0-rc.7`** (2026-10-22), solo el panel web, con el backend `1.0.0-rc.6`: panel adaptado al móvil y
-«Completada desde el negocio» en Auditoría. La versión incluye para la app la compilación 9 («Completadas» en la lista
-de ventas), que aún no se ha distribuido: el usuario la pasará a mano a ventas en iPhone más adelante (Android no hace
-falta). Hasta entonces la app sigue en la `1.0.0-rc.5` (Android compilación 7; iPhone TestFlight `1.0.0 (7)`,
-[docs/ios-en-mac.md](docs/ios-en-mac.md)).
+**Anterior: `1.0.0-rc.7`** (2026-10-22), solo el panel web: panel adaptado al móvil y «Completada desde el negocio»
+en Auditoría; la compilación 9 de la app no llegó a distribuirse.
 
 Falta para `1.0.0`:
 
@@ -193,11 +191,11 @@ y cada versión publicada lleva su tag en `main`, sin prefijo (`1.0.0-beta.1`). 
 | Menor | `1.X.0` | Cada fase siguiente, con su propio ciclo beta → rc → estable | Funcionalidad nueva compatible |
 | Mayor | `X.0.0` | Cambio incompatible (por ejemplo, exige una versión nueva del backend) | Solo con migración planificada |
 
-**Versión actual: `1.0.0-rc.5`** (2026-10-13), con el backend `1.0.0-rc.4`; compilación 7. La siguiente usa `+8` o más.
+**Versión actual: `1.0.0-rc.8`** (2026-10-24), con el backend `1.0.0-rc.8`; compilación 10. La siguiente usa `+11` o más.
 
 Decidido (2026-10-11): los arreglos que salgan de la prueba en staging van en `1.0.0-rc.2` (rama `release/1.0.0-rc.2`); el tag `1.0.0-rc.1` publicado no se toca. Si staging no encuentra nada, se pasa de `1.0.0-rc.1` directamente a `1.0.0`. El backend versiona igual.
 
-## Informes a detalle y estadísticas (2026-10-23)
+## Informes a detalle y estadísticas (2026-10-23, publicado en 1.0.0-rc.8)
 
 Aprobado por el usuario sobre la propuesta del canvas y hecho en `develop` con el backend `develop` (contratos
 `ottos/docs/contracts/monthly-report.md` § Detalle y `statistics.md`). Sin datos personales; permiso `reports:read`.
