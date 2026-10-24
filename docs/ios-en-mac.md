@@ -110,7 +110,7 @@ les llega la actualización solos; en el grupo externo, Apple puede volver a rev
 - **Sí pasa `--build-name`** con la versión sin la etiqueta (`1.0.0`), como en el paso 5.
 - Si App Store Connect dice que esa compilación ya existe, no la cambies a mano: la versión siguiente sube el `+N` en su
   rama `release/`. Excepción ya hecha: la rc.3 de iPhone se subió como compilación **5**, porque la 4 la usó una prueba
-  con el código de la rc.2. La rc.4 usó la 6, la rc.5 la 7 y la siguiente, la 8 o más.
+  con el código de la rc.2. La rc.4 usó la 6, la rc.5 la 7, la rc.7 la 9 (no se subió) y la rc.8 la 10.
 - Si Xcode o CocoaPods se quejan tras cambiar de versión (la rc.3 trae un componente nuevo para elegir contactos), en
   `apps/ottos_courier/ios` ejecuta `pod install` y vuelve a compilar.
 - «Elegir de contactos» usa el selector de contactos de Apple: no hay que añadir ningún permiso ni texto en Xcode.
