@@ -86,6 +86,7 @@ class _RemittanceDetailView extends StatelessWidget {
             Text('${OpsTexts.remittance} ${remittance.code}', style: textTheme.headlineMedium),
             RemittanceStatusChip(remittance: remittance),
             Chip(label: Text(remittance.isPickup ? CoreTexts.pickup : CoreTexts.delivery)),
+            if (remittance.onTheHouse) const OnTheHouseBadge(),
           ],
         ),
         _ActionBar(state: state),
@@ -363,7 +364,17 @@ class _MoneyCard extends StatelessWidget {
       title: OpsTexts.money,
       children: [
         InfoRow(label: OpsTexts.amount, value: Formatters.money(remittance.amount, source)),
-        InfoRow(label: OpsTexts.fee, value: Formatters.money(remittance.fee, source)),
+        InfoRow(
+          label: OpsTexts.fee,
+          value: [
+            Formatters.money(remittance.fee, source),
+            if (remittance.onTheHouse) CoreTexts.onTheHouse,
+          ].join(' · '),
+        ),
+        if (remittance.onTheHouse && remittance.waivedFee != null)
+          InfoRow(label: CoreTexts.waivedFee, value: Formatters.money(remittance.waivedFee, source)),
+        if (remittance.onTheHouse && remittance.onTheHouseReason != null)
+          InfoRow(label: CoreTexts.onTheHouseReason, value: remittance.onTheHouseReason),
         InfoRow(label: OpsTexts.total, value: Formatters.money(remittance.total, source)),
         InfoRow(
           label: OpsTexts.rate,

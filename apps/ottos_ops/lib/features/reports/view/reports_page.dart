@@ -1,54 +1,75 @@
+import 'dart:convert';
+
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:ottos_core/ottos_core.dart';
 import 'package:printing/printing.dart';
 
 import '../../../app/ops_texts.dart';
-import '../cubit/reports_cubit.dart';
-import 'monthly_report_pdf.dart';
+import '../../../app/router.dart';
 import '../../../widgets/page_header.dart';
 
-/// The monthly summary of sales, exportable as a PDF (`reports:read`).
+/// The monthly summary of sales and every remittance of the month, exportable
+/// as PDF (summary or detail) and CSV (`reports:read`).
 class ReportsPage extends StatelessWidget {
   const ReportsPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) => ReportsCubit(reports: context.read<ReportRepository>())..load(),
-      child: BlocBuilder<ReportsCubit, ReportsState>(
-        builder: (context, state) {
-          final cubit = context.read<ReportsCubit>();
-          final report = state.report;
-          return ListView(
-            padding: pagePadding(context),
-            children: [
-              _Header(state: state),
-              const SizedBox(height: 4),
-              if (report != null)
-                Text(
-                  OpsTexts.reportPeriod(
-                    Formatters.date(report.from),
-                    Formatters.date(report.to),
-                    report.businessCurrency,
+    final repository = context.read<ReportRepository>();
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(create: (_) => ReportsCubit(reports: repository)..load()),
+        BlocProvider(
+          create: (context) =>
+              ReportRemittancesCubit(reports: repository, month: context.read<ReportsCubit>().state.month)..load(),
+        ),
+      ],
+      child: BlocListener<ReportsCubit, ReportsState>(
+        listenWhen: (previous, current) => previous.month != current.month,
+        listener: (context, state) => context.read<ReportRemittancesCubit>().load(state.month),
+        child: BlocBuilder<ReportsCubit, ReportsState>(
+          builder: (context, state) {
+            final cubit = context.read<ReportsCubit>();
+            final report = state.report;
+            final canOpen = context.canDo(Permissions.remittancesRead);
+            return ListView(
+              padding: pagePadding(context),
+              children: [
+                _Header(state: state),
+                const SizedBox(height: 4),
+                if (report != null)
+                  Text(
+                    OpsTexts.reportPeriod(
+                      Formatters.date(report.from),
+                      Formatters.date(report.to),
+                      report.businessCurrency,
+                    ),
                   ),
+                const SizedBox(height: 16),
+                switch (state.status) {
+                  ReportsStatus.loading => const SizedBox(height: 240, child: LoadingView()),
+                  ReportsStatus.failure => SizedBox(
+                    height: 240,
+                    child: ErrorView(message: state.error!, onRetry: cubit.load),
+                  ),
+                  ReportsStatus.success when report!.remittances == 0 => const SizedBox(
+                    height: 240,
+                    child: EmptyView(message: OpsTexts.noSales),
+                  ),
+                  ReportsStatus.success => _ReportView(report: report!),
+                },
+                const SizedBox(height: 16),
+                ReportRemittancesSection(
+                  compact: isCompact(context),
+                  onOpen: canOpen ? (row) => context.go(Routes.remittance(row.id)) : null,
                 ),
-              const SizedBox(height: 16),
-              switch (state.status) {
-                ReportsStatus.loading => const SizedBox(height: 240, child: LoadingView()),
-                ReportsStatus.failure => SizedBox(
-                  height: 240,
-                  child: ErrorView(message: state.error!, onRetry: cubit.load),
-                ),
-                ReportsStatus.success when report!.remittances == 0 => const SizedBox(
-                  height: 240,
-                  child: EmptyView(message: OpsTexts.noSales),
-                ),
-                ReportsStatus.success => _ReportView(report: report!),
-              },
-            ],
-          );
-        },
+              ],
+            );
+          },
+        ),
       ),
     );
   }
@@ -62,7 +83,13 @@ class _Header extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cubit = context.read<ReportsCubit>();
+    final detailState = context.watch<ReportRemittancesCubit>().state;
     final report = state.report;
+    final detail = detailState.status == ReportDetailStatus.success && detailState.month == state.month
+        ? detailState.detail
+        : null;
+    final hasSales = report != null && report.remittances > 0;
+    final hasRows = detail != null && detail.lines > 0;
     return Wrap(
       spacing: 12,
       runSpacing: 12,
@@ -71,42 +98,55 @@ class _Header extends StatelessWidget {
       children: [
         Text(OpsTexts.monthlyReport, style: Theme.of(context).textTheme.headlineMedium),
         Wrap(
+          spacing: 12,
+          runSpacing: 8,
           crossAxisAlignment: WrapCrossAlignment.center,
           children: [
-            IconButton(
-              tooltip: OpsTexts.previousMonth,
-              onPressed: () => cubit.moveMonth(-1),
-              icon: const Icon(Icons.chevron_left),
-            ),
-            SizedBox(
-              width: 160,
-              child: Text(
-                monthTitle(state.month),
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-            ),
-            IconButton(
-              tooltip: OpsTexts.nextMonth,
-              onPressed: state.isCurrentMonth ? null : () => cubit.moveMonth(1),
-              icon: const Icon(Icons.chevron_right),
-            ),
-            const SizedBox(width: 12),
-            FilledButton.icon(
-              onPressed: report == null || report.remittances == 0
-                  ? null
-                  : () async {
-                      final bytes = await buildMonthlyReportPdf(report, month: state.month);
-                      // On the web this downloads the file.
-                      await Printing.sharePdf(bytes: bytes, filename: OpsTexts.reportFileName(report.month));
-                    },
-              icon: const Icon(Icons.download_outlined),
-              label: const Text(OpsTexts.exportPdf),
+            MonthSwitcher(month: state.month, isLatest: state.isCurrentMonth, onMove: cubit.moveMonth),
+            ReportExportButton(
+              onSummaryPdf: hasSales
+                  ? () => _export(
+                      context,
+                      () async => Printing.sharePdf(
+                        bytes: await buildMonthlyReportPdf(report, month: state.month),
+                        filename: ReportTexts.summaryFileName(report.month),
+                      ),
+                    )
+                  : null,
+              onDetailPdf: report != null && hasRows
+                  ? () => _export(
+                      context,
+                      () async => Printing.sharePdf(
+                        bytes: await buildMonthlyDetailPdf(report, detail, month: state.month),
+                        filename: ReportTexts.detailFileName(detail.month),
+                      ),
+                    )
+                  : null,
+              onCsv: hasRows
+                  ? () => _export(
+                      context,
+                      () => FilePicker.saveFile(
+                        fileName: ReportTexts.csvFileName(detail.month),
+                        bytes: utf8.encode(ReportCsv.encode(detail)),
+                        mimeType: 'text/csv',
+                      ),
+                    )
+                  : null,
             ),
           ],
         ),
       ],
     );
+  }
+
+  /// On the web the file downloads; a failure says so instead of failing quietly.
+  static Future<void> _export(BuildContext context, Future<Object?> Function() save) async {
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await save();
+    } on Exception {
+      messenger.showSnackBar(const SnackBar(content: Text(ReportTexts.exportFailed)));
+    }
   }
 }
 
@@ -155,6 +195,13 @@ class _ReportView extends StatelessWidget {
               ),
               highlight: true,
             ),
+            // Only with a backend that sends it; it always does since its V3.
+            if (report.onTheHouse case final onTheHouse?)
+              _Total(
+                label: OpsTexts.onTheHouseReport,
+                value: usd(onTheHouse.waivedFees),
+                help: OpsTexts.onTheHouseHelp(onTheHouse.remittances, usd(onTheHouse.amount)),
+              ),
           ],
         ),
         const SizedBox(height: 16),

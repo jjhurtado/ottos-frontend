@@ -6,6 +6,36 @@ Cambios notables del frontend de Ottos (panel de operaciones y app de repartidor
 
 ## [Unreleased]
 
+## [1.0.0-rc.8] - 2026-10-24
+
+Necesita el backend 1.0.0-rc.8 (por la casa, remesas del mes a detalle y estadísticas). Con un backend anterior las
+remesas del mes y las estadísticas muestran un aviso de que aún no están disponibles, por la casa no aparece y todo lo
+demás funciona como antes. Se publica el panel web; la app pasa a la compilación 10 (iPhone la genera el usuario en su
+Mac) y no exige actualizar: una versión antigua sigue funcionando, solo que sin estas novedades.
+
+### Añadido
+
+- Panel › Reportes: sección **«Remesas del mes»** debajo del resumen, con todas las remesas registradas en el mes y sin datos personales: código (abre el detalle si se tiene permiso), tipo, fecha de registro (hora de Cuba), municipio, repartidor, estado, importe, comisión, cobrado, a entregar y tasa. Buscar por código; filtros de tipo, estado, repartidor, «Solo por la casa» y «Mostrar anuladas»; orden por fecha (de la más reciente a la más antigua, o al revés); páginas de 50 y una franja con los totales de lo filtrado sin anuladas. Las anuladas salen en gris, con los importes tachados y, debajo, la fecha y el motivo tal cual se escribió. En el móvil, tarjetas y filtros plegados.
+- Panel › **Estadísticas** (nueva sección del menú, con el mismo permiso que Reportes): mes actual, mes anterior, últimos 3 meses o un periodo personalizado de hasta 366 días. Tarjetas de remesas, importe medio, cobrado y ganancias; ventas por semana (número de remesas y cobrado, en dos gráficos), ventas por día de la semana, importe medio por remesa con la comparación frente al periodo anterior y su evolución semanal, remesas por municipio (los 10 primeros y «Otros») y remesas por la casa (por mes o por semana). Por fecha de registro, hora de Cuba, sin anuladas. Con menos de 10 remesas avisa de que son pocos datos y no compara.
+- App › ventas: secciones **«Reportes»** y **«Estadísticas»** en la barra inferior, solo para ventas con el permiso de ver los reportes; los repartidores no las ven. Reportes muestra las remesas del mes como tarjetas, con buscador, filtros y totales; «Exportar» comparte desde el teléfono (WhatsApp, Drive, Archivos…) el resumen general o el resumen a detalle en PDF, o las remesas en CSV. Estadísticas tiene los mismos gráficos que el panel, uno debajo de otro.
+- Panel y app › Nueva remesa: casilla **«Por la casa (sin comisión)»** en las entregas, solo para quien tiene el permiso «Registrar entregas por la casa». Al marcarla pide un motivo (obligatorio, hasta 500 caracteres), el resumen se recalcula con comisión 0, total igual al monto y la «Comisión no cobrada», y el botón pasa a «Registrar por la casa». La tasa y el monto mínimo son los de siempre. No se puede marcar ni desmarcar después de registrarla. Las recogidas no la tienen.
+- Panel › Remesas: insignia «Por la casa» en el listado y en el detalle; el detalle muestra además la comisión no cobrada y el motivo. Nuevo filtro «Solo por la casa».
+- App › remesas: insignia «Por la casa» en la lista y en el detalle, también para el repartidor.
+- Panel › Reportes: el resumen mensual y su PDF muestran el bloque «Por la casa» con las comisiones no cobradas, cuántas entregas fueron y cuánto se envió (sin anuladas).
+- Panel › Auditoría: la acción «Remesa por la casa (sin comisión)», con el monto, remitente, beneficiario, comisión no cobrada y motivo; también en el filtro de acciones.
+- Panel › Roles: el permiso nuevo se llama «Registrar entregas por la casa (sin comisión)». Quien lo recibe tiene que salir y volver a entrar.
+
+### Cambiado
+
+- Panel y app › Por la casa: la insignia, la casilla de «Nueva remesa» y el filtro «Solo por la casa» usan ahora el icono de una casa en vez del corazón.
+- App y panel en el móvil › Reportes: los totales de las remesas del mes se ven como mosaicos de colores (remesas, enviado, cobrado, recogido y comisiones) en vez de una franja de texto. En el ordenador, el panel no cambia.
+- Panel › Reportes: el botón «Exportar PDF» pasa a ser un menú **«Exportar»** con «Resumen general (PDF)» (el de siempre), «Resumen a detalle (PDF)» (A4 horizontal: el resumen, las entregas, las recogidas y las anuladas con su motivo, cada parte desde una página nueva) y «Remesas (CSV)» (una fila por remesa, anuladas incluidas y marcadas, `;` y decimales con coma para Excel). Exportan siempre el mes entero, sin datos personales.
+- Panel › Roles: el permiso de los reportes se describe ahora como «Ver los reportes del negocio (resumen mensual, remesas del mes y estadísticas)». No cambia quién lo tiene.
+
+### Corregido
+
+- Panel › Remesas: al registrar una remesa y volver a «Remesas», la lista no la mostraba hasta recargar la página. Ahora se actualiza sola al volver, y lo mismo tras anular, asignar, entregar o aplazar desde el detalle. También se actualizan Clientes al volver de la ficha de un cliente y Caja al volver del efectivo de un repartidor. La app del móvil ya lo hacía bien.
+
 ## [1.0.0-rc.7] - 2026-10-22
 
 Funciona con el backend 1.0.0-rc.5; la acción «Completada desde el negocio» de Auditoría solo aparece con el backend

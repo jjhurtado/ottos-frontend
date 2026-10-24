@@ -412,4 +412,130 @@ void main() {
       expect(cubit.state.beneficiary, _beneficiary);
     });
   });
+
+  group('on the house', () {
+    const free = Quote(
+      sourceCurrency: 'USD',
+      targetCurrency: 'USD',
+      amount: 100,
+      fee: 0,
+      total: 100,
+      rate: 1,
+      amountToDeliver: 100,
+      onTheHouse: true,
+      waivedFee: 10,
+    );
+
+    void quoteOnTheHouse(Quote quote) => when(
+      () => rates.quote(
+        sourceCurrency: any(named: 'sourceCurrency'),
+        targetCurrency: any(named: 'targetCurrency'),
+        amount: any(named: 'amount'),
+        type: any(named: 'type'),
+        rate: any(named: 'rate'),
+        fee: any(named: 'fee'),
+        onTheHouse: true,
+      ),
+    ).thenAnswer((_) async => quote);
+
+    setUp(() {
+      quoteOnTheHouse(free);
+      when(() => remittances.register(any(), idempotencyKey: any(named: 'idempotencyKey')))
+          .thenAnswer((_) async => _created);
+    });
+
+    test('marking it quotes again without a fee', () async {
+      await fillForm();
+      cubit.onTheHouseChanged(true);
+      await settle();
+
+      expect(cubit.state.onTheHouse, isTrue);
+      expect(cubit.state.quote, free);
+      verify(
+        () => rates.quote(
+          sourceCurrency: 'USD',
+          targetCurrency: 'USD',
+          amount: 100,
+          type: RemittanceType.delivery,
+          onTheHouse: true,
+        ),
+      ).called(1);
+
+      cubit.onTheHouseChanged(false);
+      await settle();
+      expect(cubit.state.quote, _quote);
+    });
+
+    test('the reason is required and at most 500 characters', () async {
+      await fillForm();
+      cubit.onTheHouseChanged(true);
+      await settle();
+      expect(cubit.state.onTheHouseReasonMissing, isTrue);
+      expect(cubit.state.canSubmit, isFalse);
+
+      cubit.onTheHouseReasonChanged('   ');
+      expect(cubit.state.canSubmit, isFalse);
+
+      cubit.onTheHouseReasonChanged('x' * 501);
+      expect(cubit.state.onTheHouseReasonTooLong, isTrue);
+      expect(cubit.state.canSubmit, isFalse);
+
+      cubit.onTheHouseReasonChanged('Su madre');
+      expect(cubit.state.canSubmit, isTrue);
+    });
+
+    test('registers it with the trimmed reason', () async {
+      await fillForm();
+      cubit.onTheHouseChanged(true);
+      cubit.onTheHouseReasonChanged('  Su madre ');
+      await settle();
+
+      await cubit.submit();
+      final sent =
+          verify(() => remittances.register(captureAny(), idempotencyKey: any(named: 'idempotencyKey'))).captured.single
+              as NewRemittance;
+      expect(sent.onTheHouse, isTrue);
+      expect(sent.onTheHouseReason, 'Su madre');
+      expect(sent.fee, isNull);
+    });
+
+    test('a quote that still charges a fee cannot be registered on the house', () async {
+      quoteOnTheHouse(_quote);
+      await fillForm();
+      cubit.onTheHouseChanged(true);
+      cubit.onTheHouseReasonChanged('Su madre');
+      await settle();
+
+      expect(cubit.state.quote, _quote);
+      expect(cubit.state.canSubmit, isFalse);
+    });
+
+    test('only deliveries: a pickup drops the mark and cannot take it', () async {
+      await fillForm();
+      cubit.onTheHouseChanged(true);
+      cubit.typeChanged(RemittanceType.pickup);
+      expect(cubit.state.onTheHouse, isFalse);
+
+      cubit.onTheHouseChanged(true);
+      expect(cubit.state.onTheHouse, isFalse);
+    });
+
+    test('the server refusal shows in Spanish', () async {
+      when(() => remittances.register(any(), idempotencyKey: any(named: 'idempotencyKey'))).thenThrow(
+        ApiException(
+          CoreTexts.errorCodes['ON_THE_HOUSE_NOT_ALLOWED']!,
+          statusCode: 403,
+          code: 'ON_THE_HOUSE_NOT_ALLOWED',
+        ),
+      );
+      await fillForm();
+      cubit.onTheHouseChanged(true);
+      cubit.onTheHouseReasonChanged('Su madre');
+      await settle();
+
+      await cubit.submit();
+      expect(cubit.state.error, CoreTexts.errorCodes['ON_THE_HOUSE_NOT_ALLOWED']);
+      expect(cubit.state.created, isNull);
+    });
+  });
 }

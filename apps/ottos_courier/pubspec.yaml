@@ -1,7 +1,7 @@
 name: ottos_courier
 description: Ottos courier app for deliveries and pickups.
 publish_to: none
-version: 1.0.0-rc.7+9
+version: 1.0.0-rc.8+10
 resolution: workspace
 
 environment:
@@ -25,6 +25,7 @@ dependencies:
     path: ../../packages/ottos_core
   package_info_plus: ^10.2.2
   path: ^1.9.1
+  share_plus: ^13.3.1
   sqflite: ^2.4.4+1
   url_launcher: ^6.3.2
 

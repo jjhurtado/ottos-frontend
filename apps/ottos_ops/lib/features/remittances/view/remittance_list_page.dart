@@ -8,6 +8,7 @@ import '../../../app/router.dart';
 import '../../../widgets/pagination_bar.dart';
 import '../bloc/remittance_list_bloc.dart';
 import '../../../widgets/page_header.dart';
+import '../../../widgets/refresh_on_return.dart';
 
 class RemittanceListPage extends StatelessWidget {
   const RemittanceListPage({super.key, this.initialFilter = const RemittanceFilter()});
@@ -22,7 +23,16 @@ class RemittanceListPage extends StatelessWidget {
       create: (context) =>
           RemittanceListBloc(remittances: context.read<RemittanceRepository>(), initialFilter: initialFilter)
             ..add(const RemittanceListStarted()),
-      child: const _RemittanceListView(),
+      // Back from registering, voiding or changing one: reload the page shown.
+      child: Builder(
+        builder: (context) => RefreshOnReturn(
+          onReturn: () {
+            final bloc = context.read<RemittanceListBloc>();
+            bloc.add(RemittanceListPageRequested(bloc.state.result?.page ?? 0));
+          },
+          child: const _RemittanceListView(),
+        ),
+      ),
     );
   }
 }
@@ -163,6 +173,12 @@ class _FilterBar extends StatelessWidget {
             label: const Text(OpsTexts.onlyVoided),
             selected: filter.voided == true,
             onSelected: (selected) => change(filter.copyWith(voided: selected ? true : null)),
+          ),
+          FilterChip(
+            avatar: const Icon(Icons.home_outlined, size: 18, color: OttosColors.onTheHouse),
+            label: const Text(OpsTexts.onlyOnTheHouse),
+            selected: filter.onTheHouse == true,
+            onSelected: (selected) => change(filter.copyWith(onTheHouse: selected ? true : null)),
           ),
           if (!filter.isEmpty)
             TextButton.icon(
@@ -348,6 +364,7 @@ class _StatusCell extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         RemittanceStatusChip(remittance: remittance),
+        if (remittance.onTheHouse) ...[const SizedBox(width: 6), const OnTheHouseBadge()],
         if (remittance.review case final review?) ...[
           const SizedBox(width: 6),
           Tooltip(

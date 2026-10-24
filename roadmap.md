@@ -1,14 +1,17 @@
 # Ottos frontend · Roadmap
 
-Actualizado: 2026-10-22
+Actualizado: 2026-10-23
 
 ## Estado actual
 
-**Publicado: `1.0.0-rc.7`** (2026-10-22), solo el panel web, con el backend `1.0.0-rc.6`: panel adaptado al móvil y
-«Completada desde el negocio» en Auditoría. La versión incluye para la app la compilación 9 («Completadas» en la lista
-de ventas), que aún no se ha distribuido: el usuario la pasará a mano a ventas en iPhone más adelante (Android no hace
-falta). Hasta entonces la app sigue en la `1.0.0-rc.5` (Android compilación 7; iPhone TestFlight `1.0.0 (7)`,
-[docs/ios-en-mac.md](docs/ios-en-mac.md)).
+**Publicado: `1.0.0-rc.8`** (2026-10-24), con el backend `1.0.0-rc.8`: remesas **por la casa** (sin comisión), remesas
+del mes a detalle, exportar (PDF a detalle y CSV) y **Estadísticas**, en el panel y en la app para ventas (ver
+«Informes a detalle y estadísticas»). Se publica el panel web. La app pasa a la compilación 10, aviso **opcional**: el
+usuario genera la de iPhone en su Mac ([docs/ios-en-mac.md](docs/ios-en-mac.md)); Android se probó con APK de prueba
+contra staging. Cuando haya compilación distribuida, se pasa al backend para el aviso de versión.
+
+**Anterior: `1.0.0-rc.7`** (2026-10-22), solo el panel web: panel adaptado al móvil y «Completada desde el negocio»
+en Auditoría; la compilación 9 de la app no llegó a distribuirse.
 
 Falta para `1.0.0`:
 
@@ -43,6 +46,7 @@ Decisión del negocio (2026-10-10): durante el día, **ventas y repartidores tra
 - [x] **Entrar con huella** (app): tras entrar con contraseña, la app pregunta si usar la huella la próxima vez; si se acepta, guarda las credenciales en el almacenamiento seguro (Keystore) y muestra «Entrar con huella». Si la contraseña cambia, las olvida y pide la nueva. Sin huella registrada en el teléfono no se ofrece. Probado en emulador sin huella; falta probar con huella en un teléfono real.
 - [ ] Ajuste para dejar de usar la huella en un dispositivo (hoy: «Ahora no» al preguntar; se vuelve a preguntar en el siguiente login con contraseña).
 - [x] **Alta de remitentes y beneficiarios desde la app** (2026-10-12): «Nuevo remitente» y «Nuevo beneficiario» en «Nueva remesa» con `customers:write`; los formularios se movieron a `ottos_core`.
+- [x] **Remesas por la casa** (2026-10-23, `remittances:on-the-house`, que el usuario da o quita desde Roles): casilla «Por la casa (sin comisión)» en la nueva remesa (panel y app), solo entregas, motivo obligatorio, cotización con `onTheHouse` (comisión 0 y «Comisión no cobrada»); insignia en listas y detalles (también del repartidor), filtro «Solo por la casa», detalle con motivo y comisión no cobrada, acción de Auditoría y bloque del resumen mensual y su PDF. Falta: probarlo en staging y, con la próxima compilación de la app, el aviso de versión opcional.
 - [ ] Decidir qué más de ventas necesita estar en la app de día (buscar remesas, reasignar) y qué se queda solo en el panel.
 
 ## Notificaciones de la app
@@ -83,7 +87,7 @@ Objetivo: que una persona de ventas registre una remesa, un supervisor la asigne
 - [x] **Entregar desde el panel** (con o sin PIN) y **aplazar** con nueva fecha y motivo. Los diálogos ahora están en `ottos_core` y los comparten panel y app courier.
 - [x] **Botones según el workflow**: solo las transiciones que `GET /remittance-workflow` permite desde el estado actual y con los permisos del usuario.
 - [x] **Mensajes de éxito y error** tras cada acción; el detalle recarga remesa e historial. Los errores del backend se traducen por su `code`.
-- [ ] Al volver al listado o al inicio después de una acción, comprobar que muestran el estado nuevo (hoy se recargan al entrar).
+- [x] **Al volver al listado** después de registrar, anular o cambiar una remesa, la lista recarga la página que estaba viendo (`RefreshOnReturn`); lo mismo en Clientes y en Caja al volver del detalle. Inicio ya se recargaba al entrar.
 - [x] **Prueba de extremo a extremo** automatizada (`packages/ottos_core/test/integration`): cotizar → crear (reintento idempotente) → asignar → PIN incorrecto rechazado → entregar → historial.
 - [ ] **Prueba en el navegador** del recorrido completo con tres usuarios: ventas, supervisor y repartidor (en la app courier). Hoy solo hay usuario admin y dos repartidores de prueba.
 
@@ -187,9 +191,35 @@ y cada versión publicada lleva su tag en `main`, sin prefijo (`1.0.0-beta.1`). 
 | Menor | `1.X.0` | Cada fase siguiente, con su propio ciclo beta → rc → estable | Funcionalidad nueva compatible |
 | Mayor | `X.0.0` | Cambio incompatible (por ejemplo, exige una versión nueva del backend) | Solo con migración planificada |
 
-**Versión actual: `1.0.0-rc.5`** (2026-10-13), con el backend `1.0.0-rc.4`; compilación 7. La siguiente usa `+8` o más.
+**Versión actual: `1.0.0-rc.8`** (2026-10-24), con el backend `1.0.0-rc.8`; compilación 10. La siguiente usa `+11` o más.
 
 Decidido (2026-10-11): los arreglos que salgan de la prueba en staging van en `1.0.0-rc.2` (rama `release/1.0.0-rc.2`); el tag `1.0.0-rc.1` publicado no se toca. Si staging no encuentra nada, se pasa de `1.0.0-rc.1` directamente a `1.0.0`. El backend versiona igual.
+
+## Informes a detalle y estadísticas (2026-10-23, publicado en 1.0.0-rc.8)
+
+Aprobado por el usuario sobre la propuesta del canvas y hecho en `develop` con el backend `develop` (contratos
+`ottos/docs/contracts/monthly-report.md` § Detalle y `statistics.md`). Sin datos personales; permiso `reports:read`.
+
+- [x] Panel › Reportes: sección «Remesas del mes» bajo el resumen (buscar por código, filtros de tipo, estado,
+  repartidor, por la casa y anuladas, orden por fecha, páginas de 50 y totales de lo filtrado; anuladas en gris con
+  su motivo). En el móvil, tarjetas.
+- [x] Panel › Reportes: menú «Exportar» con el resumen general (PDF de siempre), el resumen a detalle (PDF A4
+  horizontal: resumen, entregas, recogidas y anuladas) y las remesas en CSV. Los totales del PDF y del CSV cuadran
+  con el resumen (test).
+- [x] Panel › Estadísticas (menú lateral): mes actual, mes anterior, últimos 3 meses o personalizado (≤ 366 días);
+  ventas por semana, por día de la semana, importe medio con comparación y evolución, municipios (10 y «Otros») y
+  por la casa. «Pocos datos» con menos de 10 remesas.
+- [x] App › ventas con `reports:read`: «Reportes» y «Estadísticas» en la barra inferior (el repartidor nunca);
+  «Exportar» comparte el PDF o el CSV desde el teléfono (`share_plus`).
+- [x] Con un backend sin los endpoints (404), aviso amable en esas vistas; el resto igual. La app no exige actualizar.
+- [ ] Probarlo en staging con datos reales (panel) y, con la próxima compilación de la app, en un teléfono (compartir
+  el PDF y el CSV). Preparar el aviso de versión opcional cuando haya compilación.
+
+### Pendientes futuros
+
+- [ ] **Estadísticas: entregas por repartidor** (2026-10-23). El usuario no lo quiere ahora; queda para el futuro.
+- [ ] **Informe a detalle: columna del vendedor que registró cada remesa** (2026-10-23). Fuera de la primera versión
+  del PDF a detalle y del CSV, por decisión del usuario.
 
 ## Dependencias con el backend y preguntas abiertas
 

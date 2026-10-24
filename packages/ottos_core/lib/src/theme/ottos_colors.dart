@@ -19,6 +19,9 @@ abstract final class OttosColors {
   static const delivery = tealDark;
   static const pickup = Color(0xFF6B46C1);
 
+  /// Deliveries on the house (no fee): a gift, unlike any status or type color.
+  static const onTheHouse = Color(0xFFB83280);
+
   static const success = Color(0xFF2E7D4F);
   static const warning = Color(0xFFB7791F);
   static const danger = Color(0xFFC0392B);

@@ -112,6 +112,27 @@ void main() {
     expect(find.textContaining(CoreTexts.incidentReason(IncidentReason.notHome)), findsOneWidget);
   });
 
+  testWidgets('the courier sees which delivery goes on the house', (tester) async {
+    await pumpList(tester, [
+      Remittance.fromJson(const {
+        'id': 'OT-1',
+        'code': 'OT-1',
+        'type': 'DELIVERY',
+        'status': 'ASSIGNED',
+        'courierId': 'c1',
+        'cashAmount': 100,
+        'cashCurrency': 'USD',
+        'onTheHouse': true,
+        'waivedFee': null,
+        'onTheHouseReason': null,
+      }),
+      _remittance('OT-2', RemittanceType.delivery),
+    ]);
+
+    expect(find.byType(OnTheHouseBadge), findsOneWidget);
+    expect(find.text(CoreTexts.onTheHouse), findsOneWidget);
+  });
+
   testWidgets('a late remittance says how many days late it is', (tester) async {
     final threeDaysAgo = DateUtils.dateOnly(DateTime.now()).subtract(const Duration(days: 3));
     await pumpList(tester, [_remittance('OT-1', RemittanceType.delivery, expectedDate: threeDaysAgo, late: true)]);

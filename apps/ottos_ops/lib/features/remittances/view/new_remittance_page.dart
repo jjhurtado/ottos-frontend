@@ -139,6 +139,7 @@ class _NewRemittanceViewState extends State<_NewRemittanceView> {
                       const SizedBox(height: 16),
                       PickupRateField(state: state),
                       PickupFeeField(state: state),
+                      OnTheHouseField(state: state),
                       _QuoteSummary(state: state),
                       const SizedBox(height: 16),
                       TextField(
@@ -161,13 +162,16 @@ class _NewRemittanceViewState extends State<_NewRemittanceView> {
                           ),
                           const SizedBox(width: 12),
                           FilledButton(
+                            style: state.onTheHouse
+                                ? FilledButton.styleFrom(backgroundColor: OttosColors.onTheHouse)
+                                : null,
                             onPressed: state.canSubmit ? () => cubit.submit(notes: _notes.text) : null,
                             child: state.submitting
                                 ? const SizedBox.square(
                                     dimension: 20,
                                     child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                                   )
-                                : const Text(OpsTexts.register),
+                                : Text(state.onTheHouse ? CoreTexts.registerOnTheHouse : OpsTexts.register),
                           ),
                         ],
                       ),
@@ -394,7 +398,15 @@ class _QuoteSummary extends StatelessWidget {
                 ].join(' · '),
               ),
             ] else ...[
-              InfoRow(label: OpsTexts.fee, value: Formatters.money(quote!.fee, quote.sourceCurrency)),
+              InfoRow(
+                label: OpsTexts.fee,
+                value: [
+                  Formatters.money(quote!.fee, quote.sourceCurrency),
+                  if (quote.onTheHouse) CoreTexts.onTheHouse,
+                ].join(' · '),
+              ),
+              if (quote.onTheHouse && quote.waivedFee != null)
+                InfoRow(label: CoreTexts.waivedFee, value: Formatters.money(quote.waivedFee, quote.sourceCurrency)),
               InfoRow(label: OpsTexts.total, value: Formatters.money(quote.total, quote.sourceCurrency)),
               InfoRow(
                 label: OpsTexts.rate,
@@ -407,6 +419,10 @@ class _QuoteSummary extends StatelessWidget {
                 label: OpsTexts.amountToDeliver,
                 value: Formatters.money(quote.amountToDeliver, quote.targetCurrency),
               ),
+              if (state.onTheHouse && !quote.onTheHouse) ...[
+                const SizedBox(height: 8),
+                Text(CoreTexts.onTheHouseNotQuoted, style: TextStyle(color: colors.error)),
+              ],
             ],
           ],
         ),
