@@ -28,7 +28,7 @@ class OnTheHouseBadge extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.volunteer_activism_outlined, size: 16, color: foreground),
+          Icon(Icons.home_outlined, size: 16, color: foreground),
           const SizedBox(width: 6),
           Text(
             CoreTexts.onTheHouse,
@@ -98,7 +98,7 @@ class _OnTheHouseFieldState extends State<OnTheHouseField> {
               onChanged: enabled ? (value) => cubit.onTheHouseChanged(value ?? false) : null,
               controlAffinity: ListTileControlAffinity.leading,
               activeColor: OttosColors.onTheHouse,
-              secondary: const Icon(Icons.volunteer_activism_outlined, color: OttosColors.onTheHouse),
+              secondary: const Icon(Icons.home_outlined, color: OttosColors.onTheHouse),
               title: const Text(CoreTexts.onTheHouseCheckbox),
               subtitle: const Text(CoreTexts.onTheHouseCheckboxHelp),
             ),

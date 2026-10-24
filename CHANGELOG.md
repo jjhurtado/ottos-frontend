@@ -28,6 +28,8 @@ no muestra la insignia.
 
 ### Cambiado
 
+- Panel y app › Por la casa: la insignia, la casilla de «Nueva remesa» y el filtro «Solo por la casa» usan ahora el icono de una casa en vez del corazón.
+- App y panel en el móvil › Reportes: los totales de las remesas del mes se ven como mosaicos de colores (remesas, enviado, cobrado, recogido y comisiones) en vez de una franja de texto. En el ordenador, el panel no cambia.
 - Panel › Reportes: el botón «Exportar PDF» pasa a ser un menú **«Exportar»** con «Resumen general (PDF)» (el de siempre), «Resumen a detalle (PDF)» (A4 horizontal: el resumen, las entregas, las recogidas y las anuladas con su motivo, cada parte desde una página nueva) y «Remesas (CSV)» (una fila por remesa, anuladas incluidas y marcadas, `;` y decimales con coma para Excel). Exportan siempre el mes entero, sin datos personales.
 - Panel › Roles: el permiso de los reportes se describe ahora como «Ver los reportes del negocio (resumen mensual, remesas del mes y estadísticas)». No cambia quién lo tiene.
 
