@@ -25,6 +25,8 @@ class RemittancePage extends StatelessWidget {
         listener: (context, state) {
           final message = switch (state.actionResult) {
             RemittanceActionResult.completed => CourierTexts.completed,
+            RemittanceActionResult.completedByBusiness =>
+              state.remittance!.isPickup ? CoreTexts.collectedByBusiness : CoreTexts.deliveredByBusiness,
             RemittanceActionResult.postponed => CourierTexts.postponed,
             RemittanceActionResult.incidentReported => CoreTexts.incidentReported,
             RemittanceActionResult.assigned => CourierTexts.assigned,
@@ -119,6 +121,12 @@ class _RemittanceView extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                if (remittance.completedFromBusiness)
+                  InfoRow(
+                    label: remittance.isPickup ? CourierTexts.collectedBy : CourierTexts.deliveredBy,
+                    value: CourierTexts.theBusiness,
+                    labelWidth: 110,
+                  ),
                 InfoRow(label: CourierTexts.beneficiary, value: remittance.beneficiaryName, labelWidth: 110),
                 _PhoneRow(label: CourierTexts.phone, phone: remittance.beneficiaryPhone),
                 _PhoneRow(label: CourierTexts.alternatePhone, phone: remittance.beneficiaryAlternatePhone),
@@ -199,6 +207,25 @@ class _Actions extends StatelessWidget {
                       },
                 icon: const Icon(Icons.person_add_alt_1_outlined),
                 label: const Text(CourierTexts.assignToCourier),
+              ),
+              const SizedBox(height: 8),
+            ],
+            // Sales and admin, with or without a courier: the business's cash pays it.
+            if (context.canDo(Permissions.remittancesCompleteFromBusiness)) ...[
+              OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size.fromHeight(48),
+                  foregroundColor: OttosColors.teal,
+                  side: const BorderSide(color: OttosColors.teal, width: 2),
+                ),
+                onPressed: submitting
+                    ? null
+                    : () async {
+                        final note = await askCompleteFromBusiness(context, remittance);
+                        if (note != null) await cubit.completeFromBusiness(note: note);
+                      },
+                icon: const Icon(Icons.storefront_outlined),
+                label: Text(remittance.isPickup ? CoreTexts.collectedByBusiness : CoreTexts.deliveredByBusiness),
               ),
               const SizedBox(height: 8),
             ],

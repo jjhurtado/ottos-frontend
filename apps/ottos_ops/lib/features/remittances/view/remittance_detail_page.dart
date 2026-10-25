@@ -5,7 +5,6 @@ import 'package:ottos_core/ottos_core.dart';
 
 import '../../../app/destinations.dart';
 import '../../../app/ops_texts.dart';
-import '../../../widgets/complete_from_business_dialog.dart';
 import '../../../widgets/resolve_review_dialog.dart';
 import '../../../widgets/void_remittance_dialog.dart';
 import '../cubit/remittance_detail_cubit.dart';
@@ -219,7 +218,7 @@ class _ActionBar extends StatelessWidget {
                     }
                   : null,
               icon: const Icon(Icons.storefront_outlined),
-              label: Text(remittance.isPickup ? OpsTexts.collectedByBusiness : OpsTexts.deliveredByBusiness),
+              label: Text(remittance.isPickup ? CoreTexts.collectedByBusiness : CoreTexts.deliveredByBusiness),
             ),
           if (canPostpone)
             OutlinedButton.icon(
@@ -308,7 +307,7 @@ class _SummaryCard extends StatelessWidget {
         InfoRow(
           label: OpsTexts.courier,
           value: remittance.completedFromBusiness
-              ? (remittance.isPickup ? OpsTexts.collectedByBusiness : OpsTexts.deliveredByBusiness)
+              ? (remittance.isPickup ? CoreTexts.collectedByBusiness : CoreTexts.deliveredByBusiness)
               : remittance.courierName ?? OpsTexts.noCourier,
         ),
         InfoRow(label: OpsTexts.expectedDate, value: Formatters.date(remittance.expectedDate)),

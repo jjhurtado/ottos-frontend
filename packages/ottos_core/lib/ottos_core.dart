@@ -74,6 +74,7 @@ export 'src/widgets/form_pair.dart';
 export 'src/widgets/async_view.dart';
 export 'src/widgets/cash_operation_dialog.dart';
 export 'src/widgets/change_password_dialog.dart';
+export 'src/widgets/complete_from_business_dialog.dart';
 export 'src/widgets/exchange_dialog.dart';
 export 'src/widgets/incident_banner.dart';
 export 'src/widgets/info_row.dart';

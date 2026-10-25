@@ -214,28 +214,28 @@ void main() {
       );
       await pumpDetail(tester, _remittance('ASSIGNED', courierId: 'k1'), byBusiness);
 
-      await tester.tap(find.text(OpsTexts.deliveredByBusiness));
+      await tester.tap(find.text(CoreTexts.deliveredByBusiness));
       await tester.pumpAndSettle();
       expect(find.textContaining('Se le quita al repartidor'), findsOneWidget);
       await tester.tap(find.text(CoreTexts.cancel));
       await tester.pumpAndSettle();
       verifyNever(() => remittances.completeFromBusiness(any(), note: any(named: 'note')));
 
-      await tester.tap(find.text(OpsTexts.deliveredByBusiness));
+      await tester.tap(find.text(CoreTexts.deliveredByBusiness));
       await tester.pumpAndSettle();
       await tester.enterText(find.byType(TextField).last, 'En la oficina');
-      await tester.tap(find.text(OpsTexts.byBusinessConfirm));
+      await tester.tap(find.text(CoreTexts.confirm));
       await tester.pumpAndSettle();
 
       verify(() => remittances.completeFromBusiness('r1', note: 'En la oficina')).called(1);
       expect(find.text(OpsTexts.completed), findsOneWidget);
-      expect(find.widgetWithText(FilledButton, OpsTexts.deliveredByBusiness), findsNothing);
-      expect(find.text(OpsTexts.deliveredByBusiness), findsOneWidget, reason: 'the summary says who delivered it');
+      expect(find.widgetWithText(FilledButton, CoreTexts.deliveredByBusiness), findsNothing);
+      expect(find.text(CoreTexts.deliveredByBusiness), findsOneWidget, reason: 'the summary says who delivered it');
     });
 
     testWidgets('a paid remittance can also be delivered by the business', (tester) async {
       await pumpDetail(tester, _remittance('PAID'), byBusiness);
-      expect(find.text(OpsTexts.deliveredByBusiness), findsOneWidget);
+      expect(find.text(CoreTexts.deliveredByBusiness), findsOneWidget);
     });
 
     for (final (name, remittance, permissions) in [
@@ -245,7 +245,7 @@ void main() {
     ]) {
       testWidgets('no delivery by the business $name', (tester) async {
         await pumpDetail(tester, remittance, permissions);
-        expect(find.text(OpsTexts.deliveredByBusiness), findsNothing);
+        expect(find.text(CoreTexts.deliveredByBusiness), findsNothing);
       });
     }
 

@@ -7,7 +7,7 @@ permissions, never on their role ([decisions](../../docs/decisiones.md#producto)
 | User | What they do in the app |
 | --- | --- |
 | Courier (`remittances:read-assigned`, `remittances:deliver`, `cash:read-own`) | Their remittances, deliver (with or without PIN) or pick up, incidents, postpone, their own cash and currency exchange. **Works offline.** |
-| Sales (`remittances:read`, `remittances:create`, `remittances:assign`, `cash:write`, `customers:write`) | Every open remittance, new remittance (creating sender/beneficiary on the spot), assign to a courier, fund couriers and take returns. **Online only.** |
+| Sales (`remittances:read`, `remittances:create`, `remittances:assign`, `cash:write`, `customers:write`) | Every open remittance, new remittance (creating sender/beneficiary on the spot), assign to a courier, deliver or collect from the business (`remittances:complete-from-business`), fund couriers and take returns. **Online only.** |
 
 ## Layout
 

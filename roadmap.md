@@ -1,6 +1,6 @@
 # Ottos frontend · Roadmap
 
-Actualizado: 2026-10-23
+Actualizado: 2026-10-24
 
 ## Estado actual
 
@@ -147,6 +147,10 @@ App «Ottos» para repartidores y ventas, probada en emulador contra el backend 
 - [x] **Lista del repartidor**: las atrasadas y con incidencia van al final; orden «Más atrasadas primero» por días; días de atraso en la tarjeta; deslizar a la derecha para completar y a la izquierda para marcar una incidencia, siempre con confirmación; nombre del usuario en la barra; WhatsApp junto a Llamar; tras reportar una incidencia vuelve a la lista.
 - [x] Estados traducidos por código y tipo: una recogida completada dice «Recogida» y una entrega «Entregada» (en listas, detalle, historial, chips de la app); en filtros e Inicio, «Entregada o recogida». `statusName` del backend queda como respaldo.
 - [x] **«Completadas» en la lista de ventas** (2026-10-15): opción que añade, tras las pendientes, las entregadas y recogidas (las más recientes primero, de 50 en 50 con «Ver más»). Desmarcada por defecto; el repartidor no la tiene. Usa `GET /remittances` con el estado final, sin cambios en el backend.
+- [x] **«Entregada/Recogida por el negocio» en la app para ventas** (aprobado por el usuario el 2026-10-24, también en
+  remesas asignadas): botón en el detalle con `remittances:complete-from-business`, el mismo diálogo que el panel (ahora
+  en `ottos_core`), solo con conexión. Sin cambios en el backend. Falta probarlo en un teléfono con la próxima
+  compilación (aviso opcional).
 - [ ] Tests de los cubits de asignadas, remesa y caja.
 - [x] Llamar y escribir por WhatsApp desde el detalle.
 - [ ] Abrir la dirección en mapas desde el detalle.
