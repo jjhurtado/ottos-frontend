@@ -129,20 +129,7 @@ abstract final class OpsTexts {
   static const historicalInvalidNumber = 'Escribe un número válido.';
   static String historicalRegistered(String code) => 'Remesa antigua $code registrada';
 
-  // Delivered or collected by the business, without a courier (sales and admin)
-  static const deliveredByBusiness = 'Entregada por el negocio';
-  static const collectedByBusiness = 'Recogida por el negocio';
-  static String byBusinessTitle(String code, {required bool isPickup}) =>
-      isPickup ? 'Recogida por el negocio: $code' : 'Entregada por el negocio: $code';
-  static String byBusinessHelp(String amount, {required bool isPickup, required bool hasCourier}) => [
-    isPickup
-        ? 'Queda recogida sin repartidor y los $amount entran en la caja del negocio.'
-        : 'Queda entregada sin repartidor y los $amount salen de la caja del negocio, aunque se quede en negativo.',
-    if (hasCourier) 'Se le quita al repartidor: desaparece de su lista y de su teléfono.',
-    'No pide PIN.',
-  ].join(' ');
-  static const byBusinessNote = 'Nota (opcional)';
-  static const byBusinessConfirm = 'Confirmar';
+  // Delivered or collected by the business (the dialog and its texts are in core)
   static const byBusiness = 'El negocio';
 
   // Voiding a remittance (admin)

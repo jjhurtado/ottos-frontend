@@ -8,7 +8,17 @@ import '../../../offline/sync_cubit.dart';
 enum RemittanceLoadStatus { loading, success, failure }
 
 /// Result of the last action, for one-off feedback (snackbars).
-enum RemittanceActionResult { none, completed, postponed, incidentReported, assigned, queued, flagged, failed }
+enum RemittanceActionResult {
+  none,
+  completed,
+  completedByBusiness,
+  postponed,
+  incidentReported,
+  assigned,
+  queued,
+  flagged,
+  failed,
+}
 
 final class RemittanceState extends Equatable {
   const RemittanceState({
@@ -49,7 +59,7 @@ class RemittanceCubit extends Cubit<RemittanceState> {
 
   final RemittanceSource _source;
 
-  /// For assigning, which is always online (sales).
+  /// For assigning and completing from the business, always online (sales).
   final RemittanceRepository _remittances;
   final String _id;
 
@@ -84,6 +94,16 @@ class RemittanceCubit extends Cubit<RemittanceState> {
           return Rejected(error.message);
         }
       });
+
+  /// Delivered (or collected) by the business, without a courier: its cash
+  /// pays out or takes in, and an assigned courier loses it.
+  Future<void> completeFromBusiness({String? note}) => _perform(RemittanceActionResult.completedByBusiness, (_) async {
+    try {
+      return Applied(await _remittances.completeFromBusiness(_id, note: note));
+    } on ApiException catch (error) {
+      return Rejected(error.message);
+    }
+  });
 
   Future<void> _perform(
     RemittanceActionResult result,

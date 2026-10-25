@@ -96,6 +96,9 @@ abstract final class CourierTexts {
   static const completed = 'Remesa completada';
   static const postponed = 'Remesa aplazada';
   static const assignToCourier = 'Asignar a repartidor';
+  static const deliveredBy = 'Entregada por';
+  static const collectedBy = 'Recogida por';
+  static const theBusiness = 'El negocio';
 
   // Offline
   static const unsent = 'Sin enviar';

@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:ottos_core/ottos_core.dart';
 
-import '../app/ops_texts.dart';
+import '../l10n/core_texts.dart';
+import '../models/remittance.dart';
+import '../utils/formatters.dart';
 
 /// Confirms a delivery (or pickup) by the business, saying what it does to the
 /// business's cash and the courier; the optional note, or null if cancelled.
@@ -32,7 +33,7 @@ class _CompleteFromBusinessDialogState extends State<_CompleteFromBusinessDialog
   Widget build(BuildContext context) {
     final remittance = widget.remittance;
     return AlertDialog(
-      title: Text(OpsTexts.byBusinessTitle(remittance.code, isPickup: remittance.isPickup)),
+      title: Text(CoreTexts.byBusinessTitle(remittance.code, isPickup: remittance.isPickup)),
       content: SizedBox(
         width: 460,
         child: Column(
@@ -40,7 +41,7 @@ class _CompleteFromBusinessDialogState extends State<_CompleteFromBusinessDialog
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              OpsTexts.byBusinessHelp(
+              CoreTexts.byBusinessHelp(
                 Formatters.money(remittance.cashAmount, remittance.cashCurrency),
                 isPickup: remittance.isPickup,
                 hasCourier: remittance.courierId != null,
@@ -52,7 +53,7 @@ class _CompleteFromBusinessDialogState extends State<_CompleteFromBusinessDialog
               autofocus: true,
               maxLines: 3,
               maxLength: 1000,
-              decoration: const InputDecoration(labelText: OpsTexts.byBusinessNote),
+              decoration: const InputDecoration(labelText: CoreTexts.note),
             ),
           ],
         ),
@@ -61,7 +62,7 @@ class _CompleteFromBusinessDialogState extends State<_CompleteFromBusinessDialog
         TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text(CoreTexts.cancel)),
         FilledButton(
           onPressed: () => Navigator.of(context).pop(_note.text.trim()),
-          child: const Text(OpsTexts.byBusinessConfirm),
+          child: const Text(CoreTexts.confirm),
         ),
       ],
     );
