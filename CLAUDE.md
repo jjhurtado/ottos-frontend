@@ -1,5 +1,9 @@
 # Ottos frontend · contexto para agentes
 
+This project uses the `a-*` team skills. Before any task, apply `a-team-conventions`.
+- Settings: `docs/team/SETTINGS.md` in repository `ottos`
+- Shared documents: repository `ottos`
+
 Ottos es un negocio de remesas hacia Cuba: ventas cobra fuera y un repartidor entrega (o recoge) el dinero en casa
 del beneficiario. Este repo es el frontend en Flutter; el backend (Spring Boot) está en `../ottos` (GitHub
 `jjhurtado/ottos`). El dueño del negocio es el usuario: habla en español y decide el producto.
@@ -32,15 +36,11 @@ del beneficiario. Este repo es el frontend en Flutter; el backend (Spring Boot) 
 - **Cambios visuales**: actualizar en la misma rama el canvas oficial del cliente («Ottos · Panel web» o «Ottos · App
   móvil») para que coincida con lo implementado (STANDARDS.md › Canvas de diseño). Solo esos dos canvas: las variantes
   para decidir van en uno temporal que se borra cuando el usuario elige.
-- **Idioma**: interfaz y documentación de producto en español; código, commits y READMEs técnicos en inglés.
+- **Idioma**: interfaz, CHANGELOG y los documentos que ya existen en español se quedan en español. Los documentos
+  nuevos del equipo (requisitos, arquitectura, mapa de pantallas…) van en inglés y viven en `ottos`, como dice la
+  configuración. Código, commits y READMEs técnicos en inglés.
 - **No publicar una versión** (rama `release/`, tag, APK/AAB, TestFlight) sin el «sí» explícito del usuario.
-- **Copia de la base de datos antes de `main`** (D-027): `main` despliega solo en producción, así que antes de cada
-  push a `main` (versiones y hotfixes) se pide a infraestructura la copia de la base de datos de producción y se espera
-  el nombre del archivo. Sin esa confirmación no hay push.
-- **Consultar antes al usuario** (D-026, por encima de su «luz verde» y en cualquier entorno): cualquier cambio que
-  altere la lógica actual (reglas, cálculos, validaciones, flujos del panel o de la app) y cualquier código o script que
-  cree, cambie o borre datos en la base. No hace falta para funcionalidades nuevas que no toquen lo existente.
-  Producción, además, necesita su orden explícita.
+- **Producción** (D-022): nada se publica en producción sin la orden explícita del usuario en ese momento.
 - **Funcionalidad nueva, primero se discute** (por encima de la «luz verde»): antes de implementarla se le presenta al
   usuario el diseño, los detalles técnicos y las dudas, y se implementa cuando lo ha acordado.
 
