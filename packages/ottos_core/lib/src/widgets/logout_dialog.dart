@@ -28,8 +28,14 @@ Future<void> confirmLogout(
     if (choice == null) return;
     forget = choice;
   }
-  await beforeLogout?.call();
-  auth.add(AuthLogoutRequested(forgetBiometricLogin: forget));
+  try {
+    await beforeLogout?.call();
+  } catch (error) {
+    // The session closes anyway (SEC-12); only the type is logged, never data.
+    debugPrint('Logout: clearing local data failed (${error.runtimeType})');
+  } finally {
+    auth.add(AuthLogoutRequested(forgetBiometricLogin: forget));
+  }
 }
 
 LoginMemory? _memoryOf(BuildContext context) {

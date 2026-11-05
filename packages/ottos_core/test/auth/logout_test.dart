@@ -98,6 +98,15 @@ void main() {
       verifyNever(() => auth.logout());
     });
 
+    testWidgets('SEC-12: logout completes when clearing fails', (tester) async {
+      when(() => memory.biometricEmail()).thenAnswer((_) async => null);
+      final authBloc = await pump(tester, beforeLogout: () async => throw StateError('database is locked'));
+      await tester.pumpAndSettle();
+
+      verify(() => auth.logout()).called(1);
+      expect(authBloc.state.isAuthenticated, isFalse);
+    });
+
     testWidgets('without a saved fingerprint nor a warning it logs out at once', (tester) async {
       when(() => memory.biometricEmail()).thenAnswer((_) async => null);
       var before = 0;
@@ -106,6 +115,27 @@ void main() {
       expect(find.byType(AlertDialog), findsNothing);
       expect(before, 1);
       verify(() => auth.logout()).called(1);
+    });
+  });
+
+  group('start', () {
+    const user = CurrentUser(id: 'u1', email: 'ana@ottos.test', name: 'Ana', type: 'STAFF', roles: [], permissions: {});
+
+    test('SEC-1: legacy password removed at start', () async {
+      when(() => memory.removeLegacyCredentials()).thenAnswer((_) async {});
+      when(() => auth.restoreSession()).thenAnswer((_) async => user);
+      final authBloc = bloc()..add(const AuthStarted());
+      await authBloc.stream.firstWhere((state) => state.isAuthenticated);
+      verify(() => memory.removeLegacyCredentials()).called(1);
+      await authBloc.close();
+    });
+
+    test('SEC-1: a failure removing it does not stop the app from starting', () async {
+      when(() => memory.removeLegacyCredentials()).thenThrow(PlatformException(code: 'STORAGE'));
+      when(() => auth.restoreSession()).thenAnswer((_) async => user);
+      final authBloc = bloc()..add(const AuthStarted());
+      await authBloc.stream.firstWhere((state) => state.isAuthenticated);
+      await authBloc.close();
     });
   });
 
@@ -159,8 +189,9 @@ void main() {
     });
 
     test('SEC-1: a password saved before the binding is deleted', () async {
-      await secure().biometricEmail();
+      await secure().removeLegacyCredentials();
       verify(() => plain.delete(key: 'ottos.login.biometric.password')).called(1);
+      verify(() => plain.delete(key: 'ottos.login.biometric.email')).called(1);
     });
 
     test('SEC-1: the bound storage is tied to the biometric on Android and iOS', () {

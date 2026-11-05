@@ -305,7 +305,11 @@ class SyncCubit extends Cubit<SyncStatus> {
   /// only the actions not sent yet. A session that expires keeps everything.
   Future<void> clearForLogout() async {
     _loggingOut = true;
-    await _running;
+    try {
+      await _running;
+    } catch (_) {
+      // A sync that failed must not keep the data on the phone (SEC-12).
+    }
     await _store.clearForLogout();
   }
 

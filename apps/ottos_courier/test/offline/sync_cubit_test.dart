@@ -313,4 +313,15 @@ void main() {
     expect(await store.pending(), isEmpty);
     expect(sync.state.pending, 0);
   });
+
+  test('SEC-12: logout completes when clearing fails in a running sync', () async {
+    when(() => server.state(since: any(named: 'since'))).thenThrow(const FormatException('bad answer'));
+    final running = sync.sync().catchError((Object _) {});
+
+    await sync.clearForLogout();
+    await running;
+
+    expect(await store.remittances(), isEmpty);
+    expect(await store.serverTime(), isNull);
+  });
 }
