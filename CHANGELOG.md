@@ -14,6 +14,11 @@ Cambios notables del frontend de Ottos (panel de operaciones y app de repartidor
 
 - Panel y app: el texto de los botones principales turquesa (por ejemplo «Entrar» o «Guardar») pasa de blanco a azul marino, para que se lea mejor (de 3.5:1 a 5.5:1 de contraste). El turquesa no cambia. Los botones de otros colores (rojo de anular, morado de recogida, magenta de por la casa) siguen con el texto blanco.
 
+### Seguridad
+
+- Panel: el navegador recibe ahora reglas de seguridad que impiden que otra página muestre el panel dentro de la suya y que solo dejan cargar código del propio panel. Nada cambia al usarlo, salvo que los emojis u otros alfabetos que la fuente del panel no tiene se ven como cuadros, en vez de descargarse de Google.
+- Panel y app › CSV de clientes y de remesas del mes: un valor que empieza por `=`, `+`, `-` o `@` se exporta con un apóstrofo delante (`'+5355551234`): Excel lo muestra como texto, con el apóstrofo visible, y nunca lo ejecuta como fórmula. Los importes negativos siguen siendo números. Al importar el CSV de clientes, el apóstrofo se quita y los teléfonos vuelven a quedar como `+53…`.
+
 ## [1.0.0-rc.8] - 2026-10-24
 
 Necesita el backend 1.0.0-rc.8 (por la casa, remesas del mes a detalle y estadísticas). Con un backend anterior las
