@@ -163,7 +163,10 @@ class _NewRemittanceViewState extends State<_NewRemittanceView> {
                           const SizedBox(width: 12),
                           FilledButton(
                             style: state.onTheHouse
-                                ? FilledButton.styleFrom(backgroundColor: OttosColors.onTheHouse)
+                                ? FilledButton.styleFrom(
+                                    backgroundColor: OttosColors.onTheHouse,
+                                    foregroundColor: Colors.white,
+                                  )
                                 : null,
                             onPressed: state.canSubmit ? () => cubit.submit(notes: _notes.text) : null,
                             child: state.submitting

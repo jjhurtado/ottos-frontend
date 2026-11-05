@@ -57,7 +57,7 @@ class _VoidRemittanceDialogState extends State<_VoidRemittanceDialog> {
       actions: [
         TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text(CoreTexts.cancel)),
         FilledButton(
-          style: FilledButton.styleFrom(backgroundColor: OttosColors.danger),
+          style: FilledButton.styleFrom(backgroundColor: OttosColors.danger, foregroundColor: Colors.white),
           onPressed: () {
             if (_formKey.currentState!.validate()) Navigator.of(context).pop(_reason.text.trim());
           },
