@@ -98,19 +98,29 @@ void main() {
 
     const writer = {Permissions.usersRead, Permissions.usersWrite, Permissions.rolesRead};
 
-    testWidgets('you cannot deactivate yourself', (tester) async {
+    testWidgets('you can neither deactivate yourself nor reset your own password', (tester) async {
       await pumpUsers(tester, writer);
 
       await tester.tap(find.byTooltip(OpsTexts.actions).first);
       await tester.pumpAndSettle();
-      expect(find.text(OpsTexts.resetPassword), findsOneWidget);
+      expect(find.text(OpsTexts.edit), findsOneWidget);
+      expect(find.text(OpsTexts.resetPassword), findsNothing);
       expect(find.text(OpsTexts.deactivate), findsNothing);
       await tester.tapAt(Offset.zero);
       await tester.pumpAndSettle();
 
       await tester.tap(find.byTooltip(OpsTexts.actions).last);
       await tester.pumpAndSettle();
+      expect(find.text(OpsTexts.resetPassword), findsOneWidget);
       expect(find.text(OpsTexts.deactivate), findsOneWidget);
+    });
+
+    test('the errors of resetting a password or (de)activating a user read in Spanish', () {
+      expect(
+        CoreTexts.errorCodes['CANNOT_RESET_OWN_PASSWORD'],
+        'Tu contraseña se cambia desde «Cambiar contraseña», en el menú de tu cuenta.',
+      );
+      expect(CoreTexts.errorCodes['PERMISSION_ESCALATION'], 'Esta acción necesita permisos que tú no tienes.');
     });
 
     testWidgets('a reader sees the users without actions', (tester) async {

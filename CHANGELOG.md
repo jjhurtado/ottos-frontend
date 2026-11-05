@@ -12,6 +12,7 @@ Cambios notables del frontend de Ottos (panel de operaciones y app de repartidor
 
 ### Cambiado
 
+- Panel › Usuarios: en tu propia fila ya no aparece «Restablecer contraseña»; tu contraseña se cambia desde «Cambiar contraseña», en el menú de tu cuenta. Si no tienes todos los permisos de otro usuario, no puedes restablecer su contraseña, desactivarlo ni activarlo, y el panel lo explica con «Esta acción necesita permisos que tú no tienes.».
 - Panel y app: el texto de los botones principales turquesa (por ejemplo «Entrar» o «Guardar») pasa de blanco a azul marino, para que se lea mejor (de 3.5:1 a 5.5:1 de contraste). El turquesa no cambia. Los botones de otros colores (rojo de anular, morado de recogida, magenta de por la casa) siguen con el texto blanco.
 
 ## [1.0.0-rc.8] - 2026-10-24
