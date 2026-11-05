@@ -19,19 +19,42 @@ Future<String> offlineDatabasePath(DatabaseFactory factory, String fileName) asy
   final String? folder;
   try {
     folder = await _channel.invokeMethod<String>('offlineDirectory');
-  } on PlatformException {
+  } on PlatformException catch (error) {
+    debugPrint('Offline database: no backup-excluded folder (${error.code}); using the default one');
     return legacy;
   } on MissingPluginException {
+    debugPrint('Offline database: no backup-excluded folder; using the default one');
     return legacy;
   }
   if (folder == null) return legacy;
   final path = p.join(folder, fileName);
-  if (!File(path).existsSync() && File(legacy).existsSync()) {
-    // With its journal, if one was left: actions not sent yet must not be lost.
-    for (final suffix in const ['', '-journal', '-wal', '-shm']) {
-      final file = File('$legacy$suffix');
-      if (file.existsSync()) await file.rename('$path$suffix');
+  if (File(path).existsSync() || !File(legacy).existsSync()) return path;
+  // Best effort: a failed move never stops the app from starting.
+  return _move(legacy, path);
+}
+
+/// Moves the database with its journal, if one was left: actions not sent yet
+/// must not be lost. On failure, what was moved goes back and the old path stays.
+Future<String> _move(String from, String to) async {
+  const suffixes = ['', '-journal', '-wal', '-shm'];
+  final moved = <String>[];
+  try {
+    for (final suffix in suffixes) {
+      final file = File('$from$suffix');
+      if (!file.existsSync()) continue;
+      await file.rename('$to$suffix');
+      moved.add(suffix);
     }
+    return to;
+  } on FileSystemException catch (error) {
+    debugPrint('Offline database: move failed (${error.osError?.errorCode}); keeping the default folder');
+    for (final suffix in moved) {
+      try {
+        await File('$to$suffix').rename('$from$suffix');
+      } on FileSystemException {
+        // Nothing else to do: the next start tries again.
+      }
+    }
+    return from;
   }
-  return path;
 }
