@@ -20,15 +20,43 @@ class _Memory implements LoginMemory {
   Future<void> rememberEmail(String? email) async => this.email = email;
 
   @override
-  Future<({String email, String password})?> biometricCredentials() async => credentials;
+  Future<String?> biometricEmail() async => credentials?.email;
+
+  /// Reading asks the system; [systemRefuses] says no, [keyGone] lost the key.
+  bool systemRefuses = false;
+  bool keyGone = false;
 
   @override
-  Future<void> saveBiometricCredentials(String email, String password) async =>
-      credentials = (email: email, password: password);
+  Future<({String email, String password})?> biometricCredentials() async {
+    if (systemRefuses) return null;
+    if (keyGone) credentials = null;
+    return credentials;
+  }
+
+  @override
+  Future<bool> saveBiometricCredentials(String email, String password) async {
+    credentials = (email: email, password: password);
+    return true;
+  }
 
   @override
   Future<void> clearBiometricCredentials() async => credentials = null;
+
+  @override
+  bool promptsOnRead = false;
+
+  @override
+  bool promptsOnSave = false;
 }
+
+const _other = CurrentUser(
+  id: 'u2',
+  email: 'beto@ottos.test',
+  name: 'Beto',
+  type: 'STAFF',
+  roles: ['DELIVERY'],
+  permissions: {},
+);
 
 const _user = CurrentUser(
   id: 'u1',
@@ -167,5 +195,99 @@ void main() {
     await login.submitWithBiometrics();
     expect(memory.credentials, isNotNull);
     expect(login.state.error, CoreTexts.networkError);
+  });
+
+  group('one account per fingerprint', () {
+    test('SEC-1: the fingerprint of user A is not used after user B logs in with a password', () async {
+      memory.credentials = (email: 'ana@ottos.test', password: 'secret-a');
+      when(() => auth.login(email: 'beto@ottos.test', password: 'secret-b')).thenAnswer((_) async => _other);
+      final login = cubit(withBiometrics: biometrics);
+      await login.start();
+      expect(login.state.biometricsReady, isTrue);
+
+      await login.submit(email: 'beto@ottos.test', password: 'secret-b');
+      expect(memory.credentials, isNull);
+      expect(login.state.biometricsReady, isFalse);
+      // B is asked about their own fingerprint; saying no leaves nothing saved.
+      expect(login.state.offerBiometrics, isTrue);
+      await login.answerBiometrics(use: false);
+
+      await login.submitWithBiometrics();
+      verifyNever(
+        () => auth.login(
+          email: 'ana@ottos.test',
+          password: any(named: 'password'),
+        ),
+      );
+    });
+
+    test('SEC-1: the same user logging in with the password keeps their fingerprint login', () async {
+      memory.credentials = (email: 'ana@ottos.test', password: 'secret');
+      final login = cubit(withBiometrics: biometrics);
+      await login.submit(email: ' ANA@ottos.test ', password: 'secret');
+      expect(memory.credentials, isNotNull);
+      expect(login.state.offerBiometrics, isFalse);
+      verify(() => authBloc.add(const AuthLoggedIn(_user))).called(1);
+    });
+
+    test('SEC-1: the button knows which account it opens', () async {
+      memory.credentials = (email: 'ana@ottos.test', password: 'secret');
+      final login = cubit(withBiometrics: biometrics);
+      await login.start();
+      expect(login.state.biometricEmail, 'ana@ottos.test');
+    });
+
+    test('SEC-1: where the system asks for the fingerprint on reading, there is no second prompt', () async {
+      memory
+        ..credentials = (email: 'ana@ottos.test', password: 'secret')
+        ..promptsOnRead = true;
+      await cubit(withBiometrics: biometrics).submitWithBiometrics();
+      verifyNever(() => biometrics.authenticate(any()));
+      verify(() => auth.login(email: 'ana@ottos.test', password: 'secret')).called(1);
+    });
+
+    test('SEC-1: a fingerprint the system refuses does not log in and keeps the saved login', () async {
+      memory
+        ..credentials = (email: 'ana@ottos.test', password: 'secret')
+        ..promptsOnRead = true
+        ..systemRefuses = true;
+      final login = cubit(withBiometrics: biometrics);
+      await login.submitWithBiometrics();
+      verifyNever(
+        () => auth.login(
+          email: any(named: 'email'),
+          password: any(named: 'password'),
+        ),
+      );
+      expect(memory.credentials, isNotNull);
+      expect(login.state.error, isNull);
+    });
+
+    test('SEC-1: a key lost with a change of fingerprints hides the button', () async {
+      memory
+        ..credentials = (email: 'ana@ottos.test', password: 'secret')
+        ..promptsOnRead = true
+        ..keyGone = true;
+      final login = cubit(withBiometrics: biometrics);
+      await login.start();
+      await login.submitWithBiometrics();
+      verifyNever(
+        () => auth.login(
+          email: any(named: 'email'),
+          password: any(named: 'password'),
+        ),
+      );
+      expect(login.state.biometricsReady, isFalse);
+      expect(login.state.error, CoreTexts.biometricReset);
+    });
+
+    test('SEC-1: where saving asks for the fingerprint, enabling does not prompt twice', () async {
+      memory.promptsOnSave = true;
+      final login = cubit(withBiometrics: biometrics);
+      await login.submit(email: 'ana@ottos.test', password: 'secret');
+      await login.answerBiometrics(use: true);
+      verifyNever(() => biometrics.authenticate(any()));
+      expect(memory.credentials, (email: 'ana@ottos.test', password: 'secret'));
+    });
   });
 }
