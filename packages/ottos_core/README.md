@@ -1,7 +1,7 @@
 # ottos_core · shared code
 
 Everything the panel (`apps/ottos_ops`) and the app (`apps/ottos_courier`) both use. An app never imports from the
-other; anything they share comes here. Layers and conventions are in [STANDARDS.md](../../STANDARDS.md#2-arquitectura-del-frontend).
+other; anything they share comes here. Layers and conventions are in `ottos/docs/STANDARDS.md` › Code style › Frontend.
 
 ## Layout (`lib/src/`)
 

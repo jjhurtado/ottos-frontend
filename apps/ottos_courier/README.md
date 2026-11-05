@@ -1,7 +1,7 @@
 # ottos_courier · the Ottos mobile app
 
 Android/iOS app, published as **Ottos** (`com.remesadeotto.ottos`). Despite the package name it is not only for
-couriers: during the day **couriers and sales** both work with it, and what each one sees depends on their
+couriers: **couriers and sales** both work with it, and what each one sees depends on their
 permissions, never on their role ([decisions](../../docs/decisiones.md#producto)).
 
 | User | What they do in the app |
