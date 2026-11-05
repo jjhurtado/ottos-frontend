@@ -231,8 +231,6 @@ abstract final class OpsTexts {
     CashMovementType.deliveryPayout => 'Entrega de remesa',
     CashMovementType.pickupCollection => 'Recogida de remesa',
     CashMovementType.courierReturn => 'Devolución de repartidor',
-    CashMovementType.courierSurplus => 'Sobrante de repartidor',
-    CashMovementType.remittanceRefund => 'Reembolso de remesa',
     CashMovementType.businessDeposit => 'Depósito',
     CashMovementType.businessWithdrawal => 'Retiro',
     CashMovementType.courierExchangeOut => 'Cambio de moneda: entregado',
