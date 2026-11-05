@@ -19,7 +19,7 @@ ADRs) live in the backend repository [jjhurtado/ottos](https://github.com/jjhurt
 | Document | What it covers |
 | --- | --- |
 | [CLAUDE.md](CLAUDE.md) | Short index for agents |
-| [STANDARDS.md](STANDARDS.md) | Git Flow, commits, changelog, frontend architecture, tests |
+| [STANDARDS.md](STANDARDS.md) | Link to the shared standards in `ottos/docs/STANDARDS.md` |
 | [CHANGELOG.md](CHANGELOG.md) | Changes per version, for the people who use the apps |
 | [roadmap.md](roadmap.md) | Pending work of the frontend |
 | [docs/decisiones.md](docs/decisiones.md) | Decisions up to 2026-11-05, kept as history; new ones are ADRs in `ottos/docs/architecture/adr/` |
