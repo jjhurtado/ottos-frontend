@@ -43,6 +43,9 @@ class _Memory implements LoginMemory {
   Future<void> clearBiometricCredentials() async => credentials = null;
 
   @override
+  Future<void> removeLegacyCredentials() async {}
+
+  @override
   bool promptsOnRead = false;
 
   @override

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:equatable/equatable.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../api/api_exception.dart';
@@ -36,6 +37,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   late final StreamSubscription<void> _sessionExpiredSubscription;
 
   Future<void> _onStarted(AuthStarted event, Emitter<AuthState> emit) async {
+    await _removeLegacyCredentials();
     try {
       final user = await _authRepository.restoreSession();
       if (user != null && _accessPolicy(user)) {
@@ -47,6 +49,15 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     } on ApiException {
       // Offline or server down: ask for login again rather than blocking the app.
       emit(const AuthState.unauthenticated());
+    }
+  }
+
+  /// The password saved before SEC-1 must go even if the user stays signed in.
+  Future<void> _removeLegacyCredentials() async {
+    try {
+      await _loginMemory?.removeLegacyCredentials();
+    } catch (error) {
+      debugPrint('Could not remove the legacy fingerprint login (${error.runtimeType})');
     }
   }
 

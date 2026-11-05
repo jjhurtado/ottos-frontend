@@ -21,6 +21,10 @@ abstract interface class LoginMemory {
   Future<bool> saveBiometricCredentials(String email, String password);
   Future<void> clearBiometricCredentials();
 
+  /// Deletes what was saved before the password was bound to the biometric
+  /// (SEC-1). Run once at every app start, with or without a session.
+  Future<void> removeLegacyCredentials();
+
   /// The system itself asks for the fingerprint when the saved password is read.
   bool get promptsOnRead;
 
@@ -93,11 +97,13 @@ class SecureLoginMemory implements LoginMemory {
       email == null ? _storage.delete(key: _emailKey) : _storage.write(key: _emailKey, value: email);
 
   @override
-  Future<String?> biometricEmail() async {
+  Future<String?> biometricEmail() => _storage.read(key: _biometricEmailKey);
+
+  @override
+  Future<void> removeLegacyCredentials() async {
     for (final key in _legacyKeys) {
       await _storage.delete(key: key);
     }
-    return _storage.read(key: _biometricEmailKey);
   }
 
   @override
