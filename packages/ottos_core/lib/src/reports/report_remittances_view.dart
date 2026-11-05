@@ -333,7 +333,7 @@ class _TotalsStrip extends StatelessWidget {
 };
 
 String _courier(ReportRemittance row) =>
-    row.completedFromBusiness ? 'El negocio' : (row.courierName ?? ReportTexts.withoutCourier);
+    row.completedFromBusiness ? ReportTexts.business : (row.courierName ?? ReportTexts.withoutCourier);
 
 class _StatusChip extends StatelessWidget {
   const _StatusChip({required this.row});
@@ -476,7 +476,9 @@ class _Table extends StatelessWidget {
                 cell(
                   1,
                   text(
-                    row.isPickup ? 'Recogida' : (row.onTheHouse ? 'Entrega · casa' : 'Entrega'),
+                    row.isPickup
+                        ? ReportTexts.pickupType
+                        : (row.onTheHouse ? ReportTexts.onTheHouseDeliveryShort : ReportTexts.deliveryType),
                     style: TextStyle(color: row.type.color),
                   ),
                 ),
@@ -521,7 +523,9 @@ class _RemittanceCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final voided = row.isVoided;
     final textTheme = Theme.of(context).textTheme;
-    final type = row.isPickup ? 'Recogida' : (row.onTheHouse ? 'Entrega por la casa' : 'Entrega');
+    final type = row.isPickup
+        ? ReportTexts.pickupType
+        : (row.onTheHouse ? ReportTexts.onTheHouseDelivery : ReportTexts.deliveryType);
     final (status, _) = _status(row);
     final details = [type, CubaTime.shortDate(row.createdAt), ?row.municipalityName, _courier(row), status].join(' · ');
     final open = onOpen;

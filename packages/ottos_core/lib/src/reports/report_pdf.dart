@@ -189,7 +189,7 @@ const _typeHeaders = ['Tipo', ReportTexts.reportRemittances, ReportTexts.collect
 Future<Uint8List> buildMonthlyReportPdf(MonthlyReport report, {required DateTime month, DateTime? now}) {
   final document = pw.Document(
     title: pdfSafe('${ReportTexts.monthlyReport} ${ReportTexts.monthTitle(month)}'),
-    author: "Otto's Bussines",
+    author: ReportTexts.brand,
   );
   final generated = Formatters.dateTime(report.generatedAt ?? now ?? DateTime.now());
   final period = ReportTexts.reportPeriod(
@@ -341,7 +341,7 @@ Future<Uint8List> buildMonthlyReportPdf(MonthlyReport report, {required DateTime
                 child: pw.Column(
                   crossAxisAlignment: pw.CrossAxisAlignment.stretch,
                   children: [
-                    _heading('Estado al cierre'),
+                    _heading(ReportTexts.monthEndStatusShort),
                     pw.SizedBox(height: 6),
                     _table(
                       ['', ReportTexts.reportRemittances],
@@ -365,8 +365,8 @@ Future<Uint8List> buildMonthlyReportPdf(MonthlyReport report, {required DateTime
             child: pw.Row(
               mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
               children: [
-                pw.Text("Otto's Bussines · Panel de operaciones", style: const pw.TextStyle(fontSize: 9, color: _grey)),
-                pw.Text('Página 1 de 1', style: const pw.TextStyle(fontSize: 9, color: _grey)),
+                pw.Text(ReportTexts.summaryFooter, style: const pw.TextStyle(fontSize: 9, color: _grey)),
+                pw.Text(ReportTexts.pageNumber(1, 1), style: const pw.TextStyle(fontSize: 9, color: _grey)),
               ],
             ),
           ),
@@ -391,7 +391,7 @@ Future<Uint8List> buildMonthlyDetailPdf(
   DateTime? now,
 }) {
   final title = ReportTexts.monthTitle(month);
-  final document = pw.Document(title: pdfSafe('Resumen a detalle $title'), author: "Otto's Bussines");
+  final document = pw.Document(title: pdfSafe('Resumen a detalle $title'), author: ReportTexts.brand);
   final generated = CubaTime.dateTime(detail.generatedAt ?? report.generatedAt ?? now ?? DateTime.now());
   final rows = detail.remittances;
   final deliveries = [
@@ -410,7 +410,7 @@ Future<Uint8List> buildMonthlyDetailPdf(
   final pickupTotals = ReportTotals.of(pickups);
   final currency = detail.businessCurrency;
   String date(DateTime? instant) => instant == null ? '-' : CubaTime.shortDate(instant);
-  String courier(ReportRemittance row) => row.completedFromBusiness ? 'El negocio' : (row.courierName ?? '-');
+  String courier(ReportRemittance row) => row.completedFromBusiness ? ReportTexts.business : (row.courierName ?? '-');
 
   pw.Widget header(pw.Context context) => pw.Container(
     margin: const pw.EdgeInsets.only(bottom: 12),
@@ -466,11 +466,11 @@ Future<Uint8List> buildMonthlyDetailPdf(
       mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
       children: [
         pw.Text(
-          pdfSafe("Otto's Bussines · Resumen a detalle de ${ReportTexts.monthLower(month)}"),
+          pdfSafe(ReportTexts.detailFooter(ReportTexts.monthLower(month))),
           style: const pw.TextStyle(fontSize: 8.5, color: _grey),
         ),
         pw.Text(
-          'Página ${context.pageNumber} de ${context.pagesCount}',
+          ReportTexts.pageNumber(context.pageNumber, context.pagesCount),
           style: const pw.TextStyle(fontSize: 8.5, color: _grey),
         ),
       ],
@@ -516,7 +516,7 @@ Future<Uint8List> buildMonthlyDetailPdf(
         ReportTexts.onTheHouseHelp(onTheHouse?.remittances ?? 0, _number(onTheHouse?.amount ?? 0)),
       ),
       _box(
-        'Estado al cierre',
+        ReportTexts.monthEndStatusShort,
         '${report.completed} / ${report.open}',
         'Completadas / abiertas · ${report.withIncident} con incidencia',
       ),
@@ -732,7 +732,7 @@ Future<Uint8List> buildMonthlyDetailPdf(
           for (final row in voided)
             [
               row.code,
-              row.isPickup ? 'Recogida' : 'Entrega',
+              row.isPickup ? ReportTexts.pickupType : ReportTexts.deliveryType,
               date(row.createdAt),
               date(row.voided!.at),
               row.municipalityName ?? '-',

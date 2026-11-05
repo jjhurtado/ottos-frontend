@@ -9,43 +9,22 @@ import 'report_texts.dart';
 /// included and marked, `;`, UTF-8 with BOM and decimal commas, so it opens
 /// right in Excel in Spanish. No personal data.
 abstract final class ReportCsv {
-  static const columns = [
-    'Código',
-    'Tipo',
-    'Estado',
-    'Registrada',
-    'Completada',
-    'Municipio',
-    'Repartidor',
-    'Moneda de cobro',
-    'Enviado',
-    'Comisión',
-    'Cobrado',
-    'Recogido',
-    'Moneda de entrega',
-    'A entregar',
-    'Tasa',
-    'Por la casa',
-    'Comisión no cobrada',
-    'Anulada',
-    'Anulada el',
-    'Motivo de la anulación',
-  ];
+  static const columns = ReportTexts.csvColumns;
 
   static String encode(MonthlyReportDetail detail) {
     String number(double value) => Formatters.money(value, null);
-    String yesNo(bool value) => value ? 'Sí' : 'No';
+    String yesNo(bool value) => value ? ReportTexts.yes : ReportTexts.no;
     return Csv.encode([
       columns,
       for (final row in detail.remittances)
         [
           row.code,
-          row.isPickup ? 'Recogida' : 'Entrega',
+          row.isPickup ? ReportTexts.pickupType : ReportTexts.deliveryType,
           reportStatusName(row),
           CubaTime.sortable(row.createdAt),
           CubaTime.sortable(row.completedAt),
           row.municipalityName ?? '',
-          row.completedFromBusiness ? 'El negocio' : (row.courierName ?? ''),
+          row.completedFromBusiness ? ReportTexts.business : (row.courierName ?? ''),
           row.sourceCurrency,
           row.isPickup ? '' : number(row.amount),
           number(row.fee),
