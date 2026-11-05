@@ -24,5 +24,10 @@ abstract final class OttosColors {
 
   static const success = Color(0xFF2E7D4F);
   static const warning = Color(0xFFB7791F);
+
+  /// Small text on a light tint of [success] or [warning] (status chips,
+  /// review badges): same hue, dark enough for 4.5:1 on the tint.
+  static const successText = Color(0xFF297047);
+  static const warningText = Color(0xFF926119);
   static const danger = Color(0xFFC0392B);
 }
