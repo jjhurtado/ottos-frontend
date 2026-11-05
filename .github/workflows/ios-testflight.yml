@@ -32,9 +32,10 @@ jobs:
       APP_DIR: apps/ottos_courier
       KEY_PATH: ${{ github.workspace }}/AuthKey.p8
     steps:
-      - uses: actions/checkout@v7.0.1
+      # Actions are pinned by commit SHA (REQ-002, SEC-6); the comment keeps the tag for updates.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: subosito/flutter-action@v2.23.0
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
         with:
           flutter-version: 3.47.7
           channel: stable
@@ -56,28 +57,44 @@ jobs:
       # the backend's version gate compares. The version name drops the
       # pre-release tag: iOS takes at most three integers, and Flutter would
       # turn 1.0.0-rc.3 into 1.0.0.3, which App Store Connect rejects.
+      # Inputs and secrets reach the shell as environment variables, never pasted into
+      # the script (REQ-002, SEC-6). The API URL must be a plain https origin.
       - name: Prepare the Xcode project
         working-directory: ${{ env.APP_DIR }}
+        env:
+          API_URL: ${{ inputs.api_url }}
         run: |
+          if ! printf '%s' "$API_URL" | grep -Eq '^https://[A-Za-z0-9.-]+(:[0-9]+)?$'; then
+            echo "api_url must be an https origin such as https://api.remesadeotto.com" >&2
+            exit 1
+          fi
           BUILD_NAME=$(sed -nE 's/^version: *([0-9]+\.[0-9]+\.[0-9]+).*/\1/p' pubspec.yaml)
           flutter build ios --release --config-only \
             --build-name="$BUILD_NAME" \
-            --dart-define=OTTOS_API_URL=${{ inputs.api_url }}
+            --dart-define=OTTOS_API_URL="$API_URL"
 
       - name: Archive
         working-directory: ${{ env.APP_DIR }}/ios
+        env:
+          ASC_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
           xcodebuild -workspace Runner.xcworkspace -scheme Runner -configuration Release \
             -destination 'generic/platform=iOS' -archivePath "$RUNNER_TEMP/Ottos.xcarchive" \
             -allowProvisioningUpdates \
             -authenticationKeyPath "$KEY_PATH" \
-            -authenticationKeyID "${{ secrets.APP_STORE_CONNECT_KEY_ID }}" \
-            -authenticationKeyIssuerID "${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}" \
-            DEVELOPMENT_TEAM="${{ secrets.APPLE_TEAM_ID }}" CODE_SIGN_STYLE=Automatic \
+            -authenticationKeyID "$ASC_KEY_ID" \
+            -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
+            DEVELOPMENT_TEAM="$TEAM_ID" CODE_SIGN_STYLE=Automatic \
             archive
 
       - name: Upload to TestFlight
         working-directory: ${{ env.APP_DIR }}/ios
+        env:
+          ASC_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
           cat > "$RUNNER_TEMP/ExportOptions.plist" <<PLIST
           <?xml version="1.0" encoding="UTF-8"?>
@@ -85,7 +102,7 @@ jobs:
           <plist version="1.0"><dict>
             <key>method</key><string>app-store-connect</string>
             <key>destination</key><string>upload</string>
-            <key>teamID</key><string>${{ secrets.APPLE_TEAM_ID }}</string>
+            <key>teamID</key><string>$TEAM_ID</string>
             <key>signingStyle</key><string>automatic</string>
             <key>manageAppVersionAndBuildNumber</key><false/>
           </dict></plist>
@@ -94,8 +111,8 @@ jobs:
             -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" -exportPath "$RUNNER_TEMP/export" \
             -allowProvisioningUpdates \
             -authenticationKeyPath "$KEY_PATH" \
-            -authenticationKeyID "${{ secrets.APP_STORE_CONNECT_KEY_ID }}" \
-            -authenticationKeyIssuerID "${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}"
+            -authenticationKeyID "$ASC_KEY_ID" \
+            -authenticationKeyIssuerID "$ASC_ISSUER_ID"
 
       - name: Forget the key
         if: always()
