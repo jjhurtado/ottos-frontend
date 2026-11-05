@@ -88,7 +88,7 @@ Un commit, un cambio lógico; el build debe pasar en cada commit. Los mensajes s
 
 ### Versionado
 
-Ver [roadmap.md › Versionado](roadmap.md#versionado). La versión vive en el `pubspec.yaml` de cada app y de `ottos_core`
+Semántico con etiquetas de pre-release (`1.0.0-rc.N`), como en `ottos/docs/STANDARDS.md` › Versioning. La versión vive en el `pubspec.yaml` de cada app y de `ottos_core`
 (`version: …`, la misma en los tres; en las apps con `+<build>`) y se sube en la rama `release/` o `hotfix/`
 correspondiente.
 
@@ -204,31 +204,15 @@ La documentación es el contexto de quien llegue después, persona o agente. Va 
 | Documento | Se actualiza cuando… |
 | --- | --- |
 | `CHANGELOG.md` | Cambia algo visible para quien usa las apps (ver [Changelog](#changelog)) |
-| `roadmap.md` | Se termina, añade o descarta una tarea, o cambia la versión actual |
-| `docs/decisiones.md` | Se toma una decisión de producto, plataforma o proceso: qué, cuándo y **por qué** |
+| `roadmap.md` | Se añade, termina o descarta una tarea pendiente |
+| ADR en `ottos/docs/architecture/adr/` | Se toma una decisión de producto, plataforma o proceso (`docs/decisiones.md` queda como historia) |
 | `README.md` de cada paquete | Cambia su estructura, cómo se ejecuta o se publica, o un mecanismo importante |
-| `CLAUDE.md` | Cambian las reglas de trabajo, los entornos o la coordinación con otros agentes |
+| `CLAUDE.md` | Cambia dónde está algo (es solo un índice) |
 | Canvas de diseño (Claude Design) | Cambia algo visual en el panel o la app (ver abajo) |
 
 ### Canvas de diseño
 
-Hay **un canvas oficial por cliente** en Claude Design, y solo esos dos:
+Los dos canvas oficiales (panel y app) y sus reglas están en `ottos/docs/ui/README.md`.
 
-| Cliente | Canvas |
-| --- | --- |
-| Panel web (`ottos_ops`) | «Ottos · Panel web»: https://claude.ai/artifact/2j4t789enmGcFDE9Mj7NCy |
-| App móvil (`ottos_courier`) | «Ottos · App móvil»: https://claude.ai/artifact/TRmZxFgFDxUGkaEDRHqh6F |
-
-Reglas:
-
-- El canvas oficial refleja las vistas implementadas. Todo cambio visual (pantalla nueva, elemento añadido o quitado,
-  textos, colores, orden) actualiza en la misma rama el artboard de esa pantalla, o añade uno si no está.
-- Si lo implementado difiere del dibujo, se corrige el dibujo, no al revés. Para comprobarlo se capturan las vistas
-  reales (panel en Chrome sin interfaz, app en el emulador) contra el backend local.
-- Los elementos que se repiten son componentes del canvas (barra lateral del panel, barra inferior de la app) y las
-  pantallas los importan: un cambio ahí se hace una sola vez.
-- **No hay canvas extra.** Solo se crea otro para tomar una decisión (variantes para que el usuario elija); cuando
-  decide, lo elegido pasa al canvas oficial y el canvas de la decisión **se borra**.
-
-Los contratos de API no se escriben aquí: viven en el repo del backend (`docs/contracts/`) y se enlazan.
+Los contratos de API no se escriben aquí: el contrato es `docs/api/openapi.yaml` en el repo del backend.
 

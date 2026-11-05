@@ -1,5 +1,8 @@
 # Decisiones del frontend de Ottos
 
+> **Congelado el 2026-11-05.** Este registro queda como historia y ya no se añaden decisiones aquí. Las decisiones
+> nuevas del equipo se escriben como ADR en `ottos/docs/architecture/adr/`.
+
 Registro de las decisiones que dan forma al proyecto: qué se decidió, cuándo y **por qué**. Sirve para no
 volver a discutir lo ya resuelto y para saber qué hay que revisar si cambia el motivo. La más reciente va primero
 dentro de cada bloque. Una decisión nueva se añade aquí en la misma rama que la implementa; si una anterior deja de
