@@ -113,12 +113,6 @@ abstract final class ReportTexts {
   static const previousPage = 'Página anterior';
   static const nextPage = 'Página siguiente';
 
-  /// A backend without the reports detail or the statistics (before the
-  /// version that brings them) answers 404.
-  static const notAvailableYet =
-      'Esta sección todavía no está disponible: llegará cuando se actualice el servidor. El resto de la aplicación '
-      'funciona como siempre.';
-
   // Statistics
   static const statistics = 'Estadísticas';
   static const periodCurrentMonth = 'Mes actual';

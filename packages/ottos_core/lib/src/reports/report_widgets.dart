@@ -95,16 +95,9 @@ class ReportFigure extends StatelessWidget {
   }
 }
 
-/// What a section shows when there is nothing to draw, or the backend does
-/// not have it yet.
+/// What a section shows when there is nothing to draw.
 class ReportNotice extends StatelessWidget {
   const ReportNotice({super.key, required this.title, this.message, this.icon = Icons.bar_chart_outlined});
-
-  /// The friendly notice of a backend without the reports detail or the statistics.
-  const ReportNotice.unavailable({super.key})
-    : title = ReportTexts.notAvailableYet,
-      message = null,
-      icon = Icons.update_outlined;
 
   final String title;
   final String? message;

@@ -108,11 +108,12 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('a backend without statistics shows a notice', (tester) async {
+  testWidgets('a 404 on the statistics shows the error with retry', (tester) async {
     when(() => reports.statistics(any(), any())).thenThrow(const ApiException('No', statusCode: 404));
     await pump(tester, const StatisticsPage());
 
-    expect(find.text(ReportTexts.notAvailableYet), findsOneWidget);
+    expect(find.text('No'), findsOneWidget);
+    expect(find.text(CoreTexts.retry), findsOneWidget);
   });
 
   group('who sees it', () {
