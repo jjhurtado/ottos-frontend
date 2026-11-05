@@ -10,6 +10,10 @@ Cambios notables del frontend de Ottos (panel de operaciones y app de repartidor
 
 - App › ventas: botón **«Entregada por el negocio»** («Recogida por el negocio» en una recogida) en el detalle de una remesa abierta y no anulada, con o sin repartidor, igual que en el panel. Solo para quien tiene el permiso «Completar desde el negocio»; los repartidores no lo ven. Pide confirmación, explica qué pasa con la caja del negocio y, si la remesa tenía repartidor, que se le quita; admite una nota opcional y no pide PIN. Necesita conexión. Después, el detalle muestra «Entregada por: El negocio». Las versiones anteriores de la app siguen funcionando, sin el botón.
 
+### Cambiado
+
+- Panel y app: el texto de los botones principales turquesa (por ejemplo «Entrar» o «Guardar») pasa de blanco a azul marino, para que se lea mejor (de 3.5:1 a 5.5:1 de contraste). El turquesa no cambia. Los botones de otros colores (rojo de anular, morado de recogida, magenta de por la casa) siguen con el texto blanco.
+
 ## [1.0.0-rc.8] - 2026-10-24
 
 Necesita el backend 1.0.0-rc.8 (por la casa, remesas del mes a detalle y estadísticas). Con un backend anterior las

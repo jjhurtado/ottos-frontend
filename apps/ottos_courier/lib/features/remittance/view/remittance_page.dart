@@ -251,7 +251,10 @@ class _Actions extends StatelessWidget {
                   Expanded(
                     flex: 2,
                     child: FilledButton(
-                      style: FilledButton.styleFrom(backgroundColor: remittance.type.color),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: remittance.type.color,
+                        foregroundColor: Colors.white,
+                      ),
                       onPressed: submitting
                           ? null
                           : () async {

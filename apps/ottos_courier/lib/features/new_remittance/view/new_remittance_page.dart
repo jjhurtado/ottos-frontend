@@ -170,6 +170,7 @@ class _FormState extends State<_Form> {
               style: FilledButton.styleFrom(
                 minimumSize: const Size.fromHeight(52),
                 backgroundColor: state.onTheHouse ? OttosColors.onTheHouse : null,
+                foregroundColor: state.onTheHouse ? Colors.white : null,
               ),
               onPressed: state.canSubmit ? () => cubit.submit(notes: _notes.text) : null,
               child: state.submitting

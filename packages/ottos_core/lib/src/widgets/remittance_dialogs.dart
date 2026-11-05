@@ -89,7 +89,10 @@ class _CompleteDialogState extends State<_CompleteDialog> {
       actions: [
         TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text(CoreTexts.cancel)),
         FilledButton(
-          style: FilledButton.styleFrom(backgroundColor: widget.isPickup ? OttosColors.pickup : OttosColors.delivery),
+          style: FilledButton.styleFrom(
+            backgroundColor: widget.isPickup ? OttosColors.pickup : OttosColors.delivery,
+            foregroundColor: Colors.white,
+          ),
           onPressed: _confirm,
           child: const Text(CoreTexts.confirm),
         ),
@@ -273,7 +276,7 @@ class _IncidentDialogState extends State<_IncidentDialog> {
       actions: [
         TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text(CoreTexts.cancel)),
         FilledButton(
-          style: FilledButton.styleFrom(backgroundColor: OttosColors.danger),
+          style: FilledButton.styleFrom(backgroundColor: OttosColors.danger, foregroundColor: Colors.white),
           onPressed: _reason == null
               ? null
               : () {
