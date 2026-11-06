@@ -325,6 +325,63 @@ void main() {
         ).called(1);
       });
 
+      testWidgets('AC-1.4: a refused zone keeps the dialog open with the message', (tester) async {
+        when(
+          () => rates.updateSettings(
+            minimumAmount: any(named: 'minimumAmount'),
+            defaultDeliveryDays: any(named: 'defaultDeliveryDays'),
+            exchangeRateTolerancePercent: any(named: 'exchangeRateTolerancePercent'),
+            businessTimeZone: any(named: 'businessTimeZone'),
+          ),
+        ).thenThrow(
+          ApiException(CoreTexts.errorCodes['INVALID_TIME_ZONE']!, statusCode: 400, code: 'INVALID_TIME_ZONE'),
+        );
+        await pumpPage(tester, {Permissions.configurationRead, Permissions.configurationWrite});
+
+        await tester.tap(find.text(OpsTexts.edit));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('UTC−4 · ${OpsTexts.businessTimeZoneCurrent}'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('UTC−5').last);
+        await tester.pumpAndSettle();
+        await tester.tap(find.text(OpsTexts.save));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text(OpsTexts.businessTimeZoneConfirm));
+        await tester.pumpAndSettle();
+
+        expect(find.text(CoreTexts.errorCodes['INVALID_TIME_ZONE']!), findsOneWidget);
+        expect(find.text(OpsTexts.save), findsOneWidget, reason: 'the edit dialog is still open');
+      });
+
+      testWidgets('AC-1.5 (same zone): saving without a change asks for no confirmation', (tester) async {
+        when(
+          () => rates.updateSettings(
+            minimumAmount: any(named: 'minimumAmount'),
+            defaultDeliveryDays: any(named: 'defaultDeliveryDays'),
+            exchangeRateTolerancePercent: any(named: 'exchangeRateTolerancePercent'),
+            businessTimeZone: any(named: 'businessTimeZone'),
+          ),
+        ).thenAnswer(
+          (_) async => const Settings(businessTime: BusinessTimeZone(timeZone: 'UTC-04:00', offsetMinutes: -240)),
+        );
+        await pumpPage(tester, {Permissions.configurationRead, Permissions.configurationWrite});
+
+        await tester.tap(find.text(OpsTexts.edit));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text(OpsTexts.save));
+        await tester.pumpAndSettle();
+
+        expect(find.text(OpsTexts.businessTimeZoneConfirm), findsNothing);
+        verify(
+          () => rates.updateSettings(
+            minimumAmount: any(named: 'minimumAmount'),
+            defaultDeliveryDays: any(named: 'defaultDeliveryDays'),
+            exchangeRateTolerancePercent: any(named: 'exchangeRateTolerancePercent'),
+            businessTimeZone: null,
+          ),
+        ).called(1);
+      });
+
       test('the audit log says the change in labels', () {
         final entry = AuditEntry.fromJson({
           'id': 'a1',
