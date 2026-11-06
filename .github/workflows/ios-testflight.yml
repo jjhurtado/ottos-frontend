@@ -40,7 +40,9 @@ jobs:
         with:
           flutter-version: 3.47.7
           channel: stable
-          cache: true
+          # No cache: flutter-action caches with actions/cache by tag, which the
+          # repository's SHA-pinning rule blocks.
+          cache: false
 
       - name: Dependencies
         run: flutter pub get --enforce-lockfile
