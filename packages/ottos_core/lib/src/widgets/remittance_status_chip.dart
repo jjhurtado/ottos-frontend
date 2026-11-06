@@ -21,17 +21,25 @@ class RemittanceStatusChip extends StatelessWidget {
   Widget build(BuildContext context) {
     // The tint comes from the base colour; the text uses a darker shade of the
     // same hue so it reads at 4.5:1 on the tint and on white.
-    final (color, textColor, label) = switch (remittance) {
+    final (:color, :textColor, :label) = switch (remittance) {
       // Voided wins over everything: it no longer counts, whatever its status.
-      Remittance(isVoided: true) => (OttosColors.danger, OttosColors.danger, CoreTexts.voided),
-      Remittance(isCompleted: true) => (OttosColors.success, OttosColors.successText, remittance.displayStatus),
-      Remittance(late: true) => (
-        OttosColors.danger,
-        OttosColors.danger,
-        '${remittance.displayStatus} · ${CoreTexts.late}',
+      Remittance(isVoided: true) => (color: OttosColors.danger, textColor: OttosColors.danger, label: CoreTexts.voided),
+      Remittance(isCompleted: true) => (
+        color: OttosColors.success,
+        textColor: OttosColors.successText,
+        label: remittance.displayStatus,
       ),
-      Remittance(courierId: != null) => (OttosColors.warning, OttosColors.warningText, remittance.displayStatus),
-      _ => (OttosColors.teal, OttosColors.tealDark, remittance.displayStatus),
+      Remittance(late: true) => (
+        color: OttosColors.danger,
+        textColor: OttosColors.danger,
+        label: '${remittance.displayStatus} · ${CoreTexts.late}',
+      ),
+      Remittance(courierId: != null) => (
+        color: OttosColors.warning,
+        textColor: OttosColors.warningText,
+        label: remittance.displayStatus,
+      ),
+      _ => (color: OttosColors.teal, textColor: OttosColors.tealDark, label: remittance.displayStatus),
     };
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),

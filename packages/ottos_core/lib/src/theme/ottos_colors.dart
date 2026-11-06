@@ -31,6 +31,9 @@ abstract final class OttosColors {
   static const warningText = Color(0xFF926119);
   static const danger = Color(0xFFC0392B);
 
+  /// Voided rows and muted report text (7.7:1 on white).
+  static const voidedGrey = Color(0xFF44474E);
+
   /// A completed remittance in the app's lists (REQ-020): grey card, outline
   /// and muted text, so it reads as done next to the open ones.
   static const completedSurface = Color(0xFFF1F2F5);
