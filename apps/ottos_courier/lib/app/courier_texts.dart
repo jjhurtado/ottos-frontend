@@ -77,6 +77,7 @@ abstract final class CourierTexts {
   static const sortByDay = 'Del día';
   static const sortMostLate = 'Más atrasadas primero';
   static const showCompleted = 'Completadas';
+  static String latestCompleted(int count) => 'Completadas (últimas $count)';
   static const noRemittances = 'No hay remesas.';
   static const showMore = 'Ver más';
   static String completedOn(String date) => 'Completada el $date';
@@ -169,7 +170,6 @@ abstract final class CourierTexts {
     'DELIVERY_PAYOUT' => 'Entrega de remesa',
     'PICKUP_COLLECTION' => 'Recogida de remesa',
     'COURIER_RETURN' => 'Devolución al negocio',
-    'COURIER_SURPLUS' => 'Sobrante en cierre',
     'COURIER_EXCHANGE_OUT' => 'Cambio de moneda: entregado',
     'COURIER_EXCHANGE_IN' => 'Cambio de moneda: recibido',
     _ => 'Movimiento',

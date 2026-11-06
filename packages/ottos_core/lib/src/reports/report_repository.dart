@@ -18,13 +18,13 @@ class ReportRepository {
   );
 
   /// Every remittance registered in [year]-[month], voided ones included, without
-  /// personal data. A backend from before it answers 404.
+  /// personal data.
   Future<MonthlyReportDetail> monthlyRemittances(int year, int month) async => MonthlyReportDetail.fromJson(
     await _api.get<Map<String, dynamic>>('/reports/monthly/remittances', query: {'month': _month(year, month)}),
   );
 
   /// The sales from [from] to [to], both days included, Cuba time; at most 366
-  /// days. A backend from before it answers 404.
+  /// days.
   Future<Statistics> statistics(DateTime from, DateTime to) async => Statistics.fromJson(
     await _api.get<Map<String, dynamic>>(
       '/reports/statistics',

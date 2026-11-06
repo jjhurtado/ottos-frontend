@@ -72,7 +72,7 @@ void main() {
     expect(report.businessCurrency, 'USD');
   });
 
-  test('a backend before 1.0.0-rc.4 still reads, with its old name', () {
+  test('the old name deliveredUsd is no longer read', () {
     final old =
         {
             ...sampleJson,
@@ -85,8 +85,8 @@ void main() {
           ..remove('deliveredCurrency');
     final report = MonthlyReport.fromJson(old);
 
-    expect(report.deliveredCurrency, 1799);
-    expect(report.byCurrency.first.deliveredCurrency, 1799);
+    expect(report.deliveredCurrency, 0);
+    expect(report.byCurrency.first.deliveredCurrency, 0);
     expect(report.businessCurrency, 'USD');
   });
 
@@ -227,12 +227,13 @@ void main() {
       }
     });
 
-    testWidgets('a backend without the detail: the summary as always, a notice instead of the list', (tester) async {
+    testWidgets('a 404 on the detail: the summary as always, an error instead of the list', (tester) async {
       when(() => reports.monthlyRemittances(any(), any())).thenThrow(const ApiException('No', statusCode: 404));
       await pump(tester, size: const Size(1400, 2400));
 
       expect(find.text(OpsTexts.totalCollected), findsOneWidget);
-      expect(find.text(ReportTexts.notAvailableYet), findsOneWidget);
+      expect(find.text('No'), findsOneWidget);
+      expect(find.text(CoreTexts.retry), findsOneWidget);
 
       await tester.tap(find.widgetWithText(FilledButton, ReportTexts.export));
       await tester.pumpAndSettle();

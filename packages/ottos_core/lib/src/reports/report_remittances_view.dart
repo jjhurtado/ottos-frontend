@@ -33,7 +33,6 @@ class ReportRemittancesSection extends StatelessWidget {
         final cubit = context.read<ReportRemittancesCubit>();
         final Widget body = switch (state.status) {
           ReportDetailStatus.loading => const SizedBox(height: 160, child: LoadingView()),
-          ReportDetailStatus.unavailable => const ReportNotice.unavailable(),
           ReportDetailStatus.failure => SizedBox(
             height: 200,
             child: ErrorView(message: state.error ?? '', onRetry: cubit.load),
