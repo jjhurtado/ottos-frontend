@@ -1,5 +1,6 @@
 import 'package:intl/intl.dart';
 
+import '../l10n/core_texts.dart';
 import '../models/statistics.dart';
 import '../utils/formatters.dart';
 
@@ -68,6 +69,38 @@ abstract final class ReportTexts {
   static String csvFileName(String month) => 'remesas-$month.csv';
   static const exportFailed = 'No se pudo preparar el archivo. Inténtalo de nuevo.';
 
+  // Inside the exported files
+  static const brand = "Otto's Bussines";
+  static const summaryFooter = '$brand · Panel de operaciones';
+  static String detailFooter(String month) => '$brand · Resumen a detalle de $month';
+  static String pageNumber(int page, int pages) => 'Página $page de $pages';
+  static const monthEndStatusShort = 'Estado al cierre';
+  static const yes = 'Sí';
+  static const no = 'No';
+  static const csvColumns = [
+    beneficiary,
+    'Código',
+    'Tipo',
+    'Estado',
+    'Registrada',
+    'Completada',
+    'Municipio',
+    'Repartidor',
+    'Moneda de cobro',
+    'Enviado',
+    'Comisión',
+    'Cobrado',
+    'Recogido',
+    'Moneda de entrega',
+    'A entregar',
+    'Tasa',
+    'Por la casa',
+    'Comisión no cobrada',
+    'Anulada',
+    'Anulada el',
+    'Motivo de la anulación',
+  ];
+
   // The month's remittances
   static const monthRemittances = 'Remesas del mes';
   static String monthRemittancesHelp(String month) => 'Registradas en $month';
@@ -77,6 +110,11 @@ abstract final class ReportTexts {
   static const courier = 'Repartidor';
   static const all = 'Todos';
   static const withoutCourier = 'Sin asignar';
+  static const business = 'El negocio';
+  static const deliveryType = CoreTexts.delivery;
+  static const pickupType = CoreTexts.pickup;
+  static const onTheHouseDelivery = 'Entrega por la casa';
+  static const onTheHouseDeliveryShort = 'Entrega · casa';
   static const onlyOnTheHouse = 'Solo por la casa';
   static const showVoided = 'Mostrar anuladas';
   static const filters = 'Filtros';
