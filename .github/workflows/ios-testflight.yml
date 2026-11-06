@@ -36,13 +36,20 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
-        with:
-          flutter-version: 3.47.7
-          channel: stable
-          # No cache: flutter-action caches with actions/cache by tag, which the
-          # repository's SHA-pinning rule blocks.
-          cache: false
+      # Flutter installed by hand, checked against the published sha256.
+      # subosito/flutter-action uses actions/cache by tag, which the repository's
+      # SHA-pinning rule blocks. macos-15 runners are arm64.
+      - name: Install Flutter 3.47.7
+        env:
+          FLUTTER_VERSION: 3.47.7
+          FLUTTER_SHA256: dd9da574c3168460550117eb0e8dd0313ae934fabf64a82a6d557fff5fd1422e
+        run: |
+          curl -fsSL -o "$RUNNER_TEMP/flutter.zip" \
+            "https://storage.googleapis.com/flutter_infra_release/releases/stable/macos/flutter_macos_arm64_${FLUTTER_VERSION}-stable.zip"
+          echo "${FLUTTER_SHA256}  $RUNNER_TEMP/flutter.zip" | shasum -a 256 -c -
+          unzip -q "$RUNNER_TEMP/flutter.zip" -d "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/flutter/bin" >> "$GITHUB_PATH"
+          "$RUNNER_TEMP/flutter/bin/flutter" config --no-analytics >/dev/null
 
       - name: Dependencies
         run: flutter pub get --enforce-lockfile
