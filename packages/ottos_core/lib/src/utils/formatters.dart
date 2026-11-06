@@ -4,6 +4,13 @@ import 'package:intl/intl.dart';
 abstract final class Formatters {
   static const _locale = 'es';
 
+  /// The beneficiary's name trimmed, or null when there is none (null, empty or
+  /// only spaces): the one rule for "no name, the code alone" (REQ-019 BR-2).
+  static String? cleanName(String? name) {
+    final trimmed = name?.trim() ?? '';
+    return trimmed.isEmpty ? null : trimmed;
+  }
+
   static String money(num? amount, String? currency) {
     if (amount == null) return '';
     final number = NumberFormat.decimalPatternDigits(locale: _locale, decimalDigits: 2).format(amount);

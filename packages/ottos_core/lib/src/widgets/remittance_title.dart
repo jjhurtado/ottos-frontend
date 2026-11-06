@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 
 import '../theme/ottos_colors.dart';
+import '../utils/formatters.dart';
 
 /// "Rosa Pérez · OT-ABC123", or only the code when there is no name: how a
 /// remittance is named in plain text (snackbars, notifications, exports).
 /// The team names remittances by their beneficiary, never by the code
 /// (REQ-019 BR-1, BR-2).
 String remittanceLabel(String? name, String code) {
-  final trimmed = name?.trim() ?? '';
-  return trimmed.isEmpty ? code : '$trimmed · $code';
+  final clean = Formatters.cleanName(name);
+  return clean == null ? code : '$clean · $code';
 }
 
 /// A remittance named by its beneficiary, with the code small under it
@@ -38,8 +39,8 @@ class RemittanceTitle extends StatelessWidget {
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
     final titleStyle = style ?? textTheme.titleMedium;
-    final trimmed = name?.trim() ?? '';
-    if (trimmed.isEmpty) {
+    final trimmed = Formatters.cleanName(name);
+    if (trimmed == null) {
       return Text(code, style: titleStyle, maxLines: maxLines, overflow: TextOverflow.ellipsis);
     }
     return Column(

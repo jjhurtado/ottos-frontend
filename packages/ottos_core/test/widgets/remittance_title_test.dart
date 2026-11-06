@@ -24,6 +24,13 @@ void main() {
     });
   });
 
+  test('REQ-019 CR-4: cleanName trims and gives null for no name', () {
+    expect(Formatters.cleanName(' Rosa '), 'Rosa');
+    for (final none in [null, '', '   ']) {
+      expect(Formatters.cleanName(none), isNull);
+    }
+  });
+
   test('remittanceLabel: name first, code last, or the code alone', () {
     expect(remittanceLabel('Rosa Pérez', 'OT-1'), 'Rosa Pérez · OT-1');
     expect(remittanceLabel(' Rosa ', 'OT-1'), 'Rosa · OT-1');

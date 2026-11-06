@@ -378,8 +378,8 @@ Future<Uint8List> buildMonthlyReportPdf(MonthlyReport report, {required DateTime
 }
 
 /// The beneficiary over the code, or the code alone without a name.
-String _named(ReportRemittance row) => switch (row.beneficiaryName?.trim()) {
-  final name? when name.isNotEmpty => '$name\n${row.code}',
+String _named(ReportRemittance row) => switch (Formatters.cleanName(row.beneficiaryName)) {
+  final name? => '$name\n${row.code}',
   _ => row.code,
 };
 
