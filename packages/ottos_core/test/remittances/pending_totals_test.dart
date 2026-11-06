@@ -98,10 +98,13 @@ void main() {
       );
     });
 
-    test('BR-1 BR-8: the pending filter is every non-final status of the workflow, not voided', () async {
-      final filter = await RemittanceRepository(api: api).pendingFilter();
+    test('BR-1 BR-8 CR-2: the pending filter is every non-final status of the workflow, not voided', () async {
+      final workflow = await RemittanceRepository(api: api).workflow();
 
-      expect(filter, const RemittanceFilter(status: 'PAID,ASSIGNED', voided: false));
+      expect(
+        RemittanceFilter.pending(workflow.statuses),
+        const RemittanceFilter(status: 'PAID,ASSIGNED', voided: false),
+      );
     });
 
     test('AC-1.1 BR-5: asks one row with the totals and reads them', () async {

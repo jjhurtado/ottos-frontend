@@ -56,6 +56,17 @@ class RemittanceFilter extends Equatable {
   /// true: only deliveries on the house; false: without them; null: all.
   final bool? onTheHouse;
 
+  /// The open remittances: not voided, in any of [statuses] the workflow does
+  /// not mark final (REQ-021 BR-1). The pending totals and the list they open
+  /// both use it (BR-8).
+  factory RemittanceFilter.pending(Iterable<RemittanceStatus> statuses) => RemittanceFilter(
+    status: [
+      for (final status in statuses)
+        if (!status.isFinal) status.code,
+    ].join(','),
+    voided: false,
+  );
+
   static const _keep = Object();
 
   /// Copies the filter; pass `null` explicitly to clear a field.
@@ -261,22 +272,12 @@ class RemittanceRepository {
     return PageResult.fromJson(json, Remittance.fromJson);
   }
 
-  /// The open remittances: not voided, in any status the workflow does not
-  /// mark final (REQ-021 BR-1). The pending totals and the list they open use it (BR-8).
-  Future<RemittanceFilter> pendingFilter() async => RemittanceFilter(
-    status: [
-      for (final status in (await workflow()).statuses)
-        if (!status.isFinal) status.code,
-    ].join(','),
-    voided: false,
-  );
-
   /// Money pending to deliver and to collect over every open remittance, by
   /// currency, summed by the server (BR-5; `remittances:read`).
   Future<PendingTotals> pendingTotals() async {
     final json = await _api.get<Map<String, dynamic>>(
       '/remittances',
-      query: {...(await pendingFilter()).toQuery(), 'page': 0, 'size': 1, 'totals': true},
+      query: {...RemittanceFilter.pending((await workflow()).statuses).toQuery(), 'page': 0, 'size': 1, 'totals': true},
     );
     return PendingTotals.fromJson(json['totals'] as Map<String, dynamic>?);
   }
