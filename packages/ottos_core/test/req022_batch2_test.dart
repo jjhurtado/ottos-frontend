@@ -35,17 +35,4 @@ void main() {
       ),
     );
   });
-
-  test('OPT-F4 BR-8 (REQ-021): the open filter from codes equals the pending filter from the workflow', () {
-    final workflow = Workflow.fromJson({
-      'statuses': [
-        {'code': 'PAID', 'position': 10},
-        {'code': 'ASSIGNED', 'position': 20},
-        {'code': 'DELIVERED', 'isFinal': true, 'position': 30},
-      ],
-    });
-
-    expect(RemittanceFilter.open(['PAID', 'ASSIGNED']), RemittanceFilter.pending(workflow.statuses));
-    expect(RemittanceFilter.open(['PAID', 'ASSIGNED']), const RemittanceFilter(status: 'PAID,ASSIGNED', voided: false));
-  });
 }

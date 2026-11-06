@@ -22,6 +22,14 @@ class _MockRates extends Mock implements RateRepository {}
 
 class _MockAuth extends Mock implements AuthRepository {}
 
+final _workflow = Workflow.fromJson({
+  'statuses': [
+    {'code': 'PAID', 'name': 'Pagada', 'initial': true, 'position': 10},
+    {'code': 'ASSIGNED', 'name': 'Asignada', 'position': 20},
+    {'code': 'DELIVERED', 'name': 'Entregada', 'isFinal': true, 'position': 30},
+  ],
+});
+
 const _summary = RemittanceSummary(
   openByStatus: [
     StatusCount(code: 'PAID', name: 'Pagada', count: 4),
@@ -61,14 +69,16 @@ void main() {
     setUp(() {
       remittances = _MockRemittances();
       cash = _MockCash();
+      when(() => remittances.workflow()).thenAnswer((_) async => _workflow);
       when(() => remittances.summary()).thenAnswer((_) async => _summary);
-      when(() => remittances.pendingTotals()).thenAnswer((_) async => const PendingTotals());
+      when(() => remittances.pendingTotals(filter: any(named: 'filter')))
+          .thenAnswer((_) async => const PendingTotals());
       when(() => cash.exchanges(review: true, size: 1)).thenAnswer((_) async => _count(1));
     });
 
     test('OPT-F2 (slow money pending): the counters show without waiting for it', () async {
       final pending = Completer<PendingTotals>();
-      when(() => remittances.pendingTotals()).thenAnswer((_) => pending.future);
+      when(() => remittances.pendingTotals(filter: any(named: 'filter'))).thenAnswer((_) => pending.future);
       final cubit = HomeCubit(remittances: remittances, cash: cash);
       addTearDown(cubit.close);
 
@@ -85,12 +95,13 @@ void main() {
     });
 
     test('OPT-F2 (retry of the money pending alone): the counters are not asked again', () async {
-      when(() => remittances.pendingTotals()).thenThrow(const ApiException('Sin totales'));
+      when(() => remittances.pendingTotals(filter: any(named: 'filter'))).thenThrow(const ApiException('Sin totales'));
       final cubit = HomeCubit(remittances: remittances, cash: cash);
       addTearDown(cubit.close);
       await cubit.load();
       clearInteractions(remittances);
-      when(() => remittances.pendingTotals()).thenAnswer((_) async => const PendingTotals());
+      when(() => remittances.pendingTotals(filter: any(named: 'filter')))
+          .thenAnswer((_) async => const PendingTotals());
 
       await cubit.loadPending();
 

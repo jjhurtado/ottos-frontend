@@ -15,7 +15,7 @@ class _MockRemittances extends Mock implements RemittanceRepository {}
 
 class _MockAuth extends Mock implements AuthRepository {}
 
-final _summaryJson = {
+final _summaryJson = <String, Object>{
   'openByStatus': [
     {'code': 'PAID', 'name': 'Pagada', 'count': 7},
     {'code': 'ASSIGNED', 'name': 'Asignada', 'count': 0},
@@ -31,6 +31,7 @@ void main() {
   late List<String> calls;
 
   setUpAll(() async {
+    registerFallbackValue(const RemittanceFilter());
     await OttosLocalization.initialize();
   });
 
@@ -146,7 +147,15 @@ void main() {
     });
   }
 
-  testWidgets('OPT-F4 BR-8 (REQ-021): a money tile opens the open statuses of the summary', (tester) async {
+  testWidgets('CR-7 BR-8 (REQ-021): a money tile opens the filter its totals were asked with, not the summary\'s', (
+    tester,
+  ) async {
+    // The session's workflow lacks a status the summary already has (changed meanwhile).
+    _summaryJson['openByStatus'] = [
+      ...(_summaryJson['openByStatus']! as List),
+      {'code': 'POSTPONED', 'name': 'Pospuesta', 'count': 1},
+    ];
+    addTearDown(() => (_summaryJson['openByStatus']! as List).removeLast());
     await pump(tester);
 
     expect(
@@ -158,7 +167,8 @@ void main() {
   test('OPT-F4: a failed summary fails the Home, as a failed counter did', () async {
     final remittances = _MockRemittances();
     when(() => remittances.summary()).thenAnswer((_) async => throw const ApiException('Sin conexión'));
-    when(() => remittances.pendingTotals()).thenAnswer((_) async => const PendingTotals());
+    when(() => remittances.workflow()).thenAnswer((_) async => const Workflow(statuses: [], transitions: []));
+    when(() => remittances.pendingTotals(filter: any(named: 'filter'))).thenAnswer((_) async => const PendingTotals());
     final cubit = HomeCubit(remittances: remittances);
     addTearDown(cubit.close);
 

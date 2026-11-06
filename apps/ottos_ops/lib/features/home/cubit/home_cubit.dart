@@ -2,6 +2,8 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:ottos_core/ottos_core.dart';
 
+typedef _Pending = ({RemittanceFilter? filter, PendingTotals? totals, String? error});
+
 enum HomeStatus { loading, success, failure }
 
 final class HomeState extends Equatable {
@@ -13,6 +15,7 @@ final class HomeState extends Equatable {
     this.toReview = 0,
     this.exchangesToReview = 0,
     this.pending,
+    this.pendingFilter,
     this.pendingError,
     this.error,
   });
@@ -29,10 +32,13 @@ final class HomeState extends Equatable {
   /// Money pending to deliver and to collect (REQ-021); null while it loads or
   /// when it failed, with [pendingError]. It fails on its own: the counters stay.
   final PendingTotals? pending;
+
+  /// The open filter [pending] was summed with: its tiles open this list (REQ-021 BR-8, CR-7).
+  final RemittanceFilter? pendingFilter;
   final String? pendingError;
   final String? error;
 
-  HomeState withPending({PendingTotals? pending, String? pendingError}) => HomeState(
+  HomeState withPending({PendingTotals? pending, RemittanceFilter? pendingFilter, String? pendingError}) => HomeState(
     status: status,
     openByStatus: openByStatus,
     late: late,
@@ -40,6 +46,7 @@ final class HomeState extends Equatable {
     toReview: toReview,
     exchangesToReview: exchangesToReview,
     pending: pending,
+    pendingFilter: pendingFilter,
     pendingError: pendingError,
     error: error,
   );
@@ -53,6 +60,7 @@ final class HomeState extends Equatable {
     toReview,
     exchangesToReview,
     pending,
+    pendingFilter,
     pendingError,
     error,
   ];
@@ -90,22 +98,26 @@ class HomeCubit extends Cubit<HomeState> {
       emit(HomeState(status: HomeStatus.failure, error: error.message));
       return;
     }
-    final (totals, error) = await pending;
-    if (!isClosed) emit(state.withPending(pending: totals, pendingError: error));
+    if (!isClosed) emit(_withPending(await pending));
   }
 
   /// Loads (or retries) the money pending alone (REQ-021 AC-1.8).
   Future<void> loadPending() async {
     emit(state.withPending());
-    final (totals, error) = await _pending();
-    if (!isClosed) emit(state.withPending(pending: totals, pendingError: error));
+    final result = await _pending();
+    if (!isClosed) emit(_withPending(result));
   }
 
-  Future<(PendingTotals?, String?)> _pending() async {
+  HomeState _withPending(_Pending result) =>
+      state.withPending(pending: result.totals, pendingFilter: result.filter, pendingError: result.error);
+
+  /// The totals with the filter they were asked with, so the tiles link to the same list (CR-7).
+  Future<_Pending> _pending() async {
     try {
-      return (await _remittances.pendingTotals(), null);
+      final filter = RemittanceFilter.pending((await _remittances.workflow()).statuses);
+      return (filter: filter, totals: await _remittances.pendingTotals(filter: filter), error: null);
     } on ApiException catch (error) {
-      return (null, error.message);
+      return (filter: null, totals: null, error: error.message);
     }
   }
 

@@ -12,6 +12,14 @@ class _MockCash extends Mock implements CashRepository {}
 
 class _MockCustomers extends Mock implements CustomerRepository {}
 
+final _workflow = Workflow.fromJson({
+  'statuses': [
+    {'code': 'PAID', 'name': 'Pagada', 'initial': true, 'position': 10},
+    {'code': 'ASSIGNED', 'name': 'Asignada', 'position': 20},
+    {'code': 'DELIVERED', 'name': 'Entregada', 'isFinal': true, 'position': 30},
+  ],
+});
+
 const _summary = RemittanceSummary(
   openByStatus: [
     StatusCount(code: 'PAID', name: 'Pagada', count: 2),
@@ -36,8 +44,10 @@ void main() {
     setUp(() {
       remittances = _MockRemittances();
       cash = _MockCash();
+      when(() => remittances.workflow()).thenAnswer((_) async => _workflow);
       when(() => remittances.summary()).thenAnswer((_) async => _summary);
-      when(() => remittances.pendingTotals()).thenAnswer((_) async => const PendingTotals());
+      when(() => remittances.pendingTotals(filter: any(named: 'filter')))
+          .thenAnswer((_) async => const PendingTotals());
       when(() => cash.exchanges(review: true, size: 1)).thenAnswer((_) async => _count(1));
     });
 
@@ -51,7 +61,7 @@ void main() {
       await Future<void>.delayed(Duration.zero);
 
       verify(() => cash.exchanges(review: true, size: 1)).called(1);
-      verify(() => remittances.pendingTotals()).called(1);
+      verify(() => remittances.pendingTotals(filter: any(named: 'filter'))).called(1);
       summary.complete(_summary);
       await load;
 
@@ -71,7 +81,7 @@ void main() {
     });
 
     test('AC-1.8 (REQ-021): the money pending still fails on its own', () async {
-      when(() => remittances.pendingTotals()).thenThrow(const ApiException('Sin totales'));
+      when(() => remittances.pendingTotals(filter: any(named: 'filter'))).thenThrow(const ApiException('Sin totales'));
       final cubit = HomeCubit(remittances: remittances, cash: cash);
       addTearDown(cubit.close);
 

@@ -128,9 +128,7 @@ class _Pending extends StatelessWidget {
             Uri(
               path: Destinations.remittances.path,
               queryParameters: {
-                for (final MapEntry(:key, :value) in RemittanceFilter.open([
-                  for (final item in state.openByStatus) item.code,
-                ]).toQuery().entries)
+                for (final MapEntry(:key, :value) in state.pendingFilter!.toQuery().entries)
                   if (value != null) key: '$value',
                 'type': type.code,
               },
