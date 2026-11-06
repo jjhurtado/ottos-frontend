@@ -9,6 +9,13 @@ import 'fixtures.dart';
 /// the literals the code had before the move, written out here on purpose
 /// (never read back from ReportTexts or ReportCsv).
 void main() {
+  test('REQ-010 CR-1: the PDF labels have their own constants, same words as before', () {
+    expect(ReportTexts.voidedOnColumn, 'Anulada el');
+    expect(ReportTexts.voidedReasonColumn, 'Motivo de la anulación');
+    expect(ReportTexts.detailTitle, 'Resumen a detalle');
+    expect(ReportTexts.yes, 'Sí');
+  });
+
   setUpAll(OttosLocalization.initialize);
 
   final detail = MonthlyReportDetail.fromJson(detailJson);
