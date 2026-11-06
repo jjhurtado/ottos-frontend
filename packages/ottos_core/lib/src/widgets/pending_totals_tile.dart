@@ -31,7 +31,7 @@ class PendingTotalsTiles extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Expanded(
-            child: PendingTotalsTile(
+            child: _PendingTotalsTile(
               label: deliverLabel,
               amounts: totals.toDeliver,
               color: OttosColors.delivery,
@@ -41,7 +41,7 @@ class PendingTotalsTiles extends StatelessWidget {
           ),
           const SizedBox(width: 8),
           Expanded(
-            child: PendingTotalsTile(
+            child: _PendingTotalsTile(
               label: collectLabel,
               amounts: totals.toCollect,
               color: OttosColors.pickup,
@@ -56,9 +56,8 @@ class PendingTotalsTiles extends StatelessWidget {
 }
 
 /// One tile of money pending, like the counters of the panel Home.
-class PendingTotalsTile extends StatelessWidget {
-  const PendingTotalsTile({
-    super.key,
+class _PendingTotalsTile extends StatelessWidget {
+  const _PendingTotalsTile({
     required this.label,
     required this.amounts,
     required this.color,
