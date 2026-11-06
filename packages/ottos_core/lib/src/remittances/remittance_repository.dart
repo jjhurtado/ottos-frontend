@@ -3,6 +3,8 @@ import 'package:equatable/equatable.dart';
 import 'dart:math';
 
 import '../api/api_client.dart';
+import '../api/api_exception.dart';
+import '../l10n/core_texts.dart';
 import '../models/courier.dart';
 import '../models/event.dart';
 import '../models/page_result.dart';
@@ -279,7 +281,10 @@ class RemittanceRepository {
       '/remittances',
       query: {...RemittanceFilter.pending((await workflow()).statuses).toQuery(), 'page': 0, 'size': 1, 'totals': true},
     );
-    return PendingTotals.fromJson(json['totals'] as Map<String, dynamic>?);
+    final totals = json['totals'] as Map<String, dynamic>?;
+    // No totals: a backend without them. Saying «Nada pendiente» would be a false figure (CR-4).
+    if (totals == null) throw const ApiException(CoreTexts.unexpectedError);
+    return PendingTotals.fromJson(totals);
   }
 
   /// Registers a remittance. Sending the same [idempotencyKey] again (a retry

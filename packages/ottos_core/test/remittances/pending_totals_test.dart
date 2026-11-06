@@ -30,7 +30,7 @@ PendingAmount _amount(String currency, int count, double value) =>
 /// REQ-021: money pending to deliver and to collect.
 void main() {
   group('PendingTotals', () {
-    test('BR-5: reads the server totals; null totals are nothing pending', () {
+    test('BR-5: reads the server totals; missing lists read as empty', () {
       final totals = PendingTotals.fromJson({
         'toDeliver': [
           {'currency': 'CUP', 'remittances': 2, 'amount': '76000.00'},
@@ -41,7 +41,7 @@ void main() {
 
       expect(totals.toDeliver, [_amount('CUP', 2, 76000), _amount('USD', 3, 450.5)]);
       expect(totals.toCollect, isEmpty);
-      expect(PendingTotals.fromJson(null), const PendingTotals());
+      expect(PendingTotals.fromJson(const {}), const PendingTotals());
     });
 
     test('BR-2 BR-7: the phone sums the cash per type and currency, never mixing currencies', () {
@@ -132,6 +132,18 @@ void main() {
       expect(query, containsPair('size', 1));
       expect(query, containsPair('totals', true));
     });
+  });
+
+  test('CR-4: a page without totals (a backend before REQ-021) is an error, never «Nada pendiente»', () async {
+    final api = _MockApi();
+    when(() => api.get<Map<String, dynamic>>('/remittance-workflow')).thenAnswer((_) async => {'statuses': []});
+    when(() => api.get<Map<String, dynamic>>('/remittances', query: any(named: 'query')))
+        .thenAnswer((_) async => {'items': [], 'totalItems': 0, 'totals': null});
+
+    await expectLater(
+      RemittanceRepository(api: api).pendingTotals(),
+      throwsA(isA<ApiException>().having((error) => error.message, 'message', CoreTexts.unexpectedError)),
+    );
   });
 
   group('PendingTotalsTiles', () {

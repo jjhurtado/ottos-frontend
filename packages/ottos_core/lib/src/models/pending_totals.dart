@@ -27,8 +27,8 @@ class PendingAmount extends Equatable {
 class PendingTotals extends Equatable {
   const PendingTotals({this.toDeliver = const [], this.toCollect = const []});
 
-  factory PendingTotals.fromJson(Map<String, dynamic>? json) =>
-      PendingTotals(toDeliver: _amounts(json?['toDeliver']), toCollect: _amounts(json?['toCollect']));
+  factory PendingTotals.fromJson(Map<String, dynamic> json) =>
+      PendingTotals(toDeliver: _amounts(json['toDeliver']), toCollect: _amounts(json['toCollect']));
 
   /// Summed on the phone from [remittances] (the courier's, BR-7): the cash of
   /// each open one, voided and completed ones left out (BR-1, BR-2). Added in
