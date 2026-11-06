@@ -52,6 +52,7 @@ export 'src/reports/reports_cubit.dart';
 export 'src/reports/statistics_cubit.dart';
 export 'src/reports/statistics_view.dart';
 export 'src/utils/business_time.dart';
+export 'src/remittances/beneficiary_search.dart';
 export 'src/remittances/remittance_repository.dart';
 export 'src/sync/sync_models.dart';
 export 'src/sync/sync_repository.dart';

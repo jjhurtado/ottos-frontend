@@ -80,6 +80,11 @@ abstract final class CourierTexts {
   static String latestCompleted(int count) => 'Completadas (últimas $count)';
   static const noRemittances = 'No hay remesas.';
   static const showMore = 'Ver más';
+  static const searchBeneficiary = 'Beneficiario (nombre o teléfono)';
+  static const searchTooShort = 'Escribe al menos 2 letras o 4 cifras';
+  static const noRemittancesSearch = 'No hay remesas con esa búsqueda.';
+  static const searchNeedsConnection = 'La búsqueda necesita conexión. Conéctate e inténtalo de nuevo.';
+  static const clearSearch = 'Borrar búsqueda';
   static String completedOn(String date) => 'Completada el $date';
 
   // Remittance
