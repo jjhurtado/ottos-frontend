@@ -306,4 +306,19 @@ void main() {
     expect(searches.single.$1.beneficiaryQuery, 'jose');
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('DEF-1: after a network failure, typing does not crash the results area', (tester) async {
+    answer = (filter, page) {
+      if (filter.beneficiaryQuery != null) throw const ApiException(CoreTexts.networkError);
+      return PageResult(items: [_remittance('r1', 'OT-1')], page: page, size: 20, totalItems: 1);
+    };
+    await pump(tester);
+    await typeAndWait(tester, 'jose');
+    expect(find.text(CoreTexts.networkError), findsOneWidget);
+
+    await type(tester, 'josep');
+
+    expect(tester.takeException(), isNull);
+    expect(find.text(CoreTexts.networkError), findsOneWidget);
+  });
 }

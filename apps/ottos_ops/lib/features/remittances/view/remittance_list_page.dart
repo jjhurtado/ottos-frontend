@@ -76,7 +76,7 @@ class _RemittanceListView extends StatelessWidget {
                   final result = state.result;
                   if (state.status == RemittanceListStatus.failure) {
                     return ErrorView(
-                      message: state.error!,
+                      message: state.error ?? CoreTexts.networkError,
                       onRetry: () =>
                           context.read<RemittanceListBloc>().add(RemittanceListPageRequested(result?.page ?? 0)),
                     );
