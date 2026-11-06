@@ -319,17 +319,19 @@ class _TotalsStrip extends StatelessWidget {
   }
 }
 
-/// How the status reads and its color: voided grey, incident red, completed
-/// green, assigned amber, paid teal.
-(String, Color) _status(ReportRemittance row) => switch (row) {
-  ReportRemittance(isVoided: true) => (ReportTexts.voided, const Color(0xFF44474E)),
+/// How the status reads, the colour of its tint and of its text: voided grey,
+/// incident red, completed green, assigned amber, paid teal. Green and amber
+/// text use their darker shades so they read at 4.5:1 on the tint.
+(String, Color, Color) _status(ReportRemittance row) => switch (row) {
+  ReportRemittance(isVoided: true) => (ReportTexts.voided, const Color(0xFF44474E), const Color(0xFF44474E)),
   ReportRemittance(withIncident: true) => (
     '${reportStatusName(row)} · ${ReportTexts.statusIncident.toLowerCase()}',
     OttosColors.danger,
+    OttosColors.danger,
   ),
-  ReportRemittance(isCompleted: true) => (reportStatusName(row), OttosColors.success),
-  ReportRemittance(status: 'ASSIGNED') => (reportStatusName(row), OttosColors.warning),
-  _ => (reportStatusName(row), OttosColors.tealDark),
+  ReportRemittance(isCompleted: true) => (reportStatusName(row), OttosColors.success, OttosColors.successText),
+  ReportRemittance(status: 'ASSIGNED') => (reportStatusName(row), OttosColors.warning, OttosColors.warningText),
+  _ => (reportStatusName(row), OttosColors.tealDark, OttosColors.tealDark),
 };
 
 String _courier(ReportRemittance row) =>
@@ -342,14 +344,14 @@ class _StatusChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final (label, color) = _status(row);
+    final (label, color, textColor) = _status(row);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
       decoration: BoxDecoration(color: color.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(12)),
       child: Text(
         label,
         overflow: TextOverflow.ellipsis,
-        style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w500),
+        style: TextStyle(color: textColor, fontSize: 12, fontWeight: FontWeight.w500),
       ),
     );
   }
@@ -522,7 +524,7 @@ class _RemittanceCard extends StatelessWidget {
     final voided = row.isVoided;
     final textTheme = Theme.of(context).textTheme;
     final type = row.isPickup ? 'Recogida' : (row.onTheHouse ? 'Entrega por la casa' : 'Entrega');
-    final (status, _) = _status(row);
+    final (status, _, _) = _status(row);
     final details = [type, CubaTime.shortDate(row.createdAt), ?row.municipalityName, _courier(row), status].join(' · ');
     final open = onOpen;
     return InkWell(

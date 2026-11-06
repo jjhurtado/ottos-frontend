@@ -374,7 +374,7 @@ class _UnsentBadge extends StatelessWidget {
           SizedBox(width: 6),
           Text(
             CourierTexts.unsent,
-            style: TextStyle(color: OttosColors.warning, fontWeight: FontWeight.w600),
+            style: TextStyle(color: OttosColors.warningText, fontWeight: FontWeight.w600),
           ),
         ],
       ),
