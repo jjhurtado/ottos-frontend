@@ -207,7 +207,6 @@ abstract final class CoreTexts {
   static String newVersion(String version) => 'Versión $version';
   static const update = 'Actualizar';
   static const later = 'Más tarde';
-  static const syncingBeforeUpdate = 'Enviando lo que tenías sin enviar…';
   static const searchOtherBeneficiary = 'Buscar otro beneficiario';
   static const searchBeneficiaryHint = 'Nombre o teléfono del beneficiario';
   static const searchBeneficiaryHelp =

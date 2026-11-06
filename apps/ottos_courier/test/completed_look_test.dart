@@ -77,7 +77,6 @@ void main() {
 
   setUp(() {
     remittances = _MockRemittances();
-    when(() => remittances.pendingTotals()).thenAnswer((_) async => const PendingTotals());
   });
 
   Future<void> pump(WidgetTester tester, Set<String> permissions, Widget page) async {
@@ -126,10 +125,13 @@ void main() {
   /// Sales' list with «Completadas» on: open and completed mixed.
   Future<void> salesListWithCompleted(WidgetTester tester, List<Remittance> open, List<Remittance> done) async {
     when(() => remittances.workflow()).thenAnswer((_) async => _workflow);
-    when(() => remittances.search(const RemittanceFilter(voided: false), size: 100))
-        .thenAnswer((_) async => PageResult(items: open, page: 0, size: 100, totalItems: open.length));
-    when(() => remittances.search(const RemittanceFilter(voided: false), page: 0, size: 50))
-        .thenAnswer((_) async => PageResult(items: done, page: 0, size: 50, totalItems: done.length));
+    when(() => remittances.pending(size: 100)).thenAnswer(
+      (_) async =>
+          (page: PageResult(items: open, page: 0, size: 100, totalItems: open.length), totals: const PendingTotals()),
+    );
+    when(
+      () => remittances.search(const RemittanceFilter(voided: false, status: 'DELIVERED,PICKED_UP'), page: 0, size: 50),
+    ).thenAnswer((_) async => PageResult(items: done, page: 0, size: 50, totalItems: done.length));
     await pump(tester, _sales, const AssignedPage());
     await tester.tap(find.widgetWithText(FilterChip, CourierTexts.showCompleted));
     await tester.pumpAndSettle();

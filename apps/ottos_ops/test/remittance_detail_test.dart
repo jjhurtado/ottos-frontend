@@ -41,6 +41,8 @@ CurrentUser _user(Set<String> permissions) =>
     CurrentUser(id: 'u1', email: 'u@ottos.test', name: 'U', type: 'STAFF', roles: const [], permissions: permissions);
 
 void main() {
+  // The app calls it before runApp; the Spanish delegates need it (REQ-022 OPT-F1).
+  setUpAll(OttosLocalization.initialize);
   late _MockRemittances remittances;
 
   setUp(() {

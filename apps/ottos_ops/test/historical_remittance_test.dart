@@ -15,6 +15,8 @@ const _wildcard = Customer(id: 'c0', fullName: 'Cliente histórico sin identific
 const _rosa = Beneficiary(id: 'b1', fullName: 'Rosa', phone: '5352220001', street: 'Calle 10');
 
 void main() {
+  // The app calls it before runApp; the Spanish delegates need it (REQ-022 OPT-F1).
+  setUpAll(OttosLocalization.initialize);
   late _MockRemittances remittances;
   late _MockCustomers customers;
   late String? opened;

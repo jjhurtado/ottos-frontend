@@ -152,14 +152,30 @@ class NewRemittanceCubit extends Cubit<NewRemittanceState> {
   Future<void> load({String? customerId, bool canAssign = false}) async {
     if (canAssign) unawaited(_loadCouriers());
     _emit(corridorsStatus: LoadStatus.loading, error: null);
-    if (customerId != null && state.customer == null) {
-      try {
-        final customer = await _customers.get(customerId);
-        if (customer.active) unawaited(customerSelected(customer));
-      } on ApiException {
-        // Start with an empty form; the user searches the customer.
-      }
+    // Both requests run together, but the customer is chosen only once the corridors loaded: choosing it clears
+    // the error, and a corridor error must stay on screen; «Reintentar» asks for it again (REQ-022 CR-1).
+    final id = _customerId = customerId ?? _customerId;
+    final customer = id != null && state.customer == null ? _customerOrNull(id) : null;
+    await _loadCorridors();
+    final chosen = await customer;
+    if (chosen != null && chosen.active && state.corridorsStatus == LoadStatus.success && !isClosed) {
+      unawaited(customerSelected(chosen));
     }
+  }
+
+  /// The customer to start with, kept for «Reintentar», which calls [load] without it.
+  String? _customerId;
+
+  /// Null when it fails: the form starts empty and the user searches the customer.
+  Future<Customer?> _customerOrNull(String customerId) async {
+    try {
+      return await _customers.get(customerId);
+    } on ApiException {
+      return null;
+    }
+  }
+
+  Future<void> _loadCorridors() async {
     try {
       _corridors = await _rates.corridors();
       final currencies = _currenciesFor(state.type);

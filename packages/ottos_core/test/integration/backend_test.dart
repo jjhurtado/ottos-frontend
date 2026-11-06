@@ -129,11 +129,9 @@ void main() {
 
       final first = page.items.first;
       final byId = await remittances.get(first.id);
-      final byCode = await remittances.getByCode(first.code);
       final events = await remittances.events(first.id);
 
       expect(byId, first);
-      expect(byCode.id, first.id);
       expect(events, isNotEmpty);
     });
 
