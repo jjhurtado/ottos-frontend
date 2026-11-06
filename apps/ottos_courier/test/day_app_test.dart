@@ -173,14 +173,14 @@ void main() {
 
     void stubSales({required List<Remittance> recent, required List<List<Remittance>> completedPages}) {
       when(() => remittances.workflow()).thenAnswer((_) async => _workflow);
-      when(() => remittances.search(const RemittanceFilter(voided: false), size: 100)).thenAnswer(
-        (_) async => PageResult(items: recent, page: 0, size: 100, totalItems: recent.length),
-      );
+      when(() => remittances.search(const RemittanceFilter(voided: false), size: 100))
+          .thenAnswer((_) async => PageResult(items: recent, page: 0, size: 100, totalItems: recent.length));
       for (final (index, items) in completedPages.indexed) {
         when(
           () => remittances.search(const RemittanceFilter(voided: false, status: 'DELIVERED'), page: index, size: 50),
         ).thenAnswer(
-          (_) async => PageResult(items: items, page: index, size: 50, totalItems: 50 * (completedPages.length - 1) + 1),
+          (_) async =>
+              PageResult(items: items, page: index, size: 50, totalItems: 50 * (completedPages.length - 1) + 1),
         );
       }
     }

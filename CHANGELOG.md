@@ -15,6 +15,16 @@ Cambios notables del frontend de Ottos (panel de operaciones y app de repartidor
 - Panel y app: el texto de los botones principales turquesa (por ejemplo «Entrar» o «Guardar») pasa de blanco a azul marino, para que se lea mejor (de 3.5:1 a 5.5:1 de contraste). El turquesa no cambia. Los botones de otros colores (rojo de anular, morado de recogida, magenta de por la casa) siguen con el texto blanco.
 - Panel y app: las etiquetas de estado «Pagada», «Asignada» y «Entregada» o «Recogida» se leen mejor (texto más oscuro, del mismo color, con al menos 4.5:1 de contraste). El fondo de la etiqueta no cambia. También el aviso y la etiqueta «Para revisar», la etiqueta «Sin enviar» de la app y las etiquetas de estado de «Remesas del mes» en Reportes. Las etiquetas rojas (con retraso, anulada) siguen igual.
 
+### Seguridad
+
+- App › entrar con huella: la contraseña guardada queda protegida por la huella del propio teléfono. En Android solo se lee con una huella fuerte (no vale el PIN); en iPhone solo con las huellas o la cara registradas ahora, no sale del teléfono y no va en las copias de seguridad. Si se añade o quita una huella, la entrada con huella deja de valer y hay que entrar una vez con la contraseña. Quien la tenía activada antes de esta versión tiene que volver a activarla. En Android 8 o anterior, o en teléfonos sin una huella fuerte, la entrada con huella ya no se puede activar.
+- App › entrar con huella: el botón dice qué cuenta abre («Entrar con huella como …»). Si otra persona entra en el teléfono con su contraseña, la huella guardada de la anterior se olvida.
+- App › cerrar sesión: si hay una entrada con huella guardada, se puede marcar «Olvidar la entrada con huella de …» antes de salir (por ejemplo, si otra persona va a usar el teléfono).
+- App › cerrar sesión: el teléfono borra las remesas, la caja y los ajustes guardados para trabajar sin conexión. Solo se quedan las acciones sin enviar, que se envían al volver a entrar con la misma cuenta; si entra otra persona, se pierden. El aviso al cerrar sesión con acciones sin enviar lo explica así. Cuando la sesión caduca sola no se borra nada, para no perder el trabajo sin conexión.
+- App: los datos de la app ya no van en las copias de seguridad de Google ni de iCloud ni pasan a un teléfono nuevo al cambiar de teléfono.
+- Panel: el navegador recibe ahora reglas de seguridad que impiden que otra página muestre el panel dentro de la suya y que solo dejan cargar código del propio panel. Nada cambia al usarlo, salvo que los emojis u otros alfabetos que la fuente del panel no tiene se ven como cuadros, en vez de descargarse de Google.
+- Panel y app › CSV de clientes y de remesas del mes: un valor que empieza por `=`, `+`, `-` o `@` se exporta con un apóstrofo delante (`'+5355551234`): Excel lo muestra como texto, con el apóstrofo visible, y nunca lo ejecuta como fórmula. Los importes negativos siguen siendo números. Al importar el CSV de clientes, el apóstrofo se quita y los teléfonos vuelven a quedar como `+53…`.
+
 ## [1.0.0-rc.8] - 2026-10-24
 
 Necesita el backend 1.0.0-rc.8 (por la casa, remesas del mes a detalle y estadísticas). Con un backend anterior las

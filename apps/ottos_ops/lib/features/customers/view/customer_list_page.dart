@@ -20,10 +20,8 @@ class CustomerListPage extends StatelessWidget {
       create: (context) => CustomerListCubit(customers: context.read<CustomerRepository>())..load(),
       // Back from a customer's page, where they may have changed: refresh.
       child: Builder(
-        builder: (context) => RefreshOnReturn(
-          onReturn: context.read<CustomerListCubit>().load,
-          child: const _CustomerListView(),
-        ),
+        builder: (context) =>
+            RefreshOnReturn(onReturn: context.read<CustomerListCubit>().load, child: const _CustomerListView()),
       ),
     );
   }

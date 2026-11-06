@@ -285,4 +285,43 @@ void main() {
       expect(sync.state.pending, 0);
     });
   });
+
+  test('SEC-2: the actions kept at logout are sent when the same courier logs in again', () async {
+    when(() => server.send(any())).thenThrow(_offline);
+    final action = SyncAction(
+      id: SyncRepository.newActionId(),
+      type: SyncActionType.deliver,
+      remittanceId: 'a',
+      occurredAt: DateTime.now(),
+    );
+    expect(await sync.perform(action), isA<Queued>());
+
+    await sync.clearForLogout();
+    await sync.close();
+    expect(await store.remittances(), isEmpty);
+
+    // Logs in again, now with network.
+    late List<SyncAction> sent;
+    when(() => server.send(any())).thenAnswer((invocation) async {
+      sent = invocation.positionalArguments.single as List<SyncAction>;
+      return answer(sent, (action) => SyncResult(id: action.id, status: SyncResultStatus.applied));
+    });
+    sync = SyncCubit(store: store, sync: server);
+    await sync.start('u1');
+
+    expect(sent.map((sentAction) => sentAction.id), [action.id]);
+    expect(await store.pending(), isEmpty);
+    expect(sync.state.pending, 0);
+  });
+
+  test('SEC-12: logout completes when clearing fails in a running sync', () async {
+    when(() => server.state(since: any(named: 'since'))).thenThrow(const FormatException('bad answer'));
+    final running = sync.sync().catchError((Object _) {});
+
+    await sync.clearForLogout();
+    await running;
+
+    expect(await store.remittances(), isEmpty);
+    expect(await store.serverTime(), isNull);
+  });
 }
