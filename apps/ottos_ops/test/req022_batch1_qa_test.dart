@@ -30,6 +30,16 @@ final _workflow = Workflow.fromJson({
   ],
 });
 
+const _summary = RemittanceSummary(
+  openByStatus: [
+    StatusCount(code: 'PAID', name: 'Pagada', count: 4),
+    StatusCount(code: 'ASSIGNED', name: 'Asignada', count: 4),
+  ],
+  late: 1,
+  incident: 1,
+  review: 1,
+);
+
 PageResult<T> _count<T>(int total) => PageResult<T>(items: const [], page: 0, size: 1, totalItems: total);
 
 AuthBloc _loggedIn(Set<String> permissions) {
@@ -60,14 +70,15 @@ void main() {
       remittances = _MockRemittances();
       cash = _MockCash();
       when(() => remittances.workflow()).thenAnswer((_) async => _workflow);
-      when(() => remittances.search(any(), size: 1)).thenAnswer((_) async => _count(4));
-      when(() => remittances.pendingTotals()).thenAnswer((_) async => const PendingTotals());
+      when(() => remittances.summary()).thenAnswer((_) async => _summary);
+      when(() => remittances.pendingTotals(filter: any(named: 'filter')))
+          .thenAnswer((_) async => const PendingTotals());
       when(() => cash.exchanges(review: true, size: 1)).thenAnswer((_) async => _count(1));
     });
 
     test('OPT-F2 (slow money pending): the counters show without waiting for it', () async {
       final pending = Completer<PendingTotals>();
-      when(() => remittances.pendingTotals()).thenAnswer((_) => pending.future);
+      when(() => remittances.pendingTotals(filter: any(named: 'filter'))).thenAnswer((_) => pending.future);
       final cubit = HomeCubit(remittances: remittances, cash: cash);
       addTearDown(cubit.close);
 
@@ -84,19 +95,20 @@ void main() {
     });
 
     test('OPT-F2 (retry of the money pending alone): the counters are not asked again', () async {
-      when(() => remittances.pendingTotals()).thenThrow(const ApiException('Sin totales'));
+      when(() => remittances.pendingTotals(filter: any(named: 'filter'))).thenThrow(const ApiException('Sin totales'));
       final cubit = HomeCubit(remittances: remittances, cash: cash);
       addTearDown(cubit.close);
       await cubit.load();
       clearInteractions(remittances);
-      when(() => remittances.pendingTotals()).thenAnswer((_) async => const PendingTotals());
+      when(() => remittances.pendingTotals(filter: any(named: 'filter')))
+          .thenAnswer((_) async => const PendingTotals());
 
       await cubit.loadPending();
 
       expect(cubit.state.status, HomeStatus.success);
       expect(cubit.state.pending, const PendingTotals());
       expect(cubit.state.pendingError, isNull);
-      verifyNever(() => remittances.search(any(), size: 1));
+      verifyNever(() => remittances.summary());
     });
 
     testWidgets('voided tiles: a status tile opens the list without voided remittances', (tester) async {

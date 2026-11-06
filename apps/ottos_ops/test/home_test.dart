@@ -23,6 +23,16 @@ final _workflow = Workflow.fromJson({
   ],
 });
 
+const _summary = RemittanceSummary(
+  openByStatus: [
+    StatusCount(code: 'PAID', name: 'Pagada', count: 2),
+    StatusCount(code: 'ASSIGNED', name: 'Asignada', count: 2),
+  ],
+  late: 2,
+  incident: 2,
+  review: 2,
+);
+
 const _totals = PendingTotals(
   toDeliver: [
     PendingAmount(currency: 'CUP', remittances: 2, amount: 76000),
@@ -44,9 +54,8 @@ void main() {
     remittances = _MockRemittances();
     cash = _MockCash();
     when(() => remittances.workflow()).thenAnswer((_) async => _workflow);
-    when(() => remittances.search(any(), size: 1))
-        .thenAnswer((_) async => const PageResult<Remittance>(items: [], page: 0, size: 1, totalItems: 2));
-    when(() => remittances.pendingTotals()).thenAnswer((_) async => _totals);
+    when(() => remittances.summary()).thenAnswer((_) async => _summary);
+    when(() => remittances.pendingTotals(filter: any(named: 'filter'))).thenAnswer((_) async => _totals);
     when(() => cash.exchanges(review: true, size: 1))
         .thenAnswer((_) async => const PageResult<CurrencyExchange>(items: [], page: 0, size: 1, totalItems: 1));
   });
@@ -133,7 +142,8 @@ void main() {
     });
 
     testWidgets('AC-1.5: nothing open says nothing is pending', (tester) async {
-      when(() => remittances.pendingTotals()).thenAnswer((_) async => const PendingTotals());
+      when(() => remittances.pendingTotals(filter: any(named: 'filter')))
+          .thenAnswer((_) async => const PendingTotals());
 
       await pump(tester, sales);
 
@@ -144,7 +154,7 @@ void main() {
       await pump(tester, const {Permissions.cashRead});
 
       expect(find.text(CoreTexts.pendingToDeliver), findsNothing);
-      verifyNever(() => remittances.pendingTotals());
+      verifyNever(() => remittances.pendingTotals(filter: any(named: 'filter')));
     });
 
     testWidgets('AC-1.7 BR-8: a tile opens the list with the same filter and its type', (tester) async {
@@ -157,14 +167,14 @@ void main() {
     });
 
     testWidgets('AC-1.8: a failure shows an error with retry and the counters still work', (tester) async {
-      when(() => remittances.pendingTotals()).thenThrow(const ApiException('Sin conexión'));
+      when(() => remittances.pendingTotals(filter: any(named: 'filter'))).thenThrow(const ApiException('Sin conexión'));
 
       await pump(tester, sales);
 
       expect(find.text('Sin conexión'), findsOneWidget);
       expect(find.text('Pagada'), findsOneWidget, reason: 'the counters do not depend on the totals');
 
-      when(() => remittances.pendingTotals()).thenAnswer((_) async => _totals);
+      when(() => remittances.pendingTotals(filter: any(named: 'filter'))).thenAnswer((_) async => _totals);
       await tester.tap(find.text(CoreTexts.retry));
       await tester.pumpAndSettle();
 

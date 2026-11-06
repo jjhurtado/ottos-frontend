@@ -10,6 +10,7 @@ import '../models/event.dart';
 import '../models/page_result.dart';
 import '../models/pending_totals.dart';
 import '../models/remittance.dart';
+import '../models/remittance_summary.dart';
 import '../models/workflow.dart';
 import '../utils/formatters.dart';
 
@@ -274,14 +275,23 @@ class RemittanceRepository {
     return PageResult.fromJson(json, Remittance.fromJson);
   }
 
+  /// The panel Home counters in one call (`remittances:read`; REQ-022 OPT-F4).
+  Future<RemittanceSummary> summary() async =>
+      RemittanceSummary.fromJson(await _api.get<Map<String, dynamic>>('/remittances/summary'));
+
   /// The open remittances (BR-1), a page of [size], with the money pending to
   /// deliver and to collect over all of them, by currency, summed by the server
   /// (BR-5; `remittances:read`). Totals are null from a backend without them.
-  Future<({PageResult<Remittance> page, PendingTotals? totals})> pending({int size = 1}) async {
+  /// [filter] is the open filter to use, so a caller can link to the same list
+  /// (BR-8); by default it comes from [workflow].
+  Future<({PageResult<Remittance> page, PendingTotals? totals})> pending({
+    int size = 1,
+    RemittanceFilter? filter,
+  }) async {
     final json = await _api.get<Map<String, dynamic>>(
       '/remittances',
       query: {
-        ...RemittanceFilter.pending((await workflow()).statuses).toQuery(),
+        ...(filter ?? RemittanceFilter.pending((await workflow()).statuses)).toQuery(),
         'page': 0,
         'size': size,
         'totals': true,
@@ -295,9 +305,9 @@ class RemittanceRepository {
   }
 
   /// Only the money pending of [pending].
-  Future<PendingTotals> pendingTotals() async =>
+  Future<PendingTotals> pendingTotals({RemittanceFilter? filter}) async =>
       // No totals: a backend without them. Saying «Nada pendiente» would be a false figure (CR-4).
-      (await pending()).totals ?? (throw const ApiException(CoreTexts.unexpectedError));
+      (await pending(filter: filter)).totals ?? (throw const ApiException(CoreTexts.unexpectedError));
 
   /// Registers a remittance. Sending the same [idempotencyKey] again (a retry
   /// or a double click) returns the first remittance instead of a second one.
