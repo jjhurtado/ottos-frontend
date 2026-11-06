@@ -112,9 +112,7 @@ class AssignedCubit extends Cubit<AssignedState> {
   /// Loads the list; keeps the current items visible while refreshing.
   Future<void> load() async {
     if (state.items.isEmpty) {
-      emit(
-        AssignedState(sort: state.sort, showCompleted: state.showCompleted, completedPages: state.completedPages),
-      );
+      emit(AssignedState(sort: state.sort, showCompleted: state.showCompleted, completedPages: state.completedPages));
     }
     try {
       final items = [...await _source.list()];
