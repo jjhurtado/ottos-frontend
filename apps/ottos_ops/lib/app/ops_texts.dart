@@ -32,6 +32,9 @@ abstract final class OpsTexts {
   static const searchTooShort = 'Escribe al menos 2 letras o 4 cifras';
   static const noRemittancesSearch = 'No hay remesas con esa búsqueda.';
   static const allStatuses = 'Todos los estados';
+
+  /// The status filter with every non-final status, opened from the Home's pending tiles (REQ-021).
+  static const pendingStatuses = 'Pendientes';
   static const allTypes = 'Todos los tipos';
   static const onlyLate = 'Solo atrasadas';
   static const onlyIncidents = 'Con incidencia';

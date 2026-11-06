@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ottos_core/ottos_core.dart';
 
@@ -79,7 +80,7 @@ GoRouter buildRouter(AuthBloc authBloc) {
           GoRoute(path: Destinations.home.path, builder: (_, _) => const HomePage()),
           GoRoute(
             path: Destinations.remittances.path,
-            builder: (_, state) => RemittanceListPage(initialFilter: _filterFrom(state.uri.queryParameters)),
+            builder: (_, state) => RemittanceListPage(initialFilter: filterFromQuery(state.uri.queryParameters)),
             routes: [
               // Before ':id', which would otherwise match "new" and "historical".
               GoRoute(path: 'historical', builder: (_, _) => const HistoricalRemittancePage()),
@@ -126,9 +127,17 @@ GoRouter buildRouter(AuthBloc authBloc) {
   );
 }
 
-/// Lets other screens link to a filtered list, e.g. `/remittances?late=true` or `?incident=true`.
-RemittanceFilter _filterFrom(Map<String, String> query) => RemittanceFilter(
+/// Lets other screens link to a filtered list, e.g. `/remittances?late=true` or `?incident=true`, or the
+/// pending ones of a type: `?status=PAID,ASSIGNED&voided=false&type=DELIVERY` (REQ-021).
+@visibleForTesting
+RemittanceFilter filterFromQuery(Map<String, String> query) => RemittanceFilter(
   status: query['status'],
+  type: query['type'] == null ? null : RemittanceType.fromCode(query['type']),
+  voided: switch (query['voided']) {
+    'true' => true,
+    'false' => false,
+    _ => null,
+  },
   late: query['late'] == 'true' ? true : null,
   incident: query['incident'] == 'true' ? true : null,
   review: query['review'] == 'true' ? true : null,
