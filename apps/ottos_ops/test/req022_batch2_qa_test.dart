@@ -29,6 +29,7 @@ void main() {
   late _MockApi api;
   late List<String> calls;
   late Object? summaryFailure;
+  late Map<String, dynamic>? totalsQuery;
 
   setUpAll(() async {
     await OttosLocalization.initialize();
@@ -38,10 +39,12 @@ void main() {
     api = _MockApi();
     calls = [];
     summaryFailure = null;
+    totalsQuery = null;
     when(() => api.get<Map<String, dynamic>>(any(), query: any(named: 'query'))).thenAnswer((call) async {
       final path = call.positionalArguments.first as String;
       final query = call.namedArguments[#query] as Map<String, dynamic>?;
       calls.add(path == '/remittances' ? '$path ${query?['totals'] == true ? 'totals' : 'list'}' : path);
+      if (path == '/remittances' && query?['totals'] == true) totalsQuery = query;
       if (path == '/remittances/summary' && summaryFailure != null) throw summaryFailure!;
       return switch (path) {
         '/remittances/summary' => _summary,
@@ -207,6 +210,18 @@ void main() {
         expect(await tapAndRead(tester, label), target);
       });
     }
+  });
+
+  testWidgets('CR-7: a money tile opens the same open filter the totals were asked with', (tester) async {
+    await pump(tester, cashRead: true);
+    final asked = totalsQuery!;
+
+    final shown = Uri.parse((await tapAndRead(tester, CoreTexts.pendingToDeliver)).substring('list '.length));
+
+    expect(shown.queryParameters['status'], asked['status']);
+    expect(shown.queryParameters['status'], 'PAID,ASSIGNED');
+    expect(shown.queryParameters['voided'], '${asked['voided']}');
+    expect(shown.queryParameters['type'], RemittanceType.delivery.code);
   });
 
   group('OPT-F4 (error)', () {
