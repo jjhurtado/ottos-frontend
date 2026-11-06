@@ -2,12 +2,19 @@ import 'dart:ui' show PathMetric;
 
 import 'package:flutter/material.dart';
 
+import '../theme/ottos_theme.dart';
+
 /// A rounded rectangle outline drawn as dashes. Use it as the `shape` of a `Card`: the
 /// card still clips its child to the rounded rectangle and keeps the ink ripple.
 class DashedRoundedBorder extends ShapeBorder {
-  const DashedRoundedBorder({required this.color, this.radius = 14, this.width = 1, this.dash = 6, this.gap = 4})
-    : assert(dash > 0, 'dash must be positive'),
-      assert(gap > 0, 'gap must be positive');
+  const DashedRoundedBorder({
+    required this.color,
+    this.radius = OttosTheme.cardRadius,
+    this.width = 1,
+    this.dash = 6,
+    this.gap = 4,
+  }) : assert(dash > 0, 'dash must be positive'),
+       assert(gap > 0, 'gap must be positive');
 
   /// Used by [scale], which may reach zero (for example `ShapeBorder.lerp(dashed, null, 1)`); [paint] draws nothing then.
   const DashedRoundedBorder._scaled({
@@ -42,14 +49,16 @@ class DashedRoundedBorder extends ShapeBorder {
       ..color = color
       ..style = PaintingStyle.stroke
       ..strokeWidth = width;
-    final path = Path()..addRRect(_rrect(rect).deflate(width / 2));
-    for (final PathMetric metric in path.computeMetrics()) {
+    final outline = Path()..addRRect(_rrect(rect).deflate(width / 2));
+    final dashes = Path();
+    for (final PathMetric metric in outline.computeMetrics()) {
       var distance = 0.0;
       while (distance < metric.length) {
-        canvas.drawPath(metric.extractPath(distance, distance + dash), paint);
+        dashes.addPath(metric.extractPath(distance, distance + dash), Offset.zero);
         distance += dash + gap;
       }
     }
+    canvas.drawPath(dashes, paint);
   }
 
   @override

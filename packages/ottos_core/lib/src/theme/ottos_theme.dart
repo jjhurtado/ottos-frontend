@@ -4,6 +4,9 @@ import 'ottos_colors.dart';
 
 /// Material 3 theme built on the brand colors.
 abstract final class OttosTheme {
+  /// Corner radius of cards; the dashed outline of a completed card uses the same one.
+  static const double cardRadius = 14;
+
   static ThemeData light() {
     final scheme = ColorScheme.fromSeed(
       seedColor: OttosColors.navy,
@@ -56,7 +59,7 @@ abstract final class OttosTheme {
         elevation: 0,
         color: Colors.white,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(cardRadius),
           side: BorderSide(color: scheme.outlineVariant),
         ),
       ),

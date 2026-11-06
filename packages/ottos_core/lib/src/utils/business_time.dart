@@ -116,9 +116,19 @@ abstract final class BusinessTime {
     _changes.value = zone;
   }
 
-  /// A server answer came with its time ([serverTime], an instant).
+  /// How far behind the estimate an answer may be and still be ignored: the
+  /// `Date` header is cut to the second and arrives after the transit time, and
+  /// answers can finish out of order. Anything more is a real correction.
+  static const sampleJitter = Duration(seconds: 2);
+
+  /// A server answer came with its time ([serverTime], an instant). One that is
+  /// only a little behind the estimate is ignored, so [now] never steps back.
   static void serverTimeReceived(DateTime serverTime) {
     final utc = serverTime.toUtc();
+    if (_serverTime != null) {
+      final behind = now().difference(utc);
+      if (behind > Duration.zero && behind < sampleJitter) return;
+    }
     _serverTime = utc;
     _elapsedAtServerTime = _elapsed();
     final device = _deviceClock().toUtc();

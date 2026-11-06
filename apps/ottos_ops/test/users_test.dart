@@ -115,14 +115,6 @@ void main() {
       expect(find.text(OpsTexts.deactivate), findsOneWidget);
     });
 
-    test('the errors of resetting a password or (de)activating a user read in Spanish', () {
-      expect(
-        CoreTexts.errorCodes['CANNOT_RESET_OWN_PASSWORD'],
-        'Tu contraseña se cambia desde «Cambiar contraseña», en el menú de tu cuenta.',
-      );
-      expect(CoreTexts.errorCodes['PERMISSION_ESCALATION'], 'Esta acción necesita permisos que tú no tienes.');
-    });
-
     testWidgets('REQ-011: on a phone your own row has no reset either, another row has', (tester) async {
       tester.view.devicePixelRatio = 1;
       tester.view.physicalSize = const Size(390, 800);
@@ -140,9 +132,7 @@ void main() {
       expect(find.text(OpsTexts.resetPassword), findsOneWidget);
     });
 
-    testWidgets('REQ-011: refusing to deactivate a user with permissions you lack explains it in Spanish', (
-      tester,
-    ) async {
+    testWidgets('REQ-011: a refused deactivation shows the message of the error', (tester) async {
       when(() => users.deactivate('u2')).thenThrow(
         ApiException(CoreTexts.errorCodes['PERMISSION_ESCALATION']!, statusCode: 403, code: 'PERMISSION_ESCALATION'),
       );

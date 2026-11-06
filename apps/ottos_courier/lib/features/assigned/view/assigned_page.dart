@@ -33,90 +33,201 @@ class _AssignedView extends StatelessWidget {
   Widget build(BuildContext context) {
     final cubit = context.read<AssignedCubit>();
     return BlocConsumer<AssignedCubit, AssignedState>(
-      listenWhen: (_, current) => current.status == AssignedStatus.failure && current.items.isNotEmpty,
+      listenWhen: (_, current) =>
+          current.status == AssignedStatus.failure && current.items.isNotEmpty && !current.searching,
       listener: (context, state) => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(state.error!))),
       builder: (context, state) {
-        final selector = _SortSelector(
-          sort: state.sort,
-          onChanged: cubit.sortBy,
-          showCompleted: cubit.canShowCompleted ? state.showCompleted : null,
-          onShowCompleted: cubit.showCompleted,
-        );
-        if (state.items.isEmpty) {
-          return switch (state.status) {
-            AssignedStatus.loading => const LoadingView(),
-            AssignedStatus.failure => ErrorView(message: state.error!, onRetry: cubit.load),
-            AssignedStatus.success => RefreshIndicator(
-              onRefresh: cubit.refresh,
-              child: ListView(
-                padding: cubit.canShowCompleted ? const EdgeInsets.all(12) : null,
-                children: [
-                  // Sales can still turn on the completed ones when nothing is open.
-                  if (cubit.canShowCompleted) selector,
-                  SizedBox(
-                    height: 200,
-                    child: EmptyView(
-                      message: state.showCompleted ? CourierTexts.noRemittances : CourierTexts.noAssigned,
-                    ),
-                  ),
-                ],
-              ),
+        if (!cubit.canSearch) return _list(context, cubit, state);
+        return Column(
+          children: [
+            _SearchField(
+              onChanged: cubit.searchTyped,
+              onSubmitted: cubit.searchNow,
+              onClear: cubit.clearSearch,
+              tooShort: state.searchTooShort,
             ),
-          };
-        }
-        return RefreshIndicator(
-          onRefresh: cubit.refresh,
-          child: ListView.separated(
-            // Room at the end so «Nueva remesa» never covers the last card or «Ver más».
-            padding: EdgeInsets.fromLTRB(12, 12, 12, context.canDo(Permissions.remittancesCreate) ? 88 : 12),
-            itemCount: state.items.length + (state.moreCompleted ? 2 : 1),
-            separatorBuilder: (_, _) => const SizedBox(height: 8),
-            itemBuilder: (context, index) {
-              if (index == 0) return selector;
-              if (index > state.items.length) {
-                return Center(
-                  child: TextButton(
-                    onPressed: state.status == AssignedStatus.loading ? null : cubit.moreCompleted,
-                    child: const Text(CourierTexts.showMore),
-                  ),
-                );
-              }
-              final remittance = state.items[index - 1];
-              // The courier's completed block starts with a heading (REQ-017).
-              final startsCompleted =
-                  cubit.completedAreLatest &&
-                  remittance.isCompleted &&
-                  (index == 1 || !state.items[index - 2].isCompleted);
-              final card = _Swipeable(
-                remittance: remittance,
-                child: _AssignedCard(
-                  remittance: remittance,
-                  unsent: state.pendingIds.contains(remittance.id),
-                  onTap: () async {
-                    // Reload on return: the remittance may have been completed or postponed.
-                    await context.push(Routes.remittance(remittance.id));
-                    await cubit.load();
-                  },
-                ),
-              );
-              if (!startsCompleted) return card;
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(4, 8, 4, 8),
-                    child: Text(
-                      CourierTexts.latestCompleted(OfflineStore.maxCompleted),
-                      style: Theme.of(context).textTheme.titleSmall,
-                    ),
-                  ),
-                  card,
-                ],
-              );
-            },
-          ),
+            Expanded(child: state.searching ? _results(context, cubit, state) : _list(context, cubit, state)),
+          ],
         );
       },
+    );
+  }
+
+  /// The server's results of the beneficiary search, all statuses (REQ-018);
+  /// the toggles are hidden while searching.
+  Widget _results(BuildContext context, AssignedCubit cubit, AssignedState state) {
+    if (state.status == AssignedStatus.failure) {
+      return ErrorView(message: state.error ?? CoreTexts.unexpectedError, onRetry: cubit.load);
+    }
+    if (state.results.isEmpty) {
+      return state.status == AssignedStatus.loading
+          ? const LoadingView()
+          : const EmptyView(message: CourierTexts.noRemittancesSearch);
+    }
+    return ListView.separated(
+      padding: EdgeInsets.fromLTRB(12, 4, 12, context.canDo(Permissions.remittancesCreate) ? 88 : 12),
+      itemCount: state.results.length + (state.moreResults ? 1 : 0),
+      separatorBuilder: (_, _) => const SizedBox(height: 8),
+      itemBuilder: (context, index) {
+        if (index == state.results.length) {
+          return Center(
+            child: TextButton(
+              onPressed: state.status == AssignedStatus.loading ? null : cubit.moreSearch,
+              child: const Text(CourierTexts.showMore),
+            ),
+          );
+        }
+        final remittance = state.results[index];
+        return _AssignedCard(
+          remittance: remittance,
+          unsent: false,
+          onTap: () async {
+            await context.push(Routes.remittance(remittance.id));
+            await cubit.load();
+          },
+        );
+      },
+    );
+  }
+
+  Widget _list(BuildContext context, AssignedCubit cubit, AssignedState state) {
+    final selector = _SortSelector(
+      sort: state.sort,
+      onChanged: cubit.sortBy,
+      showCompleted: cubit.canShowCompleted ? state.showCompleted : null,
+      onShowCompleted: cubit.showCompleted,
+    );
+    if (state.items.isEmpty) {
+      return switch (state.status) {
+        AssignedStatus.loading => const LoadingView(),
+        AssignedStatus.failure => ErrorView(message: state.error!, onRetry: cubit.load),
+        AssignedStatus.success => RefreshIndicator(
+          onRefresh: cubit.refresh,
+          child: ListView(
+            padding: cubit.canShowCompleted ? const EdgeInsets.all(12) : null,
+            children: [
+              // Sales can still turn on the completed ones when nothing is open.
+              if (cubit.canShowCompleted) selector,
+              SizedBox(
+                height: 200,
+                child: EmptyView(message: state.showCompleted ? CourierTexts.noRemittances : CourierTexts.noAssigned),
+              ),
+            ],
+          ),
+        ),
+      };
+    }
+    return RefreshIndicator(
+      onRefresh: cubit.refresh,
+      child: ListView.separated(
+        // Room at the end so «Nueva remesa» never covers the last card or «Ver más».
+        padding: EdgeInsets.fromLTRB(12, 12, 12, context.canDo(Permissions.remittancesCreate) ? 88 : 12),
+        itemCount: state.items.length + (state.moreCompleted ? 2 : 1),
+        separatorBuilder: (_, _) => const SizedBox(height: 8),
+        itemBuilder: (context, index) {
+          if (index == 0) return selector;
+          if (index > state.items.length) {
+            return Center(
+              child: TextButton(
+                onPressed: state.status == AssignedStatus.loading ? null : cubit.moreCompleted,
+                child: const Text(CourierTexts.showMore),
+              ),
+            );
+          }
+          final remittance = state.items[index - 1];
+          // The courier's completed block starts with a heading (REQ-017).
+          final startsCompleted =
+              cubit.completedAreLatest && remittance.isCompleted && (index == 1 || !state.items[index - 2].isCompleted);
+          final card = _Swipeable(
+            remittance: remittance,
+            child: _AssignedCard(
+              remittance: remittance,
+              unsent: state.pendingIds.contains(remittance.id),
+              onTap: () async {
+                // Reload on return: the remittance may have been completed or postponed.
+                await context.push(Routes.remittance(remittance.id));
+                await cubit.load();
+              },
+            ),
+          );
+          if (!startsCompleted) return card;
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(4, 8, 4, 8),
+                child: Text(
+                  CourierTexts.latestCompleted(OfflineStore.maxCompleted),
+                  style: Theme.of(context).textTheme.titleSmall,
+                ),
+              ),
+              card,
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _SearchField extends StatefulWidget {
+  const _SearchField({
+    required this.onChanged,
+    required this.onSubmitted,
+    required this.onClear,
+    required this.tooShort,
+  });
+
+  final ValueChanged<String> onChanged;
+  final VoidCallback onSubmitted;
+  final VoidCallback onClear;
+  final bool tooShort;
+
+  @override
+  State<_SearchField> createState() => _SearchFieldState();
+}
+
+class _SearchFieldState extends State<_SearchField> {
+  final _controller = TextEditingController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 12, 12, 4),
+      child: TextField(
+        controller: _controller,
+        textInputAction: TextInputAction.search,
+        // Names and phones of customers: no keyboard suggestions or learning.
+        enableSuggestions: false,
+        autocorrect: false,
+        onSubmitted: (_) => widget.onSubmitted(),
+        onChanged: (text) {
+          setState(() {});
+          widget.onChanged(text);
+        },
+        decoration: InputDecoration(
+          hintText: CourierTexts.searchBeneficiary,
+          helperText: widget.tooShort ? CourierTexts.searchTooShort : null,
+          prefixIcon: const Icon(Icons.search),
+          suffixIcon: _controller.text.isEmpty
+              ? null
+              : IconButton(
+                  tooltip: CourierTexts.clearSearch,
+                  icon: const Icon(Icons.close),
+                  onPressed: () {
+                    _controller.clear();
+                    setState(() {});
+                    widget.onClear();
+                  },
+                ),
+        ),
+      ),
     );
   }
 }
@@ -284,7 +395,7 @@ class _AssignedCard extends StatelessWidget {
     };
     // A completed remittance looks done at a glance (REQ-020): grey, outlined
     // and with a check mark, never only by colour.
-    final completed = remittance.isCompleted && !remittance.isVoided;
+    final completed = remittance.isDone;
     final muted = completed ? OttosColors.inkMuted : null;
     return Card(
       clipBehavior: Clip.antiAlias,

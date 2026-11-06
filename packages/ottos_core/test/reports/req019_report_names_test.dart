@@ -28,11 +28,15 @@ void main() {
         .thenAnswer((_) async => MonthlyReportDetail.fromJson(detailJson));
   });
 
-  Future<void> pump(WidgetTester tester, {required bool compact}) async {
+  Future<void> pump(WidgetTester tester, {required bool compact, double textScale = 1}) async {
     await tester.binding.setSurfaceSize(compact ? const Size(390, 2400) : const Size(1400, 2400));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(
       MaterialApp(
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(textScale)),
+          child: child!,
+        ),
         localizationsDelegates: OttosLocalization.delegates,
         supportedLocales: OttosLocalization.supportedLocales,
         home: Scaffold(
@@ -82,6 +86,14 @@ void main() {
       }
     });
   }
+
+  testWidgets('REQ-019 CR-1: with large text, the table row grows instead of overflowing', (tester) async {
+    await pump(tester, compact: false, textScale: 2.5);
+
+    expect(tester.takeException(), isNull);
+    final title = tester.getSize(titleOf('OT-P3X8RA'));
+    expect(title.height, greaterThan(52), reason: 'two large lines do not fit in the old fixed 52 px');
+  });
 
   testWidgets('AC-3.1 (search): the box finds a remittance by name, any case, and still by code', (tester) async {
     await pump(tester, compact: false);

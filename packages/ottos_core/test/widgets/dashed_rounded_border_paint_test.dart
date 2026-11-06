@@ -21,14 +21,16 @@ void main() {
       ),
     );
 
-    // The perimeter is about 536 px; a dash every 10 px gives dozens of strokes in the
-    // border colour. A solid outline would draw one path.
+    // The perimeter is about 536 px; a dash every 10 px gives dozens of separate
+    // pieces in one path in the border colour. A solid outline would be one piece.
     var strokes = 0;
     final matcher = paints
       ..everything((Symbol method, List<dynamic> args) {
         if (method == #drawPath) {
           final paint = args[1] as Paint;
-          if (paint.color == red && paint.style == PaintingStyle.stroke) strokes++;
+          if (paint.color == red && paint.style == PaintingStyle.stroke) {
+            strokes += (args[0] as Path).computeMetrics().length;
+          }
         }
         return true;
       });

@@ -164,8 +164,7 @@ class SyncCubit extends Cubit<SyncStatus> {
     if (json == null) return;
     final remittance = Remittance.fromJson(json);
     if (remittance.isCompleted) {
-      await _store.removeRemittance(remittance.id);
-      if (!remittance.isVoided) await _store.putCompleted(json);
+      await _store.completeRemittance(json, voided: remittance.isVoided);
     } else {
       await _store.putRemittance(json);
     }

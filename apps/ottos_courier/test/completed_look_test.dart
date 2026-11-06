@@ -232,6 +232,12 @@ void main() {
       expect(_contrast(OttosColors.successText, tint), greaterThanOrEqualTo(4.5));
     });
 
+    test('REQ-020 CR-5: the banner text stays readable (4.5:1) on its green tint over the page background', () {
+      final page = OttosTheme.light().scaffoldBackgroundColor;
+      final tint = Color.alphaBlend(OttosColors.success.withValues(alpha: 0.12), page);
+      expect(_contrast(OttosColors.successText, tint), greaterThanOrEqualTo(4.5));
+    });
+
     testWidgets('BR-1 (voided): a voided completed remittance keeps its own look, not the completed one', (
       tester,
     ) async {

@@ -378,8 +378,8 @@ Future<Uint8List> buildMonthlyReportPdf(MonthlyReport report, {required DateTime
 }
 
 /// The beneficiary over the code, or the code alone without a name.
-String _named(ReportRemittance row) => switch (row.beneficiaryName?.trim()) {
-  final name? when name.isNotEmpty => '$name\n${row.code}',
+String _named(ReportRemittance row) => switch (Formatters.cleanName(row.beneficiaryName)) {
+  final name? => '$name\n${row.code}',
   _ => row.code,
 };
 
@@ -397,7 +397,7 @@ Future<Uint8List> buildMonthlyDetailPdf(
   DateTime? now,
 }) {
   final title = ReportTexts.monthTitle(month);
-  final document = pw.Document(title: pdfSafe('Resumen a detalle $title'), author: ReportTexts.brand);
+  final document = pw.Document(title: pdfSafe('${ReportTexts.detailTitle} $title'), author: ReportTexts.brand);
   final generated = BusinessTime.dateTime(detail.generatedAt ?? report.generatedAt ?? now ?? BusinessTime.now());
   final rows = detail.remittances;
   final deliveries = [
@@ -437,7 +437,7 @@ Future<Uint8List> buildMonthlyDetailPdf(
             ),
             pw.SizedBox(width: 14),
             pw.Text(
-              pdfSafe('Resumen a detalle · $title'),
+              pdfSafe('${ReportTexts.detailTitle} · $title'),
               style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: _navy),
             ),
           ],
@@ -615,7 +615,7 @@ Future<Uint8List> buildMonthlyDetailPdf(
               _number(row.collected),
               _money(row.amountToDeliver, row.targetCurrency),
               ReportTexts.formatRate(row.rate),
-              row.onTheHouse ? 'Sí' : '',
+              row.onTheHouse ? ReportTexts.yes : '',
             ],
           [
             ReportTexts.totalRow,
@@ -727,12 +727,12 @@ Future<Uint8List> buildMonthlyDetailPdf(
           ReportTexts.beneficiary,
           ReportTexts.type,
           ReportTexts.registered,
-          'Anulada el',
+          ReportTexts.voidedOnColumn,
           ReportTexts.municipality,
           ReportTexts.courier,
           ReportTexts.amount,
           ReportTexts.fee,
-          'Motivo de la anulación',
+          ReportTexts.voidedReasonColumn,
         ],
         [
           for (final row in voided)

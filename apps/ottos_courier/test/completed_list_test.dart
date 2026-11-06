@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:ottos_core/ottos_core.dart';
 import 'package:ottos_courier/app/courier_texts.dart';
+import 'package:ottos_courier/features/assigned/cubit/assigned_cubit.dart';
 import 'package:ottos_courier/features/assigned/view/assigned_page.dart';
 import 'package:ottos_courier/offline/offline_store.dart';
 import 'package:ottos_courier/offline/remittance_source.dart';
@@ -53,6 +54,12 @@ class _FakeSource implements RemittanceSource {
 
   @override
   bool get completedAreLatest => true;
+
+  @override
+  bool get canSearch => false;
+
+  @override
+  Future<PageResult<Remittance>> search(String query, {int page = 0}) => throw UnimplementedError();
 
   @override
   Future<List<Remittance>> list() async => [...open];
@@ -253,5 +260,15 @@ void main() {
 
     expect(find.text('OT-1'), findsOneWidget);
     expect(heading, findsNothing);
+  });
+
+  test('REQ-017 CR-4: a delivered one without completedAt sorts with the open ones and nothing throws', () {
+    final noDate = Remittance.fromJson({..._done('nodate', 0), 'completedAt': null});
+    final open = Remittance.fromJson(_open('open'));
+    final done = Remittance.fromJson(_done('done', 5));
+
+    final order = AssignedState.sorted([done, noDate, open], AssignedSort.byDay).map((r) => r.code);
+
+    expect(order, ['nodate', 'open', 'done'], reason: 'open ones by code, the completed one last');
   });
 }
