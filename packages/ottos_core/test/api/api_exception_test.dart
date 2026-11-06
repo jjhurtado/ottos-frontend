@@ -62,4 +62,18 @@ void main() {
     expect(error.message, CoreTexts.networkError);
     expect(error.code, isNull);
   });
+
+  test('REQ-011: the new user-administration errors reach the user in Spanish, not the English detail', () {
+    final own = _from(409, {'code': 'CANNOT_RESET_OWN_PASSWORD', 'detail': 'Use change-password'});
+    expect(own.message, 'Tu contraseña se cambia desde «Cambiar contraseña», en el menú de tu cuenta.');
+    expect(own.code, 'CANNOT_RESET_OWN_PASSWORD');
+
+    final escalation = _from(403, {
+      'code': 'PERMISSION_ESCALATION',
+      'detail': "This needs permissions you don't hold: x",
+    });
+    expect(escalation.message, 'Esta acción necesita permisos que tú no tienes.');
+    expect(escalation.message, isNot(contains('hold')));
+    expect(escalation.statusCode, 403);
+  });
 }
