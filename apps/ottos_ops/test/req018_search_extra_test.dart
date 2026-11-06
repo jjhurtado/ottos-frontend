@@ -387,4 +387,32 @@ void main() {
     expect(searches, isEmpty);
     expect(find.text(OpsTexts.searchTooShort), findsOneWidget);
   });
+
+  testWidgets('CR-5: the hint is a live region, so a screen reader announces it', (tester) async {
+    await pump(tester);
+    await type(tester, 'j');
+
+    final liveRegion = find.ancestor(
+      of: find.text(OpsTexts.searchTooShort),
+      matching: find.byWidgetPredicate((widget) => widget is Semantics && widget.properties.liveRegion == true),
+    );
+    expect(liveRegion, findsOneWidget);
+  });
+
+  testWidgets('CR-5: the clear button shows only with text, empties the field and removes the search at once', (
+    tester,
+  ) async {
+    await pump(tester);
+    expect(find.byTooltip(OpsTexts.clearSearch), findsNothing);
+    await typeAndWait(tester, 'jose');
+    expect(find.byTooltip(OpsTexts.clearSearch), findsOneWidget);
+    searches.clear();
+
+    await tester.tap(find.byTooltip(OpsTexts.clearSearch));
+    await tester.pumpAndSettle();
+
+    expect(tester.widget<TextField>(find.byType(TextField)).controller!.text, isEmpty);
+    expect(searches.single.$1.beneficiaryQuery, isNull);
+    expect(find.byTooltip(OpsTexts.clearSearch), findsNothing);
+  });
 }

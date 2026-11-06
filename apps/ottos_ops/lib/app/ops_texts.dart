@@ -28,6 +28,7 @@ abstract final class OpsTexts {
 
   // Remittance list
   static const searchByBeneficiary = 'Beneficiario (nombre o teléfono)';
+  static const clearSearch = 'Borrar búsqueda';
   static const searchTooShort = 'Escribe al menos 2 letras o 4 cifras';
   static const noRemittancesSearch = 'No hay remesas con esa búsqueda.';
   static const allStatuses = 'Todos los estados';

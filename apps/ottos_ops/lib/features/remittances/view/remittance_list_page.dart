@@ -255,7 +255,8 @@ class _BeneficiarySearchFieldState extends State<_BeneficiarySearchField> {
       listener: (context, state) {
         if (_controller.text != state.typed) _controller.text = state.typed;
       },
-      buildWhen: (previous, current) => previous.searchTooShort != current.searchTooShort,
+      buildWhen: (previous, current) =>
+          previous.searchTooShort != current.searchTooShort || previous.typed.isEmpty != current.typed.isEmpty,
       builder: (context, state) => TextField(
         controller: _controller,
         maxLength: 100,
@@ -265,9 +266,22 @@ class _BeneficiarySearchFieldState extends State<_BeneficiarySearchField> {
         onChanged: (text) => context.read<RemittanceListBloc>().add(RemittanceListSearchTyped(text)),
         decoration: InputDecoration(
           labelText: OpsTexts.searchByBeneficiary,
-          helperText: state.searchTooShort ? OpsTexts.searchTooShort : null,
+          // A live region: a screen reader announces the hint when it appears.
+          helper: state.searchTooShort ? Semantics(liveRegion: true, child: const Text(OpsTexts.searchTooShort)) : null,
           isDense: true,
           prefixIcon: const Icon(Icons.search),
+          suffixIcon: state.typed.isEmpty
+              ? null
+              : IconButton(
+                  tooltip: OpsTexts.clearSearch,
+                  icon: const Icon(Icons.close),
+                  onPressed: () {
+                    _controller.clear();
+                    context.read<RemittanceListBloc>()
+                      ..add(const RemittanceListSearchTyped(''))
+                      ..add(const RemittanceListSearchSubmitted());
+                  },
+                ),
         ),
       ),
     );

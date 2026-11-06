@@ -69,7 +69,8 @@ class RemittanceListBloc extends Bloc<RemittanceListEvent, RemittanceListState> 
   Future<void> _onSearchApplied(Emitter<RemittanceListState> emit) async {
     final trimmed = state.typed.trim();
     final query = isSearchable(trimmed) ? trimmed : null;
-    // Too short to send: nothing changes, the hint stays.
+    // Too short to send: nothing changes. The last results stay on screen next
+    // to the hint (nothing was asked of the server, so nothing is cleared).
     if (query == null && trimmed.isNotEmpty) return;
     if (query == state.filter.beneficiaryQuery) return;
     await _load(emit, filter: state.filter.copyWith(beneficiaryQuery: query), page: 0);
