@@ -21,6 +21,8 @@ Cambios notables del frontend de Ottos (panel de operaciones y app de repartidor
 - App › cerrar sesión: si hay una entrada con huella guardada, se puede marcar «Olvidar la entrada con huella de …» antes de salir (por ejemplo, si otra persona va a usar el teléfono).
 - App › cerrar sesión: el teléfono borra las remesas, la caja y los ajustes guardados para trabajar sin conexión. Solo se quedan las acciones sin enviar, que se envían al volver a entrar con la misma cuenta; si entra otra persona, se pierden. El aviso al cerrar sesión con acciones sin enviar lo explica así. Cuando la sesión caduca sola no se borra nada, para no perder el trabajo sin conexión.
 - App: los datos de la app ya no van en las copias de seguridad de Google ni de iCloud ni pasan a un teléfono nuevo al cambiar de teléfono.
+- Panel: el navegador recibe ahora reglas de seguridad que impiden que otra página muestre el panel dentro de la suya y que solo dejan cargar código del propio panel. Nada cambia al usarlo, salvo que los emojis u otros alfabetos que la fuente del panel no tiene se ven como cuadros, en vez de descargarse de Google.
+- Panel y app › CSV de clientes y de remesas del mes: un valor que empieza por `=`, `+`, `-` o `@` se exporta con un apóstrofo delante (`'+5355551234`): Excel lo muestra como texto, con el apóstrofo visible, y nunca lo ejecuta como fórmula. Los importes negativos siguen siendo números. Al importar el CSV de clientes, el apóstrofo se quita y los teléfonos vuelven a quedar como `+53…`.
 
 ## [1.0.0-rc.8] - 2026-10-24
 
