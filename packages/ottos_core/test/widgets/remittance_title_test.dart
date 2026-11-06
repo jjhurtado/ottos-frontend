@@ -15,6 +15,15 @@ void main() {
       expect(code.style!.fontSize!, lessThan(name.style!.fontSize!), reason: 'BR-2: the code smaller');
     });
 
+    testWidgets('REQ-019 CR-2: a screen reader gets name and code as one item', (tester) async {
+      final handle = tester.ensureSemantics();
+      await tester.pumpWidget(_wrap(const RemittanceTitle(name: 'Rosa Pérez', code: 'OT-ABC123')));
+
+      expect(find.bySemanticsLabel('Rosa Pérez · OT-ABC123'), findsOneWidget);
+      expect(find.bySemanticsLabel('OT-ABC123'), findsNothing);
+      handle.dispose();
+    });
+
     testWidgets('with no name, the code takes the title', (tester) async {
       for (final name in [null, '', '  ']) {
         await tester.pumpWidget(_wrap(RemittanceTitle(name: name, code: 'OT-ABC123')));

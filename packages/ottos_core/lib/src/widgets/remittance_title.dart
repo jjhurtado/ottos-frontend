@@ -43,18 +43,23 @@ class RemittanceTitle extends StatelessWidget {
     if (trimmed == null) {
       return Text(code, style: titleStyle, maxLines: maxLines, overflow: TextOverflow.ellipsis);
     }
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(trimmed, style: titleStyle, maxLines: maxLines, overflow: TextOverflow.ellipsis),
-        Text(
-          code,
-          style: codeStyle ?? textTheme.bodySmall?.copyWith(color: OttosColors.inkMuted),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-      ],
+    // One spoken item, "Rosa Pérez · OT-ABC123", not two unrelated texts.
+    return Semantics(
+      label: remittanceLabel(trimmed, code),
+      excludeSemantics: true,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(trimmed, style: titleStyle, maxLines: maxLines, overflow: TextOverflow.ellipsis),
+          Text(
+            code,
+            style: codeStyle ?? textTheme.bodySmall?.copyWith(color: OttosColors.inkMuted),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ),
     );
   }
 }
