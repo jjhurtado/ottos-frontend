@@ -62,7 +62,10 @@ class OnlineSource implements RemittanceSource {
 
   @override
   Future<PageResult<Remittance>> completed({int page = 0}) async {
-    final finals = [for (final status in (await _remittances.workflow()).statuses) if (status.isFinal) status.code];
+    final finals = [
+      for (final status in (await _remittances.workflow()).statuses)
+        if (status.isFinal) status.code,
+    ];
     // With a single final status the backend pages exactly the completed ones.
     final result = await _remittances.search(
       RemittanceFilter(voided: false, status: finals.length == 1 ? finals.single : null),
@@ -70,7 +73,10 @@ class OnlineSource implements RemittanceSource {
       size: completedPageSize,
     );
     return PageResult(
-      items: [for (final remittance in result.items) if (finals.contains(remittance.status)) remittance],
+      items: [
+        for (final remittance in result.items)
+          if (finals.contains(remittance.status)) remittance,
+      ],
       page: result.page,
       size: result.size,
       totalItems: result.totalItems,

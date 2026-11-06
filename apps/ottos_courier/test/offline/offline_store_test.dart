@@ -95,4 +95,39 @@ void main() {
     expect(await store.pending(), isEmpty);
     expect(await store.serverTime(), isNull);
   });
+
+  test('SEC-2: after logout the offline store keeps only the unsent actions', () async {
+    await store.applyState(
+      SyncState(
+        serverTime: 't1',
+        full: true,
+        remittances: [_remittance('a')],
+        cash: const {'cash': null, 'movements': []},
+        workflow: const {},
+      ),
+    );
+    await store.saveSetting('completedSince.u1', '2026-11-05');
+    final unsent = _action('a');
+    await store.enqueue(unsent);
+    final refused = _action('a', type: SyncActionType.reportIncident);
+    await store.enqueue(refused);
+    await store.reject(refused.id, code: 'REMITTANCE_NOT_FOUND');
+
+    await store.clearForLogout();
+
+    expect(await store.remittances(), isEmpty);
+    expect(await store.cash(), isNull);
+    expect(await store.workflow(), isNull);
+    expect(await store.serverTime(), isNull);
+    expect(await store.lastSync(), isNull);
+    expect(await store.setting('completedSince.u1'), isNull);
+    expect(await store.rejected(), isEmpty);
+    expect((await store.pending()).map((action) => action.id), [unsent.id]);
+
+    // Still this user's: the same courier finds them; anyone else does not.
+    await store.useFor('u1');
+    expect(await store.pending(), hasLength(1));
+    await store.useFor('u2');
+    expect(await store.pending(), isEmpty);
+  });
 }

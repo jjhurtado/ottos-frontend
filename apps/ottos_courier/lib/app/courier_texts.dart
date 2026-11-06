@@ -115,8 +115,8 @@ abstract final class CourierTexts {
   static String pendingActions(int count) => count == 1 ? '1 sin enviar' : '$count sin enviar';
   static String unsentOnLogout(int count) =>
       'Tienes ${count == 1 ? '1 acción' : '$count acciones'} sin enviar en el teléfono. '
-      'Si cierras sesión ahora se perderán. '
-      'Conéctate y sincroniza antes de salir.';
+      'Se quedan guardadas y se enviarán cuando vuelvas a entrar con tu cuenta. '
+      'Si entra otra persona en este teléfono, se perderán.';
   static const logoutAnyway = 'Cerrar sesión igualmente';
 
   static String actionName(SyncActionType type) => switch (type) {

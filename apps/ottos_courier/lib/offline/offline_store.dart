@@ -1,8 +1,9 @@
 import 'dart:convert';
 
 import 'package:ottos_core/ottos_core.dart';
-import 'package:path/path.dart' as p;
 import 'package:sqflite/sqflite.dart';
+
+import 'offline_location.dart';
 
 /// An action that the server rejected; kept so the courier sees why.
 class RejectedAction {
@@ -22,11 +23,12 @@ class OfflineStore {
   final Database _db;
 
   static const _version = 1;
+  static const _fileName = 'ottos_offline.db';
 
   /// Opens the store of the app ([path] for tests, e.g. `inMemoryDatabasePath`).
   static Future<OfflineStore> open({String? path, DatabaseFactory? factory}) async {
     final dbFactory = factory ?? databaseFactory;
-    final dbPath = path ?? p.join(await dbFactory.getDatabasesPath(), 'ottos_offline.db');
+    final dbPath = path ?? await offlineDatabasePath(dbFactory, _fileName);
     final db = await dbFactory.openDatabase(
       dbPath,
       options: OpenDatabaseOptions(version: _version, onCreate: (db, _) => _create(db)),
@@ -128,6 +130,16 @@ class OfflineStore {
       await _set(txn, _userId, userId);
     });
   }
+
+  /// On an explicit logout (SEC-2): the remittances, the cash, the settings and
+  /// the rejected actions leave the phone. Only the actions not sent yet stay,
+  /// with whose they are, so they go out when the same user logs in again;
+  /// another user's login empties them too ([useFor]).
+  Future<void> clearForLogout() => _db.transaction((txn) async {
+    await txn.delete('remittances');
+    await txn.delete('settings', where: 'key != ?', whereArgs: [_userId]);
+    await txn.delete('actions', where: 'rejected = 1');
+  });
 
   /// A value of this user's that is not part of the sync, e.g. where the
   /// completed remittances feed goes. Forgotten when another user logs in.
