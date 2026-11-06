@@ -86,11 +86,12 @@ void main() {
       expect(find.text(ReportTexts.voidedOn('12 oct', reasonWithSeparator)), findsOneWidget);
     });
 
-    testWidgets('a backend without the detail shows a notice, nothing else', (tester) async {
+    testWidgets('a 404 on the detail shows the error with retry', (tester) async {
       when(() => reports.monthlyRemittances(any(), any())).thenThrow(const ApiException('No', statusCode: 404));
       await pump(tester, section(compact: true), size: const Size(390, 900));
 
-      expect(find.text(ReportTexts.notAvailableYet), findsOneWidget);
+      expect(find.text('No'), findsOneWidget);
+      expect(find.text(CoreTexts.retry), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
   });
@@ -156,11 +157,12 @@ void main() {
       expect(find.text(ReportTexts.fewData(0)), findsNothing);
     });
 
-    testWidgets('a backend without statistics shows a notice, nothing else', (tester) async {
+    testWidgets('a 404 on the statistics shows the error with retry', (tester) async {
       when(() => reports.statistics(any(), any())).thenThrow(const ApiException('No', statusCode: 404));
       await pump(tester, view(compact: true), size: const Size(390, 900));
 
-      expect(find.text(ReportTexts.notAvailableYet), findsOneWidget);
+      expect(find.text('No'), findsOneWidget);
+      expect(find.text(CoreTexts.retry), findsOneWidget);
     });
   });
 }

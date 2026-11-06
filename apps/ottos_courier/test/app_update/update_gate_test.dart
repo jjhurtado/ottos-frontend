@@ -67,6 +67,19 @@ void main() {
     expect(find.text(CoreTexts.later), findsNothing);
   });
 
+  testWidgets('a 426 body without notes shows the screen without them', (tester) async {
+    when(() => versions.current('ANDROID')).thenAnswer((_) async => const AppVersion());
+    await pump(tester);
+
+    refused.add(
+      AppVersion.fromJson(const {'status': 426, 'code': 'APP_UPDATE_REQUIRED', 'minimumBuild': 5, 'latestBuild': 5}),
+    );
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    expect(find.text(CoreTexts.updateRequiredTitle), findsOneWidget);
+    expect(find.widgetWithText(FilledButton, CoreTexts.update), findsOneWidget);
+  });
+
   testWidgets('without network it keeps to the last answer', (tester) async {
     when(() => versions.current('ANDROID')).thenAnswer((_) async => const AppVersion(minimumBuild: 5, latestBuild: 5));
     await pump(tester);

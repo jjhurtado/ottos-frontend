@@ -157,12 +157,15 @@ class SyncCubit extends Cubit<SyncStatus> {
     }
   }
 
-  /// Keeps the remittance as the server returned it; a completed one leaves the phone.
+  /// Keeps the remittance as the server returned it; a completed one leaves
+  /// the open ones for the completed list (REQ-017), so it does not vanish
+  /// until the next download brings the whole list.
   Future<void> _keep(Map<String, dynamic>? json) async {
     if (json == null) return;
     final remittance = Remittance.fromJson(json);
     if (remittance.isCompleted) {
       await _store.removeRemittance(remittance.id);
+      if (!remittance.isVoided) await _store.putCompleted(json);
     } else {
       await _store.putRemittance(json);
     }

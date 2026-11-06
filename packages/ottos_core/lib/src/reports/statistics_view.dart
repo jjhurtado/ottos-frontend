@@ -101,7 +101,6 @@ class StatisticsView extends StatelessWidget {
         final cubit = context.read<StatisticsCubit>();
         return switch (state.status) {
           StatisticsStatus.loading => const SizedBox(height: 320, child: LoadingView()),
-          StatisticsStatus.unavailable => const ReportNotice.unavailable(),
           StatisticsStatus.failure => SizedBox(
             height: 320,
             child: ErrorView(message: state.error ?? '', onRetry: cubit.load),

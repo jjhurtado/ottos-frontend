@@ -10,45 +10,23 @@ import 'report_texts.dart';
 /// right in Excel in Spanish. It carries the beneficiary's name (REQ-019
 /// AC-3.1, ADR-004): whoever shares the file is responsible for it.
 abstract final class ReportCsv {
-  static const columns = [
-    'Beneficiario',
-    'Código',
-    'Tipo',
-    'Estado',
-    'Registrada',
-    'Completada',
-    'Municipio',
-    'Repartidor',
-    'Moneda de cobro',
-    'Enviado',
-    'Comisión',
-    'Cobrado',
-    'Recogido',
-    'Moneda de entrega',
-    'A entregar',
-    'Tasa',
-    'Por la casa',
-    'Comisión no cobrada',
-    'Anulada',
-    'Anulada el',
-    'Motivo de la anulación',
-  ];
+  static const columns = ReportTexts.csvColumns;
 
   static String encode(MonthlyReportDetail detail) {
     String number(double value) => Formatters.money(value, null);
-    String yesNo(bool value) => value ? 'Sí' : 'No';
+    String yesNo(bool value) => value ? ReportTexts.yes : ReportTexts.no;
     return Csv.encode([
       columns,
       for (final row in detail.remittances)
         [
           row.beneficiaryName ?? '',
           row.code,
-          row.isPickup ? 'Recogida' : 'Entrega',
+          row.isPickup ? ReportTexts.pickupType : ReportTexts.deliveryType,
           reportStatusName(row),
           BusinessTime.sortable(row.createdAt),
           BusinessTime.sortable(row.completedAt),
           row.municipalityName ?? '',
-          row.completedFromBusiness ? 'El negocio' : (row.courierName ?? ''),
+          row.completedFromBusiness ? ReportTexts.business : (row.courierName ?? ''),
           row.sourceCurrency,
           row.isPickup ? '' : number(row.amount),
           number(row.fee),

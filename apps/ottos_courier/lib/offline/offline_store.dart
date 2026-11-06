@@ -15,14 +15,19 @@ class RejectedAction {
 }
 
 /// What the courier needs to work without network, in SQLite on the phone:
-/// the assigned remittances as the server sent them, the cash, the workflow,
-/// and the queue of actions waiting to be sent.
+/// the assigned remittances as the server sent them, the latest ones they
+/// completed, the cash, the workflow, and the queue of actions waiting to be
+/// sent.
 class OfflineStore {
   OfflineStore._(this._db);
 
   final Database _db;
 
-  static const _version = 1;
+  /// 2: the `completed` table (REQ-017).
+  static const _version = 2;
+
+  /// How many completed remittances the phone keeps (REQ-017 BR-1).
+  static const maxCompleted = 20;
   static const _fileName = 'ottos_offline.db';
 
   /// Opens the store of the app ([path] for tests, e.g. `inMemoryDatabasePath`).
@@ -31,7 +36,14 @@ class OfflineStore {
     final dbPath = path ?? await offlineDatabasePath(dbFactory, _fileName);
     final db = await dbFactory.openDatabase(
       dbPath,
-      options: OpenDatabaseOptions(version: _version, onCreate: (db, _) => _create(db)),
+      options: OpenDatabaseOptions(
+        version: _version,
+        onCreate: (db, _) => _create(db),
+        // Empty until the next download fills it.
+        onUpgrade: (db, oldVersion, _) async {
+          if (oldVersion < 2) await _createCompleted(db);
+        },
+      ),
     );
     return OfflineStore._(db);
   }
@@ -51,7 +63,13 @@ class OfflineStore {
         message TEXT
       )
     ''');
+    await _createCompleted(db);
   }
+
+  /// The courier's latest completed remittances, as the server sent them;
+  /// completed_at orders them, newest first.
+  static Future<void> _createCompleted(DatabaseExecutor db) =>
+      db.execute('CREATE TABLE completed (id TEXT PRIMARY KEY, completed_at TEXT NOT NULL, json TEXT NOT NULL)');
 
   Future<void> close() => _db.close();
 
@@ -67,7 +85,8 @@ class OfflineStore {
   }
 
   /// Applies a download: replaces everything when [full], otherwise adds or
-  /// updates [remittances] and drops [removedIds].
+  /// updates [remittances] and drops [removedIds]. The completed list, when it
+  /// comes, always replaces the copy whole.
   Future<void> applyState(SyncState state) => _db.transaction((txn) async {
     if (state.full) await txn.delete('remittances');
     for (final id in state.removedIds) {
@@ -75,6 +94,13 @@ class OfflineStore {
     }
     for (final json in state.remittances) {
       await _put(txn, json);
+    }
+    if (state.completed case final completed?) {
+      await txn.delete('completed');
+      for (final json in completed) {
+        await _putCompleted(txn, json);
+      }
+      await _trimCompleted(txn);
     }
     await _set(txn, _serverTime, state.serverTime);
     if (state.cash != null) await _set(txn, _cash, jsonEncode(state.cash));
@@ -90,6 +116,42 @@ class OfflineStore {
 
   static Future<void> _put(DatabaseExecutor db, Map<String, dynamic> json) => db.insert('remittances', {
     'id': json['id'],
+    'json': jsonEncode(json),
+  }, conflictAlgorithm: ConflictAlgorithm.replace);
+
+  // Completed remittances (REQ-017)
+
+  /// The latest completed ones, newest first; at most [maxCompleted].
+  Future<List<Map<String, dynamic>>> completed() async => [
+    for (final row in await _db.query('completed', orderBy: 'completed_at DESC, id', limit: maxCompleted))
+      jsonDecode(row['json']! as String) as Map<String, dynamic>,
+  ];
+
+  Future<Map<String, dynamic>?> completedRemittance(String id) async {
+    final rows = await _db.query('completed', where: 'id = ?', whereArgs: [id]);
+    return rows.isEmpty ? null : jsonDecode(rows.single['json']! as String) as Map<String, dynamic>;
+  }
+
+  /// One just completed, as the server returned it, until the next download
+  /// brings the whole list; the oldest beyond [maxCompleted] leave (BR-1).
+  Future<void> putCompleted(Map<String, dynamic> json) => _db.transaction((txn) async {
+    await _putCompleted(txn, json);
+    await _trimCompleted(txn);
+  });
+
+  /// Keeps only the [maxCompleted] most recent.
+  static Future<void> _trimCompleted(DatabaseExecutor db) => db.rawDelete(
+    'DELETE FROM completed WHERE id NOT IN (SELECT id FROM completed ORDER BY completed_at DESC, id LIMIT ?)',
+    [maxCompleted],
+  );
+
+  /// completed_at in UTC ISO 8601, so text order is time order.
+  static Future<void> _putCompleted(DatabaseExecutor db, Map<String, dynamic> json) => db.insert('completed', {
+    'id': json['id'],
+    'completed_at': switch (json['completedAt']) {
+      final String at => DateTime.tryParse(at)?.toUtc().toIso8601String() ?? '',
+      _ => '',
+    },
     'json': jsonEncode(json),
   }, conflictAlgorithm: ConflictAlgorithm.replace);
 
@@ -154,18 +216,21 @@ class OfflineStore {
     if (await _get(_userId) == userId) return;
     await _db.transaction((txn) async {
       await txn.delete('remittances');
+      await txn.delete('completed');
       await txn.delete('settings');
       await txn.delete('actions');
       await _set(txn, _userId, userId);
     });
   }
 
-  /// On an explicit logout (SEC-2): the remittances, the cash, the settings and
-  /// the rejected actions leave the phone. Only the actions not sent yet stay,
+  /// On an explicit logout (SEC-2): the remittances, the completed ones
+  /// (REQ-017 BR-4), the cash, the settings and the rejected actions leave the
+  /// phone. Only the actions not sent yet stay,
   /// with whose they are, so they go out when the same user logs in again;
   /// another user's login empties them too ([useFor]).
   Future<void> clearForLogout() => _db.transaction((txn) async {
     await txn.delete('remittances');
+    await txn.delete('completed');
     await txn.delete('settings', where: 'key != ?', whereArgs: [_userId]);
     await txn.delete('actions', where: 'rejected = 1');
   });

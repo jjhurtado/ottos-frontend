@@ -359,4 +359,151 @@ void main() {
     expect(await store.remittances(), isEmpty);
     expect(await store.serverTime(), isNull);
   });
+
+  group('REQ-017: the latest completed ones', () {
+    Map<String, dynamic> done(String id, int minutesAgo, {String type = 'DELIVERY'}) => _json(
+      id,
+      status: 'DELIVERED',
+      type: type,
+      completedAt: DateTime.utc(2026, 11, 5, 12).subtract(Duration(minutes: minutesAgo)).toIso8601String(),
+    );
+
+    Future<void> storeCompleted(List<Map<String, dynamic>> list) =>
+        store.applyState(SyncState(serverTime: 't1', full: false, completed: list));
+
+    test('a delivery sent with network leaves the open ones and goes to the completed ones', () async {
+      when(() => server.send(any())).thenAnswer(
+        (invocation) async => answer(
+          invocation.positionalArguments.first as List<SyncAction>,
+          (action) => SyncResult(
+            id: action.id,
+            status: SyncResultStatus.applied,
+            remittance: _json('a', status: 'DELIVERED', completedAt: '2026-10-10T10:00:00Z'),
+          ),
+        ),
+      );
+
+      await source.deliver(_remittance('a'));
+
+      expect((await source.list()).map((r) => r.id), ['b']);
+      expect((await store.completed()).map((r) => r['id']), ['a']);
+      expect((await source.completed()).items.single.id, 'a');
+    });
+
+    test('a voided one is not kept as completed', () async {
+      when(() => server.send(any())).thenAnswer(
+        (invocation) async => answer(
+          invocation.positionalArguments.first as List<SyncAction>,
+          (action) => SyncResult(
+            id: action.id,
+            status: SyncResultStatus.applied,
+            remittance: {
+              ..._json('a', status: 'DELIVERED', completedAt: '2026-10-10T10:00:00Z'),
+              'voided': {'reason': 'Error'},
+            },
+          ),
+        ),
+      );
+
+      await source.deliver(_remittance('a'));
+
+      expect(await store.completed(), isEmpty);
+    });
+
+    test('AC-2.2: a delivery made offline shows first, completed now, and never also as open', () async {
+      await storeCompleted([done('x', 5), done('y', 10)]);
+      when(() => server.send(any())).thenThrow(_offline);
+
+      await source.deliver(_remittance('a'));
+      final action = (await store.pending()).single;
+
+      expect((await source.list()).map((r) => r.id), ['b']);
+      final page = await source.completed();
+      expect(page.items.map((r) => r.id), ['a', 'x', 'y']);
+      final unsent = page.items.first;
+      expect(unsent.isCompleted, isTrue);
+      expect(unsent.status, 'DELIVERED');
+      expect(unsent.statusName, 'Entregada');
+      expect(unsent.completedAt, action.occurredAt);
+      expect(await source.pendingIds(), {'a'});
+    });
+
+    test('a pickup made offline is marked as collected', () async {
+      when(() => server.send(any())).thenThrow(_offline);
+
+      await source.deliver(Remittance.fromJson(_json('b', type: 'PICKUP')));
+
+      expect((await source.completed()).items.single.statusName, 'Recogida');
+    });
+
+    test('the same remittance in the queue and in the stored copy shows once, the unsent one', () async {
+      await storeCompleted([done('a', 60), done('x', 5)]);
+      when(() => server.send(any())).thenThrow(_offline);
+
+      await source.deliver(_remittance('a'));
+
+      final items = (await source.completed()).items;
+      expect(items.map((r) => r.id), ['a', 'x']);
+      expect(items.first.completedAt, isNot(done('a', 60)['completedAt']));
+    });
+
+    test('BR-1: at most 20, one page, so there is no «Ver más»', () async {
+      await storeCompleted([for (var i = 0; i < 25; i++) done('d$i', i + 1)]);
+      when(() => server.send(any())).thenThrow(_offline);
+      await source.deliver(_remittance('a'));
+
+      final page = await source.completed();
+
+      expect(page.items, hasLength(20));
+      expect(page.items.first.id, 'a');
+      expect(page.items.last.id, 'd18');
+      expect(page.totalPages, 1);
+    });
+
+    test('AC-1.6: the completed ones open from the phone; the unsent one opens completed, read-only', () async {
+      await storeCompleted([done('x', 5)]);
+      when(() => server.send(any())).thenThrow(_offline);
+      await source.deliver(_remittance('a'));
+
+      expect((await source.get('x')).isCompleted, isTrue);
+      expect((await source.get('a')).isCompleted, isTrue, reason: 'queued: completed for the courier');
+      expect((await source.get('b')).isCompleted, isFalse);
+      await expectLater(source.get('zzz'), throwsA(isA<ApiException>()));
+    });
+
+    test('a rejected completing action puts the card back in the open list', () async {
+      when(() => server.send(any())).thenThrow(_offline);
+      await source.deliver(_remittance('a'));
+      expect((await source.completed()).items.map((r) => r.id), ['a']);
+
+      when(() => server.send(any())).thenAnswer(
+        (invocation) async => answer(
+          invocation.positionalArguments.first as List<SyncAction>,
+          (action) =>
+              SyncResult(id: action.id, status: SyncResultStatus.rejected, code: 'REMITTANCE_ALREADY_COMPLETED'),
+        ),
+      );
+      await sync.sync();
+
+      expect((await source.list()).map((r) => r.id), contains('a'));
+      expect((await source.completed()).items, isEmpty);
+      expect(sync.state.rejected, hasLength(1));
+    });
+
+    test('a download with the whole list replaces the copy kept after a delivery', () async {
+      when(() => server.send(any())).thenAnswer(
+        (invocation) async => answer(
+          invocation.positionalArguments.first as List<SyncAction>,
+          (action) => SyncResult(id: action.id, status: SyncResultStatus.applied, remittance: done('a', 0)),
+        ),
+      );
+      await source.deliver(_remittance('a'));
+      when(() => server.state(since: any(named: 'since')))
+          .thenAnswer((_) async => SyncState(serverTime: 't3', full: false, completed: [done('x', 5)]));
+
+      await sync.sync();
+
+      expect((await store.completed()).map((r) => r['id']), ['x']);
+    });
+  });
 }

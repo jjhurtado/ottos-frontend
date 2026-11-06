@@ -157,15 +157,17 @@ void main() {
       expect(find.text(ReportTexts.exportCsv), findsOneWidget);
     });
 
-    testWidgets('an old backend (404): a friendly notice, nothing breaks', (tester) async {
+    testWidgets('a 404 shows the error with retry, nothing breaks', (tester) async {
       when(() => reports.monthlyRemittances(any(), any())).thenThrow(const ApiException('No', statusCode: 404));
       when(() => reports.statistics(any(), any())).thenThrow(const ApiException('No', statusCode: 404));
 
       await pump(tester, const ReportsPage());
-      expect(find.text(ReportTexts.notAvailableYet), findsOneWidget);
+      expect(find.text('No'), findsOneWidget);
+      expect(find.text(CoreTexts.retry), findsOneWidget);
 
       await pump(tester, const StatisticsPage());
-      expect(find.text(ReportTexts.notAvailableYet), findsOneWidget);
+      expect(find.text('No'), findsOneWidget);
+      expect(find.text(CoreTexts.retry), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
 

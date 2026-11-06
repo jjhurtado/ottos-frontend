@@ -106,14 +106,15 @@ void main() {
       verify(() => reports.statistics(DateTime(2026, 9), DateTime(2026, 9, 23))).called(1);
     });
 
-    test('a backend without statistics (404) leaves a friendly notice', () async {
+    test('a 404 is an error like any other', () async {
       when(() => reports.statistics(any(), any())).thenThrow(const ApiException('No', statusCode: 404));
       final cubit = StatisticsCubit(reports: reports, today: today);
       addTearDown(cubit.close);
 
       await cubit.load();
 
-      expect(cubit.state.status, StatisticsStatus.unavailable);
+      expect(cubit.state.status, StatisticsStatus.failure);
+      expect(cubit.state.error, 'No');
     });
 
     test('the comparison failing does not stop the statistics', () async {
@@ -167,14 +168,15 @@ void main() {
       expect(cubit.state.totals.pickupCollected, 200);
     });
 
-    test('a backend without the detail (404) leaves a friendly notice', () async {
+    test('a 404 on the detail is an error like any other', () async {
       when(() => reports.monthlyRemittances(any(), any())).thenThrow(const ApiException('No', statusCode: 404));
       final cubit = ReportRemittancesCubit(reports: reports, month: DateTime(2026, 10));
       addTearDown(cubit.close);
 
       await cubit.load();
 
-      expect(cubit.state.status, ReportDetailStatus.unavailable);
+      expect(cubit.state.status, ReportDetailStatus.failure);
+      expect(cubit.state.error, 'No');
     });
 
     test('other errors can be retried', () async {

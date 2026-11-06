@@ -8,8 +8,7 @@ import 'report_repository.dart';
 
 enum StatisticsPeriod { currentMonth, previousMonth, lastThreeMonths, custom }
 
-/// [unavailable]: the backend does not have the statistics yet (404).
-enum StatisticsStatus { loading, success, failure, unavailable }
+enum StatisticsStatus { loading, success, failure }
 
 /// A range of days, both included.
 typedef DayRange = ({DateTime from, DateTime to});
@@ -127,15 +126,7 @@ class StatisticsCubit extends Cubit<StatisticsState> {
       );
     } on ApiException catch (error) {
       if (isClosed || state.from != from || state.to != to) return;
-      emit(
-        StatisticsState(
-          period: period,
-          from: from,
-          to: to,
-          status: error.statusCode == 404 ? StatisticsStatus.unavailable : StatisticsStatus.failure,
-          error: error.message,
-        ),
-      );
+      emit(StatisticsState(period: period, from: from, to: to, status: StatisticsStatus.failure, error: error.message));
     }
   }
 }

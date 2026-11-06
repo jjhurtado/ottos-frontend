@@ -21,8 +21,6 @@ enum CashMovementType {
   deliveryPayout('DELIVERY_PAYOUT'),
   pickupCollection('PICKUP_COLLECTION'),
   courierReturn('COURIER_RETURN'),
-  courierSurplus('COURIER_SURPLUS'),
-  remittanceRefund('REMITTANCE_REFUND'),
   businessDeposit('BUSINESS_DEPOSIT'),
   businessWithdrawal('BUSINESS_WITHDRAWAL'),
   courierExchangeOut('COURIER_EXCHANGE_OUT'),
