@@ -65,6 +65,9 @@ class _FakeSource implements RemittanceSource {
   Future<List<Remittance>> list() async => [...open];
 
   @override
+  PendingTotals? get totals => null;
+
+  @override
   Future<PageResult<Remittance>> completed({int page = 0}) async =>
       PageResult(items: [...done], page: 0, size: 20, totalItems: done.length);
 

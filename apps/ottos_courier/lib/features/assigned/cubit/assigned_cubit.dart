@@ -171,16 +171,13 @@ final class AssignedState extends Equatable {
 /// The open remittances of the courier, or all of them for who sees every
 /// remittance (sales), and the actions on them from the list.
 class AssignedCubit extends Cubit<AssignedState> {
-  AssignedCubit({required this._source, this._pendingTotals, this.searchDelay = const Duration(milliseconds: 400)})
+  AssignedCubit({required this._source, this.searchDelay = const Duration(milliseconds: 400)})
     : super(const AssignedState()) {
     // A sync may bring new remittances or take some away.
     _changes = _source.changes.listen((_) => load());
   }
 
   final RemittanceSource _source;
-
-  /// Where the totals above the list come from (sales); null shows none.
-  final Future<PendingTotals> Function()? _pendingTotals;
 
   /// Wait after the last keystroke before searching.
   final Duration searchDelay;
@@ -200,8 +197,6 @@ class AssignedCubit extends Cubit<AssignedState> {
         ),
       );
     }
-    // Asked alongside the list, not after it.
-    final totals = _totals();
     try {
       final items = [...await _source.list()];
       var moreCompleted = false;
@@ -215,7 +210,8 @@ class AssignedCubit extends Cubit<AssignedState> {
         }
       }
       final pendingIds = await _source.pendingIds();
-      final pending = await totals;
+      // They came with the open ones (sales); null shows none.
+      final pending = _source.totals;
       if (isClosed) return;
       emit(
         state.copyWith(
@@ -231,15 +227,6 @@ class AssignedCubit extends Cubit<AssignedState> {
     } on ApiException catch (error) {
       // Sales do not work offline: no business figures from before (AC-2.3, DEF-1).
       if (!isClosed) emit(state.copyWith(status: AssignedStatus.failure, error: error.message, clearTotals: true));
-    }
-  }
-
-  /// The totals fail on their own: the list still shows, without them.
-  Future<PendingTotals?> _totals() async {
-    try {
-      return await _pendingTotals?.call();
-    } on ApiException {
-      return null;
     }
   }
 

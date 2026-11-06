@@ -76,7 +76,7 @@ void main() {
     when(() => source.list()).thenAnswer((_) async => [Remittance.fromJson(_json('a'))]);
     when(() => source.pendingIds()).thenAnswer((_) async => {});
     when(() => source.changes).thenAnswer((_) => const Stream.empty());
-    when(() => repository.pendingTotals()).thenAnswer((_) async => _business);
+    when(() => source.totals).thenReturn(_business);
   });
 
   Future<void> pump(WidgetTester tester, Set<String> permissions, Widget page) async {
@@ -115,7 +115,7 @@ void main() {
 
   group('US-2 sales on SCR-19', () {
     test('AC-2.1 BR-5: the cubit keeps the business totals with the list', () async {
-      final cubit = AssignedCubit(source: source, pendingTotals: repository.pendingTotals);
+      final cubit = AssignedCubit(source: source);
       addTearDown(cubit.close);
 
       await cubit.load();
@@ -124,9 +124,9 @@ void main() {
       expect(cubit.state.totals, _business);
     });
 
-    test('the totals fail on their own: the list still loads', () async {
-      when(() => repository.pendingTotals()).thenThrow(const ApiException('Error'));
-      final cubit = AssignedCubit(source: source, pendingTotals: repository.pendingTotals);
+    test('the server sent no totals: the list still loads, without them', () async {
+      when(() => source.totals).thenReturn(null);
+      final cubit = AssignedCubit(source: source);
       addTearDown(cubit.close);
 
       await cubit.load();
@@ -158,6 +158,7 @@ void main() {
 
     testWidgets('AC-3.1: a courier has no business totals on SCR-19 and the server is not asked', (tester) async {
       when(() => source.canSearch).thenReturn(false);
+      when(() => source.totals).thenReturn(null);
 
       await pump(tester, _courier, const AssignedPage());
 
