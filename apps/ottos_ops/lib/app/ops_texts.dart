@@ -27,7 +27,9 @@ abstract final class OpsTexts {
   static const viewAll = 'Ver remesas';
 
   // Remittance list
-  static const searchByCode = 'Buscar por código';
+  static const searchByBeneficiary = 'Beneficiario (nombre o teléfono)';
+  static const searchTooShort = 'Escribe al menos 2 letras o 4 cifras';
+  static const noRemittancesSearch = 'No hay remesas con esa búsqueda.';
   static const allStatuses = 'Todos los estados';
   static const allTypes = 'Todos los tipos';
   static const onlyLate = 'Solo atrasadas';

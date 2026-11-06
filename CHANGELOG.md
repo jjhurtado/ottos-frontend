@@ -6,6 +6,10 @@ Cambios notables del frontend de Ottos (panel de operaciones y app de repartidor
 
 ## [Unreleased]
 
+### Cambiado
+
+- Panel › Remesas: se puede **buscar por beneficiario**, por nombre o por teléfono (sin importar tildes ni mayúsculas), y se combina con los demás filtros; la búsqueda por código desaparece de la lista.
+
 ## [1.0.0-rc.9] - 2026-11-06
 
 ### Añadido
