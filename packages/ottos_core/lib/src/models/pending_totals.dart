@@ -31,24 +31,23 @@ class PendingTotals extends Equatable {
       PendingTotals(toDeliver: _amounts(json?['toDeliver']), toCollect: _amounts(json?['toCollect']));
 
   /// Summed on the phone from [remittances] (the courier's, BR-7): the cash of
-  /// each open one, voided and completed ones left out (BR-1, BR-2).
+  /// each open one, voided and completed ones left out (BR-1, BR-2). Added in
+  /// whole cents, so the sum is exact (CR-1; `docs/STANDARDS.md` › Models).
   factory PendingTotals.sum(Iterable<Remittance> remittances) {
-    final deliver = <String, PendingAmount>{};
-    final collect = <String, PendingAmount>{};
+    final deliver = <String, (int, int)>{};
+    final collect = <String, (int, int)>{};
     for (final remittance in remittances) {
       final amount = remittance.cashAmount;
       final currency = remittance.cashCurrency;
       if (amount == null || currency == null || remittance.isVoided || remittance.isCompleted) continue;
       final into = remittance.isPickup ? collect : deliver;
-      final before = into[currency];
-      into[currency] = PendingAmount(
-        currency: currency,
-        remittances: (before?.remittances ?? 0) + 1,
-        amount: (before?.amount ?? 0) + amount,
-      );
+      final (count, cents) = into[currency] ?? (0, 0);
+      into[currency] = (count + 1, cents + (amount * 100).round());
     }
-    List<PendingAmount> sorted(Map<String, PendingAmount> amounts) =>
-        amounts.values.toList()..sort((a, b) => a.currency.compareTo(b.currency));
+    List<PendingAmount> sorted(Map<String, (int, int)> sums) => [
+      for (final MapEntry(key: currency, value: (count, cents)) in sums.entries)
+        PendingAmount(currency: currency, remittances: count, amount: cents / 100),
+    ]..sort((a, b) => a.currency.compareTo(b.currency));
     return PendingTotals(toDeliver: sorted(deliver), toCollect: sorted(collect));
   }
 

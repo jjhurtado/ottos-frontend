@@ -56,6 +56,21 @@ void main() {
       expect(totals.toCollect, [_amount('USD', 1, 200)]);
     });
 
+    test('CR-1 BR-2: the phone adds whole cents, so the sum is exact', () {
+      final totals = PendingTotals.sum([
+        _remittance('a', cash: 0.1),
+        _remittance('b', cash: 0.2),
+        _remittance('c', cash: 1234567.89),
+      ]);
+
+      expect(totals.toDeliver.single.amount, 1234568.19, reason: 'whole cents, never a binary remainder');
+      final pickups = PendingTotals.sum([
+        _remittance('d', type: RemittanceType.pickup, cash: 0.1),
+        _remittance('e', type: RemittanceType.pickup, cash: 0.2),
+      ]);
+      expect(pickups.toCollect.single.amount, 0.3, reason: 'adding doubles gives 0.30000000000000004');
+    });
+
     test('AC-1.3 AC-3.3: voided and completed ones are not counted', () {
       final totals = PendingTotals.sum([
         _remittance('done', completedAt: DateTime(2026, 11, 6)),
