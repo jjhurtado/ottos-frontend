@@ -176,7 +176,7 @@ class _UserTable extends StatelessWidget {
     onSelected: (action) => _run(context, user, action),
     itemBuilder: (_) => [
       const PopupMenuItem(value: _UserAction.edit, child: Text(OpsTexts.edit)),
-      const PopupMenuItem(value: _UserAction.resetPassword, child: Text(OpsTexts.resetPassword)),
+      if (user.id != me) const PopupMenuItem(value: _UserAction.resetPassword, child: Text(OpsTexts.resetPassword)),
       if (user.active && user.id != me)
         const PopupMenuItem(value: _UserAction.deactivate, child: Text(OpsTexts.deactivate)),
       if (!user.active) const PopupMenuItem(value: _UserAction.activate, child: Text(OpsTexts.activate)),

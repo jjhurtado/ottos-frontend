@@ -62,7 +62,7 @@ void main() {
   });
 
   group('page', () {
-    Future<void> pumpUsers(WidgetTester tester, Set<String> permissions) async {
+    Future<void> pumpUsers(WidgetTester tester, Set<String> permissions, {Size size = const Size(1400, 1000)}) async {
       final auth = _MockAuth();
       when(() => auth.sessionExpired).thenAnswer((_) => const Stream.empty());
       final authBloc = AuthBloc(authRepository: auth, accessPolicy: (_) => true)
@@ -79,7 +79,7 @@ void main() {
           ),
         );
       addTearDown(authBloc.close);
-      await tester.binding.setSurfaceSize(const Size(1400, 1000));
+      await tester.binding.setSurfaceSize(size);
       addTearDown(() => tester.binding.setSurfaceSize(null));
       await tester.pumpWidget(
         MultiRepositoryProvider(
@@ -98,19 +98,64 @@ void main() {
 
     const writer = {Permissions.usersRead, Permissions.usersWrite, Permissions.rolesRead};
 
-    testWidgets('you cannot deactivate yourself', (tester) async {
+    testWidgets('you can neither deactivate yourself nor reset your own password', (tester) async {
       await pumpUsers(tester, writer);
 
       await tester.tap(find.byTooltip(OpsTexts.actions).first);
       await tester.pumpAndSettle();
-      expect(find.text(OpsTexts.resetPassword), findsOneWidget);
+      expect(find.text(OpsTexts.edit), findsOneWidget);
+      expect(find.text(OpsTexts.resetPassword), findsNothing);
       expect(find.text(OpsTexts.deactivate), findsNothing);
       await tester.tapAt(Offset.zero);
       await tester.pumpAndSettle();
 
       await tester.tap(find.byTooltip(OpsTexts.actions).last);
       await tester.pumpAndSettle();
+      expect(find.text(OpsTexts.resetPassword), findsOneWidget);
       expect(find.text(OpsTexts.deactivate), findsOneWidget);
+    });
+
+    test('the errors of resetting a password or (de)activating a user read in Spanish', () {
+      expect(
+        CoreTexts.errorCodes['CANNOT_RESET_OWN_PASSWORD'],
+        'Tu contraseña se cambia desde «Cambiar contraseña», en el menú de tu cuenta.',
+      );
+      expect(CoreTexts.errorCodes['PERMISSION_ESCALATION'], 'Esta acción necesita permisos que tú no tienes.');
+    });
+
+    testWidgets('REQ-011: on a phone your own row has no reset either, another row has', (tester) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(390, 800);
+      addTearDown(tester.view.reset);
+      await pumpUsers(tester, writer, size: const Size(390, 800));
+
+      await tester.tap(find.byTooltip(OpsTexts.actions).first);
+      await tester.pumpAndSettle();
+      expect(find.text(OpsTexts.resetPassword), findsNothing);
+      await tester.tapAt(Offset.zero);
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byTooltip(OpsTexts.actions).last);
+      await tester.pumpAndSettle();
+      expect(find.text(OpsTexts.resetPassword), findsOneWidget);
+    });
+
+    testWidgets('REQ-011: refusing to deactivate a user with permissions you lack explains it in Spanish', (
+      tester,
+    ) async {
+      when(() => users.deactivate('u2')).thenThrow(
+        ApiException(CoreTexts.errorCodes['PERMISSION_ESCALATION']!, statusCode: 403, code: 'PERMISSION_ESCALATION'),
+      );
+      await pumpUsers(tester, writer);
+
+      await tester.tap(find.byTooltip(OpsTexts.actions).last);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(OpsTexts.deactivate));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(FilledButton, OpsTexts.deactivate));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Esta acción necesita permisos que tú no tienes.'), findsOneWidget);
     });
 
     testWidgets('a reader sees the users without actions', (tester) async {

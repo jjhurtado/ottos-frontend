@@ -26,14 +26,18 @@ class UserRepository {
   Future<StaffUser> replaceRoles(String id, Set<String> roleIds) async =>
       StaffUser.fromJson(await _api.put<Map<String, dynamic>>('/users/$id/roles', body: {'roleIds': roleIds.toList()}));
 
-  /// Deactivates the user and ends their sessions; not allowed on yourself (`CANNOT_DEACTIVATE_SELF`).
+  /// Deactivates the user and ends their sessions; not allowed on yourself (`CANNOT_DEACTIVATE_SELF`) nor on a
+  /// user with permissions the caller lacks (`PERMISSION_ESCALATION`).
   Future<StaffUser> deactivate(String id) async =>
       StaffUser.fromJson(await _api.post<Map<String, dynamic>>('/users/$id/deactivate'));
 
+  /// Activates the user; refused when they have permissions the caller lacks (`PERMISSION_ESCALATION`).
   Future<StaffUser> activate(String id) async =>
       StaffUser.fromJson(await _api.post<Map<String, dynamic>>('/users/$id/activate'));
 
-  /// Sets a new password (8 to 72 characters) and ends the user's sessions.
+  /// Sets a new password (8 to 72 characters) and ends the user's sessions. Not allowed on yourself
+  /// (`CANNOT_RESET_OWN_PASSWORD`; use `AuthRepository.changePassword` for your own) nor on a user with permissions the
+  /// caller lacks (`PERMISSION_ESCALATION`).
   Future<void> resetPassword(String id, String password) =>
       _api.put<void>('/users/$id/password', body: {'password': password});
 }
