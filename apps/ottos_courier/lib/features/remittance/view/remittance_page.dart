@@ -74,6 +74,10 @@ class _RemittanceView extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       children: [
         if (remittance.voided case final voided?) ...[VoidedBanner(voided: voided), const SizedBox(height: 12)],
+        if (remittance.isCompleted && !remittance.isVoided) ...[
+          _CompletedBanner(remittance: remittance),
+          const SizedBox(height: 12),
+        ],
         if (remittance.review case final review? when !remittance.isVoided) ...[
           ReviewBanner(review: review),
           const SizedBox(height: 12),
@@ -109,7 +113,7 @@ class _RemittanceView extends StatelessWidget {
                   style: textTheme.headlineMedium?.copyWith(color: Colors.white, fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(height: 8),
-                RemittanceStatusChip(remittance: remittance, onDark: true),
+                RemittanceStatusChip(remittance: remittance, onDark: true, showCheck: true),
               ],
             ),
           ),
@@ -285,6 +289,37 @@ class _Actions extends StatelessWidget {
               ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// «✓ Recogida el 12 oct 2026, 16:40»: a completed remittance says so at the
+/// top of its detail, with a mark that does not rely on colour (REQ-020).
+class _CompletedBanner extends StatelessWidget {
+  const _CompletedBanner({required this.remittance});
+
+  final Remittance remittance;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: OttosColors.success.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.check, color: OttosColors.successText),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              CourierTexts.completedAt(remittance.isPickup, Formatters.dateTime(remittance.completedAt)),
+              style: const TextStyle(color: OttosColors.successText, fontWeight: FontWeight.w700, fontSize: 15),
+            ),
+          ),
+        ],
       ),
     );
   }
