@@ -28,8 +28,14 @@ class NewRemittancePage extends StatelessWidget {
         child: BlocConsumer<NewRemittanceCubit, NewRemittanceState>(
           listenWhen: (previous, current) => previous.created == null && current.created != null,
           listener: (context, state) {
-            ScaffoldMessenger.of(context)
-                .showSnackBar(SnackBar(content: Text(state.error ?? CourierTexts.registered(state.created!.code))));
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  state.error ??
+                      CourierTexts.registered(remittanceLabel(state.created!.beneficiaryName, state.created!.code)),
+                ),
+              ),
+            );
             Navigator.of(context).pop(state.created);
           },
           buildWhen: (previous, current) => previous.corridorsStatus != current.corridorsStatus,

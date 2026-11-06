@@ -102,6 +102,32 @@ void main() {
     expect(find.textContaining('La Habana, Boyeros'), findsNothing);
   });
 
+  testWidgets('REQ-020 AC-1.1 AC-1.3: a completed remittance looks done and keeps its type', (tester) async {
+    final done = Remittance(
+      id: 'OT-9',
+      code: 'OT-9',
+      type: RemittanceType.pickup,
+      status: 'PICKED_UP',
+      statusName: 'Recogida',
+      courierId: 'c1',
+      beneficiaryName: 'Ana',
+      cashAmount: 200,
+      cashCurrency: 'USD',
+      completedAt: DateTime.utc(2026, 11, 5, 18),
+    );
+    await pumpList(tester, [_remittance('OT-1', RemittanceType.delivery), done]);
+
+    final doneCard = find.ancestor(of: find.text('Ana'), matching: find.byType(Card));
+    expect(tester.widget<Card>(doneCard).color, OttosColors.completedSurface);
+    expect(find.descendant(of: doneCard, matching: find.byIcon(Icons.check)), findsOneWidget);
+    expect(
+      find.descendant(of: doneCard, matching: find.widgetWithText(RemittanceTypeBadge, CoreTexts.pickup)),
+      findsOneWidget,
+    );
+    final openCard = find.ancestor(of: find.text('OT-1'), matching: find.byType(Card));
+    expect(tester.widget<Card>(openCard).color, isNot(OttosColors.completedSurface));
+  });
+
   testWidgets('a remittance with an incident is marked in the list', (tester) async {
     await pumpList(tester, [
       _remittance('OT-1', RemittanceType.delivery, incident: const Incident(reason: IncidentReason.notHome)),

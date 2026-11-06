@@ -165,8 +165,12 @@ class ReportFilter extends Equatable {
 
   bool matches(ReportRemittance row) {
     if (row.isVoided && !showVoided) return false;
-    final query = code.trim().toUpperCase();
-    if (query.isNotEmpty && !row.code.toUpperCase().contains(query)) return false;
+    // The search box matches the code or the beneficiary's name (REQ-019),
+    // with or without accents: «perez» finds «Pérez».
+    final query = _fold(code.trim());
+    if (query.isNotEmpty && !_fold(row.code).contains(query) && !_fold(row.beneficiaryName ?? '').contains(query)) {
+      return false;
+    }
     if (type != null && row.type.code != type) return false;
     if (onlyOnTheHouse && !row.onTheHouse) return false;
     if (courier != null && (row.courierName ?? withoutCourier) != courier) return false;
@@ -189,4 +193,10 @@ class ReportFilter extends Equatable {
 
   @override
   List<Object?> get props => [code, type, status, courier, onlyOnTheHouse, showVoided, newestFirst];
+}
+
+/// Upper case without the Spanish accents, for searching.
+String _fold(String text) {
+  const plain = {'Á': 'A', 'É': 'E', 'Í': 'I', 'Ó': 'O', 'Ú': 'U', 'Ü': 'U', 'Ñ': 'N'};
+  return text.toUpperCase().split('').map((char) => plain[char] ?? char).join();
 }
