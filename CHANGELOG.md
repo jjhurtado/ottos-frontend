@@ -6,6 +6,12 @@ Cambios notables del frontend de Ottos (panel de operaciones y app de repartidor
 
 ## [Unreleased]
 
+## [1.0.0-rc.13] - 2026-11-06
+
+### Cambiado
+
+- Panel › Inicio: los contadores (por estado, atrasadas, con incidencia y por revisar) llegan en una sola petición en vez de una por mosaico, así el Inicio carga antes. Los mosaicos, su orden y la lista que abren no cambian. Necesita el backend con REQ-022 lote 2 (salen juntos).
+
 ## [1.0.0-rc.12] - 2026-11-06
 
 ### Cambiado

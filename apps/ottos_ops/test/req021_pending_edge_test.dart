@@ -45,6 +45,18 @@ void main() {
       ],
     };
     when(() => api.get<Map<String, dynamic>>('/remittance-workflow')).thenAnswer((_) async => _workflow);
+    when(() => api.get<Map<String, dynamic>>('/remittances/summary')).thenAnswer(
+      (_) async => {
+        'openByStatus': [
+          {'code': 'PAID', 'name': 'Pagada', 'count': 2},
+          {'code': 'ASSIGNED', 'name': 'Asignada', 'count': 2},
+          {'code': 'POSTPONED', 'name': 'Pospuesta', 'count': 2},
+        ],
+        'late': 0,
+        'incident': 0,
+        'review': 0,
+      },
+    );
     when(() => api.get<Map<String, dynamic>>('/remittances', query: any(named: 'query'))).thenAnswer((call) async {
       final query = call.namedArguments[#query] as Map<String, dynamic>;
       final asksTotals = query['totals'] == true;
