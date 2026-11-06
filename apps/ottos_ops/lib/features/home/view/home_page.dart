@@ -67,7 +67,10 @@ class _Summary extends StatelessWidget {
           color: OttosColors.teal,
           icon: Icons.send_outlined,
           onTap: () => context.go(
-            Uri(path: Destinations.remittances.path, queryParameters: {'status': item.status.code}).toString(),
+            Uri(
+              path: Destinations.remittances.path,
+              queryParameters: {'status': item.status.code, 'voided': 'false'},
+            ).toString(),
           ),
         ),
       _CountCard(
