@@ -48,51 +48,97 @@ class _Summary extends StatelessWidget {
       builder: (context, state) => switch (state.status) {
         HomeStatus.loading => const Padding(padding: EdgeInsets.all(48), child: LoadingView()),
         HomeStatus.failure => ErrorView(message: state.error!, onRetry: context.read<HomeCubit>().load),
-        HomeStatus.success => Wrap(
-          spacing: 16,
-          runSpacing: 16,
-          children: [
-            for (final item in state.openByStatus)
-              _CountCard(
-                label: CoreTexts.statusName(item.status.code, fallback: item.status.name),
-                count: item.count,
-                color: OttosColors.teal,
-                icon: Icons.send_outlined,
-                onTap: () => context.go(
-                  Uri(path: Destinations.remittances.path, queryParameters: {'status': item.status.code}).toString(),
-                ),
-              ),
-            _CountCard(
-              label: OpsTexts.lateRemittances,
-              count: state.late,
-              color: OttosColors.danger,
-              icon: Icons.schedule,
-              onTap: () => context.go('${Destinations.remittances.path}?late=true'),
-            ),
-            _CountCard(
-              label: OpsTexts.incidentRemittances,
-              count: state.incidents,
-              color: OttosColors.danger,
-              icon: Icons.error_outline,
-              onTap: () => context.go('${Destinations.remittances.path}?incident=true'),
-            ),
-            _CountCard(
-              label: OpsTexts.reviewRemittances,
-              count: state.toReview,
-              color: OttosColors.warning,
-              icon: Icons.flag_outlined,
-              onTap: () => context.go('${Destinations.remittances.path}?review=true'),
-            ),
-            if (state.exchangesToReview > 0)
-              _CountCard(
-                label: OpsTexts.exchangesToReview,
-                count: state.exchangesToReview,
-                color: OttosColors.warning,
-                icon: Icons.currency_exchange,
-                onTap: () => context.go(Destinations.cash.path),
-              ),
-          ],
+        HomeStatus.success => Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [const _Pending(), const SizedBox(height: 16), _counters(context, state)],
         ),
+      },
+    );
+  }
+
+  Widget _counters(BuildContext context, HomeState state) => Wrap(
+    spacing: 16,
+    runSpacing: 16,
+    children: [
+      for (final item in state.openByStatus)
+        _CountCard(
+          label: CoreTexts.statusName(item.status.code, fallback: item.status.name),
+          count: item.count,
+          color: OttosColors.teal,
+          icon: Icons.send_outlined,
+          onTap: () => context.go(
+            Uri(path: Destinations.remittances.path, queryParameters: {'status': item.status.code}).toString(),
+          ),
+        ),
+      _CountCard(
+        label: OpsTexts.lateRemittances,
+        count: state.late,
+        color: OttosColors.danger,
+        icon: Icons.schedule,
+        onTap: () => context.go('${Destinations.remittances.path}?late=true'),
+      ),
+      _CountCard(
+        label: OpsTexts.incidentRemittances,
+        count: state.incidents,
+        color: OttosColors.danger,
+        icon: Icons.error_outline,
+        onTap: () => context.go('${Destinations.remittances.path}?incident=true'),
+      ),
+      _CountCard(
+        label: OpsTexts.reviewRemittances,
+        count: state.toReview,
+        color: OttosColors.warning,
+        icon: Icons.flag_outlined,
+        onTap: () => context.go('${Destinations.remittances.path}?review=true'),
+      ),
+      if (state.exchangesToReview > 0)
+        _CountCard(
+          label: OpsTexts.exchangesToReview,
+          count: state.exchangesToReview,
+          color: OttosColors.warning,
+          icon: Icons.currency_exchange,
+          onTap: () => context.go(Destinations.cash.path),
+        ),
+    ],
+  );
+}
+
+/// Money pending to deliver and to collect (REQ-021 US-1): loads and fails on
+/// its own; a tile opens the list with the same filter and its type (AC-1.7, BR-8).
+class _Pending extends StatelessWidget {
+  const _Pending();
+
+  /// Two counters wide, as the tiles below.
+  static const width = 456.0;
+
+  @override
+  Widget build(BuildContext context) {
+    final state = context.watch<HomeCubit>().state;
+    final pending = state.pending;
+    final error = state.pendingError;
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: width),
+      child: switch ((pending, error)) {
+        (final PendingTotals pending, _) => PendingTotalsTiles(
+          totals: pending,
+          onTap: (type) => context.go(
+            Uri(
+              path: Destinations.remittances.path,
+              queryParameters: {
+                for (final MapEntry(:key, :value) in RemittanceFilter.pending([
+                  for (final item in state.openByStatus) item.status,
+                ]).toQuery().entries)
+                  if (value != null) key: '$value',
+                'type': type.code,
+              },
+            ).toString(),
+          ),
+        ),
+        (_, final String error) => Card(
+          margin: EdgeInsets.zero,
+          child: ErrorView(message: error, onRetry: context.read<HomeCubit>().loadPending),
+        ),
+        _ => const Padding(padding: EdgeInsets.all(24), child: LoadingView()),
       },
     );
   }

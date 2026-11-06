@@ -5,6 +5,7 @@ import 'package:ottos_core/ottos_core.dart';
 
 import '../../../app/courier_texts.dart';
 import '../../../app/router.dart';
+import '../../../offline/remittance_source.dart';
 import '../../../offline/sync_bar.dart';
 import '../../../offline/sync_cubit.dart';
 import '../cubit/cash_cubit.dart';
@@ -17,6 +18,8 @@ class CashPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final ownCash = context.canDo(Permissions.cashReadOwn);
     final couriersCash = context.canDo(Permissions.cashRead);
+    // The courier's own money pending, summed on the phone (REQ-021 US-3, variant D).
+    final courier = context.canDo(Permissions.remittancesReadAssigned);
     final sync = context.syncCubit;
     return BlocProvider(
       create: (context) => CashCubit(
@@ -25,6 +28,7 @@ class CashPage extends StatelessWidget {
         couriersCash: couriersCash,
         // A courier's cash as of the last sync, also without network.
         ownStatement: sync?.cash,
+        assigned: courier ? context.read<RemittanceSource>().list : null,
       )..load(),
       child: _ReloadOnSync(
         sync: sync,
@@ -33,6 +37,7 @@ class CashPage extends StatelessWidget {
             final cubit = context.read<CashCubit>();
             final statement = state.statement;
             final couriers = state.couriers;
+            final pending = state.pending;
             if (!state.loaded) {
               return state.status == CashStatus.failure
                   ? ErrorView(message: state.error!, onRetry: cubit.load)
@@ -58,6 +63,14 @@ class CashPage extends StatelessWidget {
                   ],
                   if (statement != null) ...[
                     BalancesCard(cash: statement.cash),
+                    if (pending != null) ...[
+                      const SizedBox(height: 8),
+                      PendingTotalsTiles(
+                        totals: pending,
+                        deliverLabel: CourierTexts.ownToDeliver,
+                        collectLabel: CourierTexts.ownToCollect,
+                      ),
+                    ],
                     if (context.canDo(Permissions.cashExchangeOwn)) ...[
                       const SizedBox(height: 8),
                       _ExchangeButton(sync: sync),

@@ -75,7 +75,10 @@ void main() {
     await OttosLocalization.initialize();
   });
 
-  setUp(() => remittances = _MockRemittances());
+  setUp(() {
+    remittances = _MockRemittances();
+    when(() => remittances.pendingTotals()).thenAnswer((_) async => const PendingTotals());
+  });
 
   Future<void> pump(WidgetTester tester, Set<String> permissions, Widget page) async {
     final auth = _MockAuth();

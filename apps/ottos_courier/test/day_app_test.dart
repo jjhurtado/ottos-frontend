@@ -78,6 +78,8 @@ void main() {
     customers = _MockCustomers();
     rates = _MockRates();
     cash = _MockCash();
+    when(() => remittances.pendingTotals()).thenAnswer((_) async => const PendingTotals());
+    when(() => remittances.assignedToMe()).thenAnswer((_) async => const []);
   });
 
   late AuthBloc authBloc;
