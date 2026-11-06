@@ -234,9 +234,15 @@ void main() {
         );
       addTearDown(authBloc.close);
       await OttosLocalization.initialize();
+      // Sales also see the business's money pending above the list (REQ-021).
+      final repository = _MockRemittances();
+      when(repository.pendingTotals).thenAnswer((_) async => const PendingTotals());
       await tester.pumpWidget(
-        RepositoryProvider<RemittanceSource>.value(
-          value: source,
+        MultiRepositoryProvider(
+          providers: [
+            RepositoryProvider<RemittanceSource>.value(value: source),
+            RepositoryProvider<RemittanceRepository>.value(value: repository),
+          ],
           child: BlocProvider.value(
             value: authBloc,
             child: MaterialApp(

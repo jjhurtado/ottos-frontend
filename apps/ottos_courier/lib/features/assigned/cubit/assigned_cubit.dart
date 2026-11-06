@@ -34,6 +34,7 @@ final class AssignedState extends Equatable {
     this.searchPages = 1,
     this.moreResults = false,
     this.searchOffline = false,
+    this.totals,
     this.error,
   });
 
@@ -66,6 +67,10 @@ final class AssignedState extends Equatable {
 
   /// The last search failed for lack of connection.
   final bool searchOffline;
+
+  /// Money pending to deliver and to collect of the whole business, above the
+  /// list (sales, REQ-021 US-2); null hides it.
+  final PendingTotals? totals;
   final String? error;
 
   bool get searching => query != null;
@@ -88,6 +93,7 @@ final class AssignedState extends Equatable {
     int? searchPages,
     bool? moreResults,
     bool? searchOffline,
+    PendingTotals? totals,
     String? error,
   }) {
     final next = status ?? this.status;
@@ -105,6 +111,7 @@ final class AssignedState extends Equatable {
       searchPages: searchPages ?? this.searchPages,
       moreResults: moreResults ?? this.moreResults,
       searchOffline: searchOffline ?? this.searchOffline,
+      totals: totals ?? this.totals,
       // Error and status go together: kept while the status stays failure
       // (typing does not hide it) and dropped with any other status.
       error: next == AssignedStatus.failure ? (error ?? this.error) : null,
@@ -155,6 +162,7 @@ final class AssignedState extends Equatable {
     searchPages,
     moreResults,
     searchOffline,
+    totals,
     error,
   ];
 }
@@ -162,13 +170,16 @@ final class AssignedState extends Equatable {
 /// The open remittances of the courier, or all of them for who sees every
 /// remittance (sales), and the actions on them from the list.
 class AssignedCubit extends Cubit<AssignedState> {
-  AssignedCubit({required this._source, this.searchDelay = const Duration(milliseconds: 400)})
+  AssignedCubit({required this._source, this._pendingTotals, this.searchDelay = const Duration(milliseconds: 400)})
     : super(const AssignedState()) {
     // A sync may bring new remittances or take some away.
     _changes = _source.changes.listen((_) => load());
   }
 
   final RemittanceSource _source;
+
+  /// Where the totals above the list come from (sales); null shows none.
+  final Future<PendingTotals> Function()? _pendingTotals;
 
   /// Wait after the last keystroke before searching.
   final Duration searchDelay;
@@ -201,6 +212,7 @@ class AssignedCubit extends Cubit<AssignedState> {
         }
       }
       final pendingIds = await _source.pendingIds();
+      final totals = await _totals();
       if (isClosed) return;
       emit(
         state.copyWith(
@@ -208,10 +220,20 @@ class AssignedCubit extends Cubit<AssignedState> {
           items: items,
           moreCompleted: moreCompleted,
           pendingIds: pendingIds,
+          totals: totals,
         ),
       );
     } on ApiException catch (error) {
       if (!isClosed) emit(state.copyWith(status: AssignedStatus.failure, error: error.message));
+    }
+  }
+
+  /// The totals fail on their own: the list still shows, with the last ones.
+  Future<PendingTotals?> _totals() async {
+    try {
+      return await _pendingTotals?.call();
+    } on ApiException {
+      return null;
     }
   }
 
