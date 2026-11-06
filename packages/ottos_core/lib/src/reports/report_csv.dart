@@ -7,9 +7,11 @@ import 'report_texts.dart';
 
 /// The month's remittances as CSV: one row per remittance, voided ones
 /// included and marked, `;`, UTF-8 with BOM and decimal commas, so it opens
-/// right in Excel in Spanish. No personal data.
+/// right in Excel in Spanish. It carries the beneficiary's name (REQ-019
+/// AC-3.1, ADR-004): whoever shares the file is responsible for it.
 abstract final class ReportCsv {
   static const columns = [
+    'Beneficiario',
     'Código',
     'Tipo',
     'Estado',
@@ -39,6 +41,7 @@ abstract final class ReportCsv {
       columns,
       for (final row in detail.remittances)
         [
+          row.beneficiaryName ?? '',
           row.code,
           row.isPickup ? 'Recogida' : 'Entrega',
           reportStatusName(row),

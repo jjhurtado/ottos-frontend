@@ -6,22 +6,32 @@ import '../theme/ottos_colors.dart';
 
 /// Status of a remittance; red when it is late or voided, green when it is completed.
 class RemittanceStatusChip extends StatelessWidget {
-  const RemittanceStatusChip({super.key, required this.remittance, this.onDark = false});
+  const RemittanceStatusChip({super.key, required this.remittance, this.onDark = false, this.showCheck = false});
 
   final Remittance remittance;
 
   /// Solid white background, to stay readable on dark or colored headers.
   final bool onDark;
 
+  /// A check mark before the word of a completed remittance, so it does not
+  /// rely on colour alone (REQ-020). The mobile app uses it; the panel does not.
+  final bool showCheck;
+
   @override
   Widget build(BuildContext context) {
-    final (color, label) = switch (remittance) {
+    // The tint comes from the base colour; the text uses a darker shade of the
+    // same hue so it reads at 4.5:1 on the tint and on white.
+    final (color, textColor, label) = switch (remittance) {
       // Voided wins over everything: it no longer counts, whatever its status.
-      Remittance(isVoided: true) => (OttosColors.danger, CoreTexts.voided),
-      Remittance(isCompleted: true) => (OttosColors.success, remittance.displayStatus),
-      Remittance(late: true) => (OttosColors.danger, '${remittance.displayStatus} · ${CoreTexts.late}'),
-      Remittance(courierId: != null) => (OttosColors.warning, remittance.displayStatus),
-      _ => (OttosColors.teal, remittance.displayStatus),
+      Remittance(isVoided: true) => (OttosColors.danger, OttosColors.danger, CoreTexts.voided),
+      Remittance(isCompleted: true) => (OttosColors.success, OttosColors.successText, remittance.displayStatus),
+      Remittance(late: true) => (
+        OttosColors.danger,
+        OttosColors.danger,
+        '${remittance.displayStatus} · ${CoreTexts.late}',
+      ),
+      Remittance(courierId: != null) => (OttosColors.warning, OttosColors.warningText, remittance.displayStatus),
+      _ => (OttosColors.teal, OttosColors.tealDark, remittance.displayStatus),
     };
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -29,9 +39,18 @@ class RemittanceStatusChip extends StatelessWidget {
         color: onDark ? Colors.white : color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(20),
       ),
-      child: Text(
-        label,
-        style: TextStyle(color: color, fontWeight: FontWeight.w600, fontSize: 12),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (showCheck && remittance.isCompleted && !remittance.isVoided) ...[
+            Icon(Icons.check, size: 14, color: textColor),
+            const SizedBox(width: 4),
+          ],
+          Text(
+            label,
+            style: TextStyle(color: textColor, fontWeight: FontWeight.w600, fontSize: 12),
+          ),
+        ],
       ),
     );
   }
