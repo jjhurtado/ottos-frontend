@@ -289,12 +289,7 @@ class _AssignedCard extends StatelessWidget {
     return Card(
       clipBehavior: Clip.antiAlias,
       color: completed ? OttosColors.completedSurface : null,
-      shape: completed
-          ? RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(14),
-              side: const BorderSide(color: OttosColors.completedBorder),
-            )
-          : null,
+      shape: completed ? const DashedRoundedBorder(color: OttosColors.completedBorder) : null,
       child: InkWell(
         onTap: onTap,
         child: IntrinsicHeight(
