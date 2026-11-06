@@ -9,6 +9,27 @@
 :{$PORT:8080} {
 	encode zstd gzip
 
+	# Security headers on every response (SEC-4). The CSP fits the build of
+	# the Dockerfile: CanvasKit from our own origin (--no-web-resources-cdn)
+	# and Roboto bundled, so no outside host is needed.
+	# - script-src 'wasm-unsafe-eval': compiling canvaskit.wasm; no 'unsafe-eval'.
+	# - style-src 'unsafe-inline': the engine writes <style> elements and inline styles.
+	# - img-src/font-src data: blob:: images and fonts the engine and pdf build in memory.
+	# - worker-src 'self' blob:: the service worker and the engine's workers.
+	# - connect-src 'self': the engine, assets and /api all come from this origin.
+	# Fallback fonts for glyphs Roboto lacks (emoji, other scripts) would come
+	# from fonts.gstatic.com: blocked on purpose, those glyphs show as boxes.
+	header {
+		Content-Security-Policy "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:; manifest-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+		X-Frame-Options "DENY"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=(), browsing-topics=()"
+		# Railway's edge serves HTTPS; browsers ignore this header over plain HTTP.
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		-Server
+	}
+
 	# Railway's health check.
 	handle /healthz {
 		respond "ok" 200

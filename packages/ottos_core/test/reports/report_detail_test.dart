@@ -95,6 +95,21 @@ void main() {
     final csv = ReportCsv.encode(detail);
     final rows = Csv.decode(csv);
 
+    test('SEC-3: a typed courier name or void reason cannot become a formula', () {
+      final json = jsonDecode(jsonEncode(detailJson)) as Map<String, dynamic>;
+      final remittances = json['remittances'] as List;
+      final voided = remittances.cast<Map<String, dynamic>>().singleWhere((row) => row['voided'] != null);
+      voided['voided']['reason'] = '=HYPERLINK("https://example.test")';
+      voided['courierName'] = '@SUM(1)';
+      voided['completedFromBusiness'] = false;
+
+      final row = Csv.decode(ReportCsv.encode(MonthlyReportDetail.fromJson(json))).singleWhere((r) => r[17] == 'Sí');
+
+      expect(row[19], '\'=HYPERLINK("https://example.test")');
+      expect(row[6], "'@SUM(1)");
+      expect(row[9], isNot(startsWith("'")), reason: 'amounts stay numbers');
+    });
+
     test('a header and one row per remittance, voided included', () {
       expect(csv.startsWith(Csv.bom), isTrue);
       expect(rows.first, ReportCsv.columns);
