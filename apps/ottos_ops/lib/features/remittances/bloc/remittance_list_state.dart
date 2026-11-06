@@ -31,7 +31,7 @@ final class RemittanceListState extends Equatable {
   final bool canRetry;
 
   /// The typed text is too short to be sent, so a hint is shown.
-  bool get searchTooShort => typed.trim().isNotEmpty && !isSearchable(typed);
+  bool get searchTooShort => typed.trim().isNotEmpty && !isBeneficiarySearchable(typed);
 
   RemittanceListState copyWith({
     RemittanceListStatus? status,
@@ -59,13 +59,4 @@ final class RemittanceListState extends Equatable {
 
   @override
   List<Object?> get props => [status, filter, statuses, result, typed, error, canRetry];
-}
-
-final _letter = RegExp(r'\p{L}', unicode: true);
-final _digit = RegExp(r'\d');
-
-/// A search is sent from 2 letters (a name) or 4 digits (the end of a phone).
-bool isSearchable(String text) {
-  final trimmed = text.trim();
-  return _letter.allMatches(trimmed).length >= 2 || _digit.allMatches(trimmed).length >= 4;
 }
