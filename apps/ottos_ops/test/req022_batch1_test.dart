@@ -12,13 +12,15 @@ class _MockCash extends Mock implements CashRepository {}
 
 class _MockCustomers extends Mock implements CustomerRepository {}
 
-final _workflow = Workflow.fromJson({
-  'statuses': [
-    {'code': 'PAID', 'name': 'Pagada', 'initial': true, 'position': 10},
-    {'code': 'ASSIGNED', 'name': 'Asignada', 'position': 20},
-    {'code': 'DELIVERED', 'name': 'Entregada', 'isFinal': true, 'position': 30},
+const _summary = RemittanceSummary(
+  openByStatus: [
+    StatusCount(code: 'PAID', name: 'Pagada', count: 2),
+    StatusCount(code: 'ASSIGNED', name: 'Asignada', count: 2),
   ],
-});
+  late: 1,
+  incident: 1,
+  review: 1,
+);
 
 PageResult<T> _count<T>(int total) => PageResult<T>(items: const [], page: 0, size: 1, totalItems: total);
 
@@ -34,15 +36,14 @@ void main() {
     setUp(() {
       remittances = _MockRemittances();
       cash = _MockCash();
-      when(() => remittances.workflow()).thenAnswer((_) async => _workflow);
-      when(() => remittances.search(any(), size: 1)).thenAnswer((_) async => _count(2));
+      when(() => remittances.summary()).thenAnswer((_) async => _summary);
       when(() => remittances.pendingTotals()).thenAnswer((_) async => const PendingTotals());
       when(() => cash.exchanges(review: true, size: 1)).thenAnswer((_) async => _count(1));
     });
 
-    test('OPT-F2: exchanges and money pending start without waiting for the workflow', () async {
-      final workflow = Completer<Workflow>();
-      when(() => remittances.workflow()).thenAnswer((_) => workflow.future);
+    test('OPT-F2: exchanges and money pending start without waiting for the counters', () async {
+      final summary = Completer<RemittanceSummary>();
+      when(() => remittances.summary()).thenAnswer((_) => summary.future);
       final cubit = HomeCubit(remittances: remittances, cash: cash);
       addTearDown(cubit.close);
 
@@ -51,8 +52,7 @@ void main() {
 
       verify(() => cash.exchanges(review: true, size: 1)).called(1);
       verify(() => remittances.pendingTotals()).called(1);
-      verifyNever(() => remittances.search(any(), size: 1));
-      workflow.complete(_workflow);
+      summary.complete(_summary);
       await load;
 
       expect(cubit.state.status, HomeStatus.success);
@@ -60,15 +60,13 @@ void main() {
       expect(cubit.state.pending, const PendingTotals());
     });
 
-    test('voided remittances do not count in the status tiles', () async {
+    test('voided remittances do not count in the status tiles: the server leaves them out (REQ-022 batch 2)', () async {
       final cubit = HomeCubit(remittances: remittances);
       addTearDown(cubit.close);
 
       await cubit.load();
 
-      verify(() => remittances.search(const RemittanceFilter(status: 'PAID', voided: false), size: 1)).called(1);
-      verify(() => remittances.search(const RemittanceFilter(status: 'ASSIGNED', voided: false), size: 1)).called(1);
-      verifyNever(() => remittances.search(const RemittanceFilter(status: 'PAID'), size: 1));
+      verifyNever(() => remittances.search(any(), size: 1));
       expect(cubit.state.openByStatus.map((item) => item.count), [2, 2]);
     });
 

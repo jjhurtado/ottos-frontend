@@ -22,13 +22,15 @@ class _MockRates extends Mock implements RateRepository {}
 
 class _MockAuth extends Mock implements AuthRepository {}
 
-final _workflow = Workflow.fromJson({
-  'statuses': [
-    {'code': 'PAID', 'name': 'Pagada', 'initial': true, 'position': 10},
-    {'code': 'ASSIGNED', 'name': 'Asignada', 'position': 20},
-    {'code': 'DELIVERED', 'name': 'Entregada', 'isFinal': true, 'position': 30},
+const _summary = RemittanceSummary(
+  openByStatus: [
+    StatusCount(code: 'PAID', name: 'Pagada', count: 4),
+    StatusCount(code: 'ASSIGNED', name: 'Asignada', count: 4),
   ],
-});
+  late: 1,
+  incident: 1,
+  review: 1,
+);
 
 PageResult<T> _count<T>(int total) => PageResult<T>(items: const [], page: 0, size: 1, totalItems: total);
 
@@ -59,8 +61,7 @@ void main() {
     setUp(() {
       remittances = _MockRemittances();
       cash = _MockCash();
-      when(() => remittances.workflow()).thenAnswer((_) async => _workflow);
-      when(() => remittances.search(any(), size: 1)).thenAnswer((_) async => _count(4));
+      when(() => remittances.summary()).thenAnswer((_) async => _summary);
       when(() => remittances.pendingTotals()).thenAnswer((_) async => const PendingTotals());
       when(() => cash.exchanges(review: true, size: 1)).thenAnswer((_) async => _count(1));
     });
@@ -96,7 +97,7 @@ void main() {
       expect(cubit.state.status, HomeStatus.success);
       expect(cubit.state.pending, const PendingTotals());
       expect(cubit.state.pendingError, isNull);
-      verifyNever(() => remittances.search(any(), size: 1));
+      verifyNever(() => remittances.summary());
     });
 
     testWidgets('voided tiles: a status tile opens the list without voided remittances', (tester) async {

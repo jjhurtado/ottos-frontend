@@ -62,14 +62,14 @@ class _Summary extends StatelessWidget {
     children: [
       for (final item in state.openByStatus)
         _CountCard(
-          label: CoreTexts.statusName(item.status.code, fallback: item.status.name),
+          label: CoreTexts.statusName(item.code, fallback: item.name),
           count: item.count,
           color: OttosColors.teal,
           icon: Icons.send_outlined,
           onTap: () => context.go(
             Uri(
               path: Destinations.remittances.path,
-              queryParameters: {'status': item.status.code, 'voided': 'false'},
+              queryParameters: {'status': item.code, 'voided': 'false'},
             ).toString(),
           ),
         ),
@@ -128,8 +128,8 @@ class _Pending extends StatelessWidget {
             Uri(
               path: Destinations.remittances.path,
               queryParameters: {
-                for (final MapEntry(:key, :value) in RemittanceFilter.pending([
-                  for (final item in state.openByStatus) item.status,
+                for (final MapEntry(:key, :value) in RemittanceFilter.open([
+                  for (final item in state.openByStatus) item.code,
                 ]).toQuery().entries)
                   if (value != null) key: '$value',
                 'type': type.code,

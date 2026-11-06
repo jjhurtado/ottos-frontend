@@ -10,6 +10,7 @@ import '../models/event.dart';
 import '../models/page_result.dart';
 import '../models/pending_totals.dart';
 import '../models/remittance.dart';
+import '../models/remittance_summary.dart';
 import '../models/workflow.dart';
 import '../utils/formatters.dart';
 
@@ -61,13 +62,14 @@ class RemittanceFilter extends Equatable {
   /// The open remittances: not voided, in any of [statuses] the workflow does
   /// not mark final (REQ-021 BR-1). The pending totals and the list they open
   /// both use it (BR-8).
-  factory RemittanceFilter.pending(Iterable<RemittanceStatus> statuses) => RemittanceFilter(
-    status: [
-      for (final status in statuses)
-        if (!status.isFinal) status.code,
-    ].join(','),
-    voided: false,
-  );
+  factory RemittanceFilter.pending(Iterable<RemittanceStatus> statuses) => RemittanceFilter.open([
+    for (final status in statuses)
+      if (!status.isFinal) status.code,
+  ]);
+
+  /// Not voided, in any of the open status [codes] (as [RemittanceFilter.pending]
+  /// when the codes come already without the final ones, e.g. from the summary).
+  factory RemittanceFilter.open(Iterable<String> codes) => RemittanceFilter(status: codes.join(','), voided: false);
 
   static const _keep = Object();
 
@@ -273,6 +275,10 @@ class RemittanceRepository {
     );
     return PageResult.fromJson(json, Remittance.fromJson);
   }
+
+  /// The panel Home counters in one call (`remittances:read`; REQ-022 OPT-F4).
+  Future<RemittanceSummary> summary() async =>
+      RemittanceSummary.fromJson(await _api.get<Map<String, dynamic>>('/remittances/summary'));
 
   /// The open remittances (BR-1), a page of [size], with the money pending to
   /// deliver and to collect over all of them, by currency, summed by the server

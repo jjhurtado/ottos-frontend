@@ -34,6 +34,7 @@ export 'src/models/page_result.dart';
 export 'src/models/pending_totals.dart';
 export 'src/models/rates.dart';
 export 'src/models/remittance.dart';
+export 'src/models/remittance_summary.dart';
 export 'src/models/staff.dart';
 export 'src/models/workflow.dart';
 export 'src/models/zones.dart';
