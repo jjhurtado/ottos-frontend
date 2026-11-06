@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -139,6 +141,37 @@ void main() {
       await cubit.moreSearch();
 
       expect([for (final r in cubit.state.results) r.code], ['OT-1', 'OT-2', 'OT-3']);
+    });
+
+    test('CR-9: «Ver más» asks only for the next page, without repeats', () async {
+      when(() => source.search('jose', page: 0)).thenAnswer((_) async => _page(['OT-1', 'OT-2'], total: 100));
+      when(() => source.search('jose', page: 1)).thenAnswer((_) async => _page(['OT-2', 'OT-3'], page: 1, total: 100));
+      final cubit = makeCubit();
+      addTearDown(cubit.close);
+      cubit.searchTyped('jose');
+      await settle();
+
+      await cubit.moreSearch();
+
+      verify(() => source.search('jose', page: 0)).called(1);
+      verify(() => source.search('jose', page: 1)).called(1);
+      expect([for (final r in cubit.state.results) r.code], ['OT-1', 'OT-2', 'OT-3']);
+    });
+
+    test('CR-8: clearing drops a search still in flight', () async {
+      final answer = Completer<PageResult<Remittance>>();
+      when(() => source.search('jose', page: 0)).thenAnswer((_) => answer.future);
+      final cubit = makeCubit();
+      addTearDown(cubit.close);
+      cubit.searchTyped('jose');
+      await settle();
+
+      cubit.clearSearch();
+      answer.complete(_page(['OT-1']));
+      await settle();
+
+      expect(cubit.state.searching, isFalse);
+      expect(cubit.state.results, isEmpty);
     });
 
     test('AC-2.2: without connection the state says the search needs connection', () async {
@@ -287,6 +320,28 @@ void main() {
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
       expect(find.text('José OT-9'), findsOneWidget);
+    });
+
+    testWidgets('SEC-34: the search field has no suggestions or autocorrect', (tester) async {
+      await pump(tester);
+
+      final field = tester.widget<TextField>(find.byType(TextField));
+      expect(field.enableSuggestions, isFalse);
+      expect(field.autocorrect, isFalse);
+    });
+
+    testWidgets('CR-11: Enter searches at once, without waiting', (tester) async {
+      await pump(tester);
+      when(() => source.search('jose', page: 0)).thenAnswer((_) async => _page(['OT-5']));
+
+      await tester.enterText(find.byType(TextField), 'jose');
+      await tester.testTextInput.receiveAction(TextInputAction.search);
+      // Well under the 400 ms delay.
+      await tester.pump(const Duration(milliseconds: 50));
+      await tester.pump(const Duration(milliseconds: 50));
+
+      verify(() => source.search('jose', page: 0)).called(1);
+      expect(find.text('José OT-5'), findsOneWidget);
     });
 
     testWidgets('a source that cannot search (courier) shows no search field', (tester) async {
