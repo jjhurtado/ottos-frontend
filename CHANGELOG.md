@@ -6,6 +6,8 @@ Cambios notables del frontend de Ottos (panel de operaciones y app de repartidor
 
 ## [Unreleased]
 
+## [1.0.0-rc.10] - 2026-11-06
+
 ### Añadido
 
 - App › ventas: la lista de remesas tiene un **buscador por beneficiario**, por nombre o por teléfono (sin importar tildes ni mayúsculas), desde 2 letras o 4 cifras. Muestra las remesas de cualquier estado, de 50 en 50 con «Ver más», y oculta los interruptores mientras se busca. Sin conexión avisa de que la búsqueda necesita conexión. Los repartidores no lo ven. Las demás búsquedas de la app (remitente y beneficiario en «Nueva remesa») ya ignoraban las tildes porque las hace el servidor.
@@ -13,6 +15,7 @@ Cambios notables del frontend de Ottos (panel de operaciones y app de repartidor
 ### Cambiado
 
 - Panel › Remesas: se puede **buscar por beneficiario**, por nombre o por teléfono (sin importar tildes ni mayúsculas), y se combina con los demás filtros; la búsqueda por código desaparece de la lista.
+- App › repartidor: las completadas guardadas en el teléfono se borran a los 7 días, también al abrir la app aunque nadie inicie sesión (las abiertas y las acciones sin enviar nunca).
 
 ## [1.0.0-rc.9] - 2026-11-06
 
@@ -26,7 +29,7 @@ Cambios notables del frontend de Ottos (panel de operaciones y app de repartidor
 ### Cambiado
 
 - Panel › Usuarios: en tu propia fila ya no aparece «Restablecer contraseña»; tu contraseña se cambia desde «Cambiar contraseña», en el menú de tu cuenta. Si no tienes todos los permisos de otro usuario, no puedes restablecer su contraseña, desactivarlo, activarlo, renombrarlo ni cambiar sus roles, y el panel lo explica con «Esta acción necesita permisos que tú no tienes.».
-- App › repartidor: en **«Mis remesas»** aparece la opción **«Completadas»** (apagada al abrir, como en ventas). Encendida, después de las abiertas se ven con el título «Completadas (últimas 20)» las últimas 20 remesas que el repartidor entregó o recogió, la más reciente primero; solo se pueden consultar, sin entregar ni reportar incidencias. Funciona sin conexión con lo último que el teléfono descargó, y una que acabas de completar sin conexión sale arriba como «Sin enviar». «Más atrasadas primero» ordena solo las abiertas. Las completadas guardadas en el teléfono se borran a los 7 días, también al abrir la app aunque nadie inicie sesión (las abiertas y las acciones sin enviar nunca). Al cerrar sesión, esa copia se borra del teléfono. Necesita el backend de REQ-017; con un backend anterior la lista de completadas se queda vacía y todo lo demás funciona igual.
+- App › repartidor: en **«Mis remesas»** aparece la opción **«Completadas»** (apagada al abrir, como en ventas). Encendida, después de las abiertas se ven con el título «Completadas (últimas 20)» las últimas 20 remesas que el repartidor entregó o recogió, la más reciente primero; solo se pueden consultar, sin entregar ni reportar incidencias. Funciona sin conexión con lo último que el teléfono descargó, y una que acabas de completar sin conexión sale arriba como «Sin enviar». «Más atrasadas primero» ordena solo las abiertas. Al cerrar sesión, esa copia se borra del teléfono. Necesita el backend de REQ-017; con un backend anterior la lista de completadas se queda vacía y todo lo demás funciona igual.
 - Panel y app: las remesas se nombran por el beneficiario y no por el código. En las listas, las tarjetas y el detalle, el nombre va como título y el código, más pequeño, debajo; en una recogida, el nombre es el de la persona a quien se le recoge. Lo mismo en los avisos de remesa registrada, en los títulos de «Anular» y de «Entregada por el negocio» y en la nota de la caja del repartidor para lo que aún no se ha enviado. Si una remesa no tiene nombre, se muestra solo el código. La auditoría sigue mostrando el código.
 - App › notificaciones: dicen primero de quién es la remesa y al final el código («Rosa Pérez · Boyeros · OT-…»). Cuando llegan muchas a la vez, nombran hasta tres y añaden «y N más». El nombre se ve también con el teléfono bloqueado.
 - Reportes › «Remesas del mes»: cada remesa aparece por su beneficiario con el código debajo, en la tabla, en el PDF detallado y en el CSV, que tiene una columna nueva «Beneficiario» antes de «Código». El buscador encuentra también por nombre. Quien comparta el CSV o el PDF es responsable de ellos, porque ahora llevan nombres. Quién puede ver los reportes no cambia, y las estadísticas tampoco. Necesita el backend de REQ-019; con uno anterior, las filas se ven solo con el código.
