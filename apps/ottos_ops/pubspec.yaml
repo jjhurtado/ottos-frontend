@@ -1,7 +1,7 @@
 name: ottos_ops
 description: Ottos operations panel (web) for administrators and sales staff.
 publish_to: none
-version: 1.0.0-rc.11+13
+version: 1.0.0-rc.12+14
 resolution: workspace
 
 environment:

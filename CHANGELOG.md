@@ -6,6 +6,8 @@ Cambios notables del frontend de Ottos (panel de operaciones y app de repartidor
 
 ## [Unreleased]
 
+## [1.0.0-rc.12] - 2026-11-06
+
 ### Cambiado
 
 - Panel y app: solo se incluyen los textos del sistema en español (calendario, menús de texto); el panel descarga unos 480 KB menos (−6 % comprimido) y la app pesa unos 450 KB menos.
