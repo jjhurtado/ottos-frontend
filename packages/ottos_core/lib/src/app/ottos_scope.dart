@@ -103,7 +103,8 @@ class _OttosScopeState extends State<OttosScope> {
       ],
       child: BlocProvider(
         create: (_) =>
-            AuthBloc(authRepository: _authRepository, accessPolicy: widget.accessPolicy)..add(const AuthStarted()),
+            AuthBloc(authRepository: _authRepository, accessPolicy: widget.accessPolicy, loginMemory: _loginMemory)
+              ..add(const AuthStarted()),
         child: widget.child,
       ),
     );

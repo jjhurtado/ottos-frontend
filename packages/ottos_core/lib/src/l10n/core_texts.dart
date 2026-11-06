@@ -216,6 +216,13 @@ abstract final class CoreTexts {
   static const biometricEnableReason = 'Confirma tu huella para entrar con ella la próxima vez';
   static const biometricLoginReason = 'Entra en Ottos con tu huella';
   static const biometricOutdated = 'Tu contraseña cambió. Escríbela una vez para volver a entrar con huella.';
+  static String biometricLoginAs(String email) => 'Entrar con huella como $email';
+  static const biometricPromptSubtitle = 'Confirma tu huella para usar el acceso guardado en este teléfono';
+  static const biometricReset =
+      'La huella guardada ya no sirve en este teléfono. Entra con tu contraseña y vuelve a activarla.';
+  static String forgetBiometricLogin(String email) => 'Olvidar la entrada con huella de $email';
+  static const forgetBiometricLoginHelp = 'Márcalo si otra persona va a usar este teléfono.';
+  static const logoutQuestion = '¿Cerrar sesión en este teléfono?';
 
   // Common
   static const retry = 'Reintentar';

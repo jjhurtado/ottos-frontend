@@ -10,13 +10,8 @@ class _MockRemittances extends Mock implements RemittanceRepository {}
 
 class _MockAuth extends Mock implements AuthRepository {}
 
-Remittance _remittance(String id, String code) => Remittance(
-  id: id,
-  code: code,
-  type: RemittanceType.delivery,
-  status: 'CREATED',
-  statusName: 'Creada',
-);
+Remittance _remittance(String id, String code) =>
+    Remittance(id: id, code: code, type: RemittanceType.delivery, status: 'CREATED', statusName: 'Creada');
 
 void main() {
   late _MockRemittances remittances;
@@ -31,9 +26,13 @@ void main() {
     remittances = _MockRemittances();
     stored = [_remittance('r1', 'OT-OLD1')];
     when(() => remittances.workflow()).thenAnswer((_) async => const Workflow(statuses: [], transitions: []));
-    when(() => remittances.search(any(), page: any(named: 'page'), size: any(named: 'size'))).thenAnswer(
-      (_) async => PageResult(items: List.of(stored), page: 0, size: 20, totalItems: stored.length),
-    );
+    when(
+      () => remittances.search(
+        any(),
+        page: any(named: 'page'),
+        size: any(named: 'size'),
+      ),
+    ).thenAnswer((_) async => PageResult(items: List.of(stored), page: 0, size: 20, totalItems: stored.length));
   });
 
   Future<GoRouter> pump(WidgetTester tester) async {
@@ -64,8 +63,14 @@ void main() {
           path: '/remittances',
           builder: (_, _) => const Scaffold(body: RemittanceListPage()),
           routes: [
-            GoRoute(path: 'new', builder: (_, _) => const Scaffold(body: Text('form'))),
-            GoRoute(path: ':id', builder: (_, state) => Scaffold(body: Text('detail ${state.pathParameters['id']}'))),
+            GoRoute(
+              path: 'new',
+              builder: (_, _) => const Scaffold(body: Text('form')),
+            ),
+            GoRoute(
+              path: ':id',
+              builder: (_, state) => Scaffold(body: Text('detail ${state.pathParameters['id']}')),
+            ),
           ],
         ),
       ],
@@ -113,7 +118,13 @@ void main() {
     router.go('/remittances/r1');
     await tester.pumpAndSettle();
     stored = [
-      const Remittance(id: 'r1', code: 'OT-OLD1', type: RemittanceType.delivery, status: 'VOIDED', statusName: 'Anulada'),
+      const Remittance(
+        id: 'r1',
+        code: 'OT-OLD1',
+        type: RemittanceType.delivery,
+        status: 'VOIDED',
+        statusName: 'Anulada',
+      ),
     ];
     router.go('/remittances');
     await tester.pumpAndSettle();
