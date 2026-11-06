@@ -130,28 +130,15 @@ class CourierShell extends StatelessWidget {
     );
   }
 
-  /// Unsent actions are lost on logout (only this user can send them): warn first.
-  static Future<void> _logout(BuildContext context, SyncCubit? sync) async {
-    final auth = context.read<AuthBloc>();
+  /// The phone keeps only the unsent actions after logout (SEC-2); they are
+  /// sent when the same courier logs in again: say so before logging out.
+  static Future<void> _logout(BuildContext context, SyncCubit? sync) {
     final pending = sync?.state.pending ?? 0;
-    if (pending > 0) {
-      final confirmed = await showDialog<bool>(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text(CoreTexts.logout),
-          content: Text(CourierTexts.unsentOnLogout(pending)),
-          actions: [
-            TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text(CoreTexts.cancel)),
-            TextButton(
-              style: TextButton.styleFrom(foregroundColor: OttosColors.danger),
-              onPressed: () => Navigator.of(context).pop(true),
-              child: const Text(CourierTexts.logoutAnyway),
-            ),
-          ],
-        ),
-      );
-      if (confirmed != true) return;
-    }
-    auth.add(const AuthLogoutRequested());
+    return confirmLogout(
+      context,
+      warning: pending > 0 ? CourierTexts.unsentOnLogout(pending) : null,
+      confirmLabel: pending > 0 ? CourierTexts.logoutAnyway : CoreTexts.logout,
+      beforeLogout: sync?.clearForLogout,
+    );
   }
 }

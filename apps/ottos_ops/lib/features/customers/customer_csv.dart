@@ -91,7 +91,8 @@ abstract final class CustomerCsv {
     String? cell(List<String> row, String column) {
       final index = header.indexOf(column);
       if (index < 0 || index >= row.length) return null;
-      final value = row[index].trim();
+      // The export puts a ' before values such as +53… (see Csv.neutralizeFormula).
+      final value = Csv.restoreFormula(row[index].trim());
       return value.isEmpty ? null : value;
     }
 
@@ -178,7 +179,8 @@ abstract final class BeneficiaryCsv {
     String? cell(List<String> row, String column) {
       final index = header.indexOf(column);
       if (index < 0 || index >= row.length) return null;
-      final value = row[index].trim();
+      // The export puts a ' before values such as +53… (see Csv.neutralizeFormula).
+      final value = Csv.restoreFormula(row[index].trim());
       return value.isEmpty ? null : value;
     }
 

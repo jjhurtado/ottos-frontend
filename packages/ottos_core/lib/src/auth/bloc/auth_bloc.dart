@@ -1,11 +1,13 @@
 import 'dart:async';
 
 import 'package:equatable/equatable.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../api/api_exception.dart';
 import '../auth_repository.dart';
 import '../current_user.dart';
+import '../login/login_memory.dart';
 
 part 'auth_event.dart';
 part 'auth_state.dart';
@@ -16,7 +18,7 @@ typedef AccessPolicy = bool Function(CurrentUser user);
 
 /// Holds the session for the whole app.
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
-  AuthBloc({required AuthRepository authRepository, required this._accessPolicy})
+  AuthBloc({required AuthRepository authRepository, required this._accessPolicy, this._loginMemory})
     : _authRepository = authRepository,
       super(const AuthState.unknown()) {
     on<AuthStarted>(_onStarted);
@@ -29,9 +31,13 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
   final AuthRepository _authRepository;
   final AccessPolicy _accessPolicy;
+
+  /// Where the fingerprint login is kept, to forget it on logout when asked.
+  final LoginMemory? _loginMemory;
   late final StreamSubscription<void> _sessionExpiredSubscription;
 
   Future<void> _onStarted(AuthStarted event, Emitter<AuthState> emit) async {
+    await _removeLegacyCredentials();
     try {
       final user = await _authRepository.restoreSession();
       if (user != null && _accessPolicy(user)) {
@@ -46,7 +52,17 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     }
   }
 
+  /// The password saved before SEC-1 must go even if the user stays signed in.
+  Future<void> _removeLegacyCredentials() async {
+    try {
+      await _loginMemory?.removeLegacyCredentials();
+    } catch (error) {
+      debugPrint('Could not remove the legacy fingerprint login (${error.runtimeType})');
+    }
+  }
+
   Future<void> _onLogoutRequested(AuthLogoutRequested event, Emitter<AuthState> emit) async {
+    if (event.forgetBiometricLogin) await _loginMemory?.clearBiometricCredentials();
     await _authRepository.logout();
     emit(const AuthState.unauthenticated());
   }
