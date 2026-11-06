@@ -6,6 +6,7 @@ import '../api/api_client.dart';
 import '../models/courier.dart';
 import '../models/event.dart';
 import '../models/page_result.dart';
+import '../models/pending_totals.dart';
 import '../models/remittance.dart';
 import '../models/workflow.dart';
 import '../utils/formatters.dart';
@@ -29,6 +30,7 @@ class RemittanceFilter extends Equatable {
     this.onTheHouse,
   });
 
+  /// One status code, or several separated by commas (`PAID,ASSIGNED`).
   final String? status;
   final RemittanceType? type;
   final bool? late;
@@ -257,6 +259,26 @@ class RemittanceRepository {
       query: {...filter.toQuery(), 'page': page, 'size': size},
     );
     return PageResult.fromJson(json, Remittance.fromJson);
+  }
+
+  /// The open remittances: not voided, in any status the workflow does not
+  /// mark final (REQ-021 BR-1). The pending totals and the list they open use it (BR-8).
+  Future<RemittanceFilter> pendingFilter() async => RemittanceFilter(
+    status: [
+      for (final status in (await workflow()).statuses)
+        if (!status.isFinal) status.code,
+    ].join(','),
+    voided: false,
+  );
+
+  /// Money pending to deliver and to collect over every open remittance, by
+  /// currency, summed by the server (BR-5; `remittances:read`).
+  Future<PendingTotals> pendingTotals() async {
+    final json = await _api.get<Map<String, dynamic>>(
+      '/remittances',
+      query: {...(await pendingFilter()).toQuery(), 'page': 0, 'size': 1, 'totals': true},
+    );
+    return PendingTotals.fromJson(json['totals'] as Map<String, dynamic>?);
   }
 
   /// Registers a remittance. Sending the same [idempotencyKey] again (a retry
