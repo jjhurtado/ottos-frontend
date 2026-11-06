@@ -13,7 +13,7 @@ dependencies:
   flutter:
     sdk: flutter
   flutter_bloc: ^9.1.1
-  flutter_local_notifications: ^22.3.1
+  flutter_local_notifications: ^22.3.3
   flutter_localizations:
     sdk: flutter
   flutter_native_contact_picker: ^0.0.12
