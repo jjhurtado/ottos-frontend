@@ -21,12 +21,27 @@ class Notice {
 /// Beyond this many at once, one notification sums them up.
 const maxSingleNotices = 3;
 
-/// "OT-ABC123 · Rosa Pérez · Boyeros".
+/// "Rosa Pérez · Boyeros · OT-ABC123": the name first, the code last
+/// (REQ-019 AC-2.1, AC-2.2). With no name, it starts with the extra part.
 String _line(Remittance remittance, [String? extra]) => [
-  remittance.code,
-  remittance.beneficiaryName,
+  remittance.beneficiaryName?.trim(),
   extra,
+  remittance.code,
 ].whereType<String>().where((part) => part.isNotEmpty).join(' · ');
+
+/// "Rosa Pérez, Juan Gómez, Ana Díaz y 4 más": at most [maxSingleNotices]
+/// names; a remittance with no name is named by its code.
+String _names(List<Remittance> remittances) {
+  final names = [
+    for (final remittance in remittances.take(maxSingleNotices))
+      switch (remittance.beneficiaryName?.trim()) {
+        final name? when name.isNotEmpty => name,
+        _ => remittance.code,
+      },
+  ];
+  final rest = remittances.length - names.length;
+  return rest > 0 ? CourierTexts.andMore(names.join(', '), rest) : names.join(', ');
+}
 
 int _idOf(String remittanceId, NoticeChannel channel) => Object.hash(remittanceId, channel) & 0x7fffffff;
 
@@ -39,7 +54,7 @@ List<Notice> newRemittanceNotices(List<Remittance> remittances) {
         id: NoticeChannel.newRemittance.index,
         channel: NoticeChannel.newRemittance,
         title: CourierTexts.newRemittancesTitle(remittances.length),
-        body: remittances.map((remittance) => remittance.code).join(', '),
+        body: _names(remittances),
       ),
     ];
   }
@@ -64,7 +79,7 @@ List<Notice> completedNotices(List<Remittance> remittances) {
         id: NoticeChannel.completed.index,
         channel: NoticeChannel.completed,
         title: CourierTexts.completedManyTitle(remittances.length),
-        body: remittances.map((remittance) => remittance.code).join(', '),
+        body: _names(remittances),
       ),
     ];
   }

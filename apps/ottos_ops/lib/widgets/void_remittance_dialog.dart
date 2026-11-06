@@ -31,7 +31,7 @@ class _VoidRemittanceDialogState extends State<_VoidRemittanceDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text(OpsTexts.voidTitle(widget.remittance.code)),
+      title: Text(OpsTexts.voidTitle(remittanceLabel(widget.remittance.beneficiaryName, widget.remittance.code))),
       content: SizedBox(
         width: 460,
         child: Form(

@@ -43,7 +43,18 @@ class RemittancePage extends StatelessWidget {
           }
         },
         builder: (context, state) => Scaffold(
-          appBar: AppBar(title: Text(state.remittance?.code ?? '')),
+          appBar: AppBar(
+            title: switch (state.remittance) {
+              // On the navy bar: white name, light code.
+              final remittance? => RemittanceTitle(
+                name: remittance.beneficiaryName,
+                code: remittance.code,
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(color: Colors.white),
+                codeStyle: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.white70),
+              ),
+              null => const Text(''),
+            },
+          ),
           body: switch (state.status) {
             RemittanceLoadStatus.loading => const LoadingView(),
             RemittanceLoadStatus.failure => ErrorView(

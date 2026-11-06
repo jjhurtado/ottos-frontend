@@ -82,7 +82,12 @@ class _RemittanceDetailView extends StatelessWidget {
           runSpacing: 8,
           crossAxisAlignment: WrapCrossAlignment.center,
           children: [
-            Text('${OpsTexts.remittance} ${remittance.code}', style: textTheme.headlineMedium),
+            RemittanceTitle(
+              name: remittance.beneficiaryName,
+              code: remittance.code,
+              style: textTheme.headlineMedium,
+              codeStyle: textTheme.bodyMedium?.copyWith(color: OttosColors.inkMuted),
+            ),
             RemittanceStatusChip(remittance: remittance),
             Chip(label: Text(remittance.isPickup ? CoreTexts.pickup : CoreTexts.delivery)),
             if (remittance.onTheHouse) const OnTheHouseBadge(),
