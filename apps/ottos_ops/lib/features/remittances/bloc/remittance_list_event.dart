@@ -48,3 +48,8 @@ final class RemittanceListSearchTyped extends RemittanceListEvent {
 final class RemittanceListSearchApplied extends RemittanceListLoadEvent {
   const RemittanceListSearchApplied();
 }
+
+/// «Quitar filtros»: every filter and the typed text go, and a pending search is dropped.
+final class RemittanceListFiltersCleared extends RemittanceListLoadEvent {
+  const RemittanceListFiltersCleared();
+}

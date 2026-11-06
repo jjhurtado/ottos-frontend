@@ -188,7 +188,7 @@ class _FilterBar extends StatelessWidget {
           ),
           if (!filter.isEmpty)
             TextButton.icon(
-              onPressed: () => change(const RemittanceFilter()),
+              onPressed: () => bloc.add(const RemittanceListFiltersCleared()),
               icon: const Icon(Icons.filter_alt_off_outlined),
               label: const Text(OpsTexts.clearFilters),
             ),

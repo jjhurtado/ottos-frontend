@@ -23,6 +23,7 @@ class RemittanceListBloc extends Bloc<RemittanceListEvent, RemittanceListState> 
         RemittanceListFilterChanged(:final filter) => _load(emit, filter: filter, page: 0),
         RemittanceListPageRequested(:final page) => _load(emit, filter: state.filter, page: page),
         RemittanceListSearchApplied() => _onSearchApplied(emit),
+        RemittanceListFiltersCleared() => _onFiltersCleared(emit),
       },
       transformer: restartable(),
     );
@@ -67,6 +68,11 @@ class RemittanceListBloc extends Bloc<RemittanceListEvent, RemittanceListState> 
     await _load(emit, filter: state.filter.copyWith(beneficiaryQuery: query), page: 0);
   }
 
+  Future<void> _onFiltersCleared(Emitter<RemittanceListState> emit) async {
+    _timer?.cancel();
+    await _load(emit, filter: const RemittanceFilter(), page: 0, clearText: true);
+  }
+
   Future<void> _onStarted(Emitter<RemittanceListState> emit) async {
     try {
       final workflow = await _remittances.workflow();
@@ -77,12 +83,15 @@ class RemittanceListBloc extends Bloc<RemittanceListEvent, RemittanceListState> 
     await _load(emit, filter: state.filter, page: 0);
   }
 
-  Future<void> _load(Emitter<RemittanceListState> emit, {required RemittanceFilter filter, required int page}) async {
+  Future<void> _load(
+    Emitter<RemittanceListState> emit, {
+    required RemittanceFilter filter,
+    required int page,
+    bool clearText = false,
+  }) async {
     final loadId = ++_loadId;
     if (filter != state.filter) _shown.clear();
-    // Cleared from outside (remove filters): the field empties too.
-    final cleared = filter.beneficiaryQuery == null && state.filter.beneficiaryQuery != null;
-    emit(state.copyWith(status: RemittanceListStatus.loading, filter: filter, typed: cleared ? '' : null));
+    emit(state.copyWith(status: RemittanceListStatus.loading, filter: filter, typed: clearText ? '' : null));
     try {
       final result = await _remittances.search(filter, page: page, size: pageSize);
       if (loadId != _loadId) return;

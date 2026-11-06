@@ -330,4 +330,34 @@ void main() {
     expect(tester.takeException(), isNull);
     expect(find.text(CoreTexts.networkError), findsOneWidget);
   });
+
+  testWidgets('CR-2: «Quitar filtros» empties a text that is too short, and its hint', (tester) async {
+    await pump(tester);
+    await tester.tap(find.text(OpsTexts.onlyLate));
+    await tester.pumpAndSettle();
+    await typeAndWait(tester, 'j');
+    expect(find.text(OpsTexts.searchTooShort), findsOneWidget);
+
+    await tester.tap(find.text(OpsTexts.clearFilters));
+    await tester.pumpAndSettle();
+
+    expect(tester.widget<TextField>(find.byType(TextField)).controller!.text, isEmpty);
+    expect(find.text(OpsTexts.searchTooShort), findsNothing);
+  });
+
+  testWidgets('CR-2: «Quitar filtros» drops a search still waiting for its pause', (tester) async {
+    await pump(tester);
+    await tester.tap(find.text(OpsTexts.onlyLate));
+    await tester.pumpAndSettle();
+    searches.clear();
+    await type(tester, 'jose'); // the 400 ms pause has not ended
+
+    await tester.tap(find.text(OpsTexts.clearFilters));
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pumpAndSettle();
+
+    expect(tester.widget<TextField>(find.byType(TextField)).controller!.text, isEmpty);
+    expect(searches.every((search) => search.$1.beneficiaryQuery == null), isTrue);
+    expect(searches.last.$1.isEmpty, isTrue);
+  });
 }
