@@ -42,7 +42,7 @@ class RemittanceStatusChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (showCheck && remittance.isCompleted && !remittance.isVoided) ...[
+          if (showCheck && remittance.isDone) ...[
             Icon(Icons.check, size: 14, color: textColor),
             const SizedBox(width: 4),
           ],

@@ -85,7 +85,7 @@ class _RemittanceView extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       children: [
         if (remittance.voided case final voided?) ...[VoidedBanner(voided: voided), const SizedBox(height: 12)],
-        if (remittance.isCompleted && !remittance.isVoided) ...[
+        if (remittance.isDone) ...[
           _CompletedBanner(remittance: remittance),
           const SizedBox(height: 12),
         ],

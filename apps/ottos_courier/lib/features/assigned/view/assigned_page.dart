@@ -284,7 +284,7 @@ class _AssignedCard extends StatelessWidget {
     };
     // A completed remittance looks done at a glance (REQ-020): grey, outlined
     // and with a check mark, never only by colour.
-    final completed = remittance.isCompleted && !remittance.isVoided;
+    final completed = remittance.isDone;
     final muted = completed ? OttosColors.inkMuted : null;
     return Card(
       clipBehavior: Clip.antiAlias,

@@ -311,6 +311,9 @@ class Remittance extends Equatable {
 
   bool get isCompleted => completedAt != null;
 
+  /// Completed and not voided: the one rule behind the "done" look (card, banner, chip).
+  bool get isDone => isCompleted && !isVoided;
+
   bool get isPickup => type == RemittanceType.pickup;
 
   @override
