@@ -3,7 +3,7 @@ name: reviewer
 description: Reviews a request's pull requests for quality, conventions and architecture after the tests pass, and writes the code review. Use when the test report passes, and again after fixes.
 tools: Read, Grep, Glob, Bash, Write
 disallowedTools: Agent, Edit
-model: sonnet
+model: opus
 skills:
   - a-team-conventions
   - a-rev-quality

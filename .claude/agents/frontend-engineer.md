@@ -3,7 +3,7 @@ name: frontend-engineer
 description: Implements the screens of an approved request in the mobile app or web and fixes findings on them. Use when a request's design is approved and has frontend work, or when findings come back for frontend code.
 tools: Read, Grep, Glob, Edit, Write, Bash
 disallowedTools: Agent
-model: sonnet
+model: opus
 isolation: worktree
 skills:
   - a-team-conventions
