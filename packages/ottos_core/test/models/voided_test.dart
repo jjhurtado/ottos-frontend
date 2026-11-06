@@ -28,4 +28,12 @@ void main() {
     expect(const RemittanceFilter().copyWith(voided: true).voided, isTrue);
     expect(CoreTexts.voidedBy(null), 'Remesa anulada');
   });
+
+  test('REQ-020 CR-1: isDone is completed and not voided', () {
+    const base = {'id': 'r1', 'type': 'DELIVERY', 'status': 'DELIVERED'};
+    const voided = {'at': '2026-10-13T15:00:00Z', 'by': 'u1', 'byName': 'Administrator', 'reason': 'Duplicada'};
+    expect(Remittance.fromJson({...base, 'completedAt': '2026-10-12T20:40:00Z'}).isDone, isTrue);
+    expect(Remittance.fromJson({...base, 'completedAt': '2026-10-12T20:40:00Z', 'voided': voided}).isDone, isFalse);
+    expect(Remittance.fromJson({...base, 'status': 'PAID'}).isDone, isFalse);
+  });
 }

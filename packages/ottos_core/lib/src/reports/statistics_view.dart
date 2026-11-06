@@ -14,7 +14,7 @@ import 'statistics_cubit.dart';
 const _bar = OttosColors.teal;
 const _otherBar = Color(0xFF9A9DA8);
 const _axis = Color(0xFF9A9DA8);
-const _muted = Color(0xFF44474E);
+const _muted = OttosColors.voidedGrey;
 
 /// The period chooser of the statistics: segments on wide screens, chips that
 /// scroll on a phone. «Personalizado…» opens a date range picker.

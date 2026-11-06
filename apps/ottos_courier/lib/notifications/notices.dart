@@ -24,7 +24,7 @@ const maxSingleNotices = 3;
 /// "Rosa Pérez · Boyeros · OT-ABC123": the name first, the code last
 /// (REQ-019 AC-2.1, AC-2.2). With no name, it starts with the extra part.
 String _line(Remittance remittance, [String? extra]) => [
-  remittance.beneficiaryName?.trim(),
+  Formatters.cleanName(remittance.beneficiaryName),
   extra,
   remittance.code,
 ].whereType<String>().where((part) => part.isNotEmpty).join(' · ');
@@ -34,8 +34,8 @@ String _line(Remittance remittance, [String? extra]) => [
 String _names(List<Remittance> remittances) {
   final names = [
     for (final remittance in remittances.take(maxSingleNotices))
-      switch (remittance.beneficiaryName?.trim()) {
-        final name? when name.isNotEmpty => name,
+      switch (Formatters.cleanName(remittance.beneficiaryName)) {
+        final name? => name,
         _ => remittance.code,
       },
   ];

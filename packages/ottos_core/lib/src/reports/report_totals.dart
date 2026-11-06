@@ -127,7 +127,8 @@ class ReportFilter extends Equatable {
     this.newestFirst = true,
   });
 
-  /// Part of the code, any case.
+  /// What the search box matches: part of the code or of the beneficiary's name,
+  /// any case, accents ignored (REQ-019). The field keeps its old name `code`.
   final String code;
 
   /// Null: deliveries and pickups.
@@ -195,7 +196,9 @@ class ReportFilter extends Equatable {
   List<Object?> get props => [code, type, status, courier, onlyOnTheHouse, showVoided, newestFirst];
 }
 
-/// Upper case without the Spanish accents, for searching.
+/// Upper case without the Spanish accents, for searching. It folds only the
+/// precomposed upper-case letters; a name typed with a combining accent
+/// (`e` + U+0301) does not match the plain letter, the same limit as the backend.
 String _fold(String text) {
   const plain = {'Á': 'A', 'É': 'E', 'Í': 'I', 'Ó': 'O', 'Ú': 'U', 'Ü': 'U', 'Ñ': 'N'};
   return text.toUpperCase().split('').map((char) => plain[char] ?? char).join();

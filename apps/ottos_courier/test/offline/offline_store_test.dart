@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ottos_core/ottos_core.dart';
 import 'package:ottos_courier/offline/offline_store.dart';
@@ -31,7 +32,11 @@ void main() {
   setUpAll(sqfliteFfiInit);
 
   setUp(() async {
-    store = await OfflineStore.open(path: inMemoryDatabasePath, factory: databaseFactoryFfiNoIsolate);
+    store = await OfflineStore.open(
+      path: inMemoryDatabasePath,
+      factory: databaseFactoryFfiNoIsolate,
+      now: () => DateTime.utc(2026, 11, 5, 13),
+    );
     await store.useFor('u1');
   });
 
@@ -227,13 +232,260 @@ void main() {
       );
       await old.close();
 
-      final upgraded = await OfflineStore.open(path: path, factory: databaseFactoryFfiNoIsolate);
+      final upgraded = await OfflineStore.open(
+        path: path,
+        factory: databaseFactoryFfiNoIsolate,
+        now: () => DateTime.utc(2026, 11, 5, 13),
+      );
       addTearDown(upgraded.close);
 
       expect((await upgraded.remittances()).single['id'], 'a');
       expect(await upgraded.completed(), isEmpty);
       await upgraded.applyState(SyncState(serverTime: 't1', full: false, completed: _doneList(2)));
       expect(await upgraded.completed(), hasLength(2));
+    });
+  });
+
+  test('REQ-017 CR-7: lastSync follows the injected clock', () async {
+    await store.applyState(const SyncState(serverTime: 't1', full: true));
+
+    expect((await store.lastSync())!.toUtc(), DateTime.utc(2026, 11, 5, 13));
+  });
+
+  group('REQ-017 CR-1: completeRemittance moves it in one transaction', () {
+    test('it leaves the open ones and joins the completed ones', () async {
+      await store.applyState(SyncState(serverTime: 't1', full: true, remittances: [_remittance('a')]));
+
+      await store.completeRemittance(_done('a', DateTime.utc(2026, 11, 5, 12)), voided: false);
+
+      expect(await store.remittances(), isEmpty);
+      expect((await store.completed()).map((r) => r['id']), ['a']);
+    });
+
+    test('a voided one only leaves the open ones', () async {
+      await store.applyState(SyncState(serverTime: 't1', full: true, remittances: [_remittance('a')]));
+
+      await store.completeRemittance(_done('a', DateTime.utc(2026, 11, 5, 12)), voided: true);
+
+      expect(await store.remittances(), isEmpty);
+      expect(await store.completed(), isEmpty);
+    });
+
+    test('if the write fails, it stays among the open ones', () async {
+      await store.applyState(SyncState(serverTime: 't1', full: true, remittances: [_remittance('a')]));
+
+      await expectLater(
+        store.completeRemittance({..._done('a', DateTime.utc(2026, 11, 5, 12)), 'bad': Object()}, voided: false),
+        throwsA(anything),
+      );
+
+      expect((await store.remittances()).map((r) => r['id']), ['a']);
+    });
+  });
+
+  group('REQ-017 SEC-32 SEC-33: stored completed ones expire after 7 days', () {
+    final now = DateTime.utc(2026, 11, 5, 13);
+    final cutoff = now.subtract(OfflineStore.maxCompletedAge);
+
+    Future<OfflineStore> openAt(DateTime Function() clock) async {
+      final other = await OfflineStore.open(
+        path: inMemoryDatabasePath,
+        factory: databaseFactoryFfiNoIsolate,
+        now: clock,
+      );
+      addTearDown(other.close);
+      return other;
+    }
+
+    test('the age limit is 7 days', () => expect(OfflineStore.maxCompletedAge, const Duration(days: 7)));
+
+    test('reading deletes the older ones, the list and one by id', () async {
+      var clock = now;
+      final aging = await openAt(() => clock);
+      await aging.applyState(SyncState(serverTime: 't1', full: true, completed: [_done('x', now)]));
+      expect(await aging.completedRemittance('x'), isNotNull);
+
+      clock = now.add(const Duration(days: 7, seconds: 1));
+
+      expect(await aging.completedRemittance('x'), isNull);
+      expect(await aging.completed(), isEmpty);
+    });
+
+    test('exactly 7 days stays; one second more goes', () async {
+      var clock = now;
+      final aging = await openAt(() => clock);
+      await aging.applyState(SyncState(serverTime: 't1', full: true, completed: [_done('x', now)]));
+
+      clock = now.add(const Duration(days: 7));
+      expect((await aging.completed()).map((r) => r['id']), ['x']);
+
+      clock = now.add(const Duration(days: 7, seconds: 1));
+      expect(await aging.completed(), isEmpty);
+    });
+
+    test('applyState drops the ones that arrive older than 7 days and keeps the rest', () async {
+      await store.applyState(
+        SyncState(
+          serverTime: 't1',
+          full: true,
+          completed: [
+            _done('old', cutoff.subtract(const Duration(seconds: 1))),
+            _done('edge', cutoff),
+            _done('recent', now.subtract(const Duration(days: 2))),
+          ],
+        ),
+      );
+
+      expect((await store.completed()).map((r) => r['id']), ['recent', 'edge']);
+    });
+
+    test('applyState without a completed list still expires the stored ones', () async {
+      var clock = now;
+      final aging = await openAt(() => clock);
+      await aging.applyState(SyncState(serverTime: 't1', full: true, completed: [_done('x', now)]));
+
+      clock = now.add(const Duration(days: 8));
+      await aging.applyState(const SyncState(serverTime: 't2', full: false));
+
+      expect(await aging.completed(), isEmpty);
+    });
+
+    test('putCompleted drops an old one, keeps a recent one', () async {
+      await store.putCompleted(_done('old', now.subtract(const Duration(days: 8))));
+      await store.putCompleted(_done('recent', now.subtract(const Duration(days: 6))));
+
+      expect((await store.completed()).map((r) => r['id']), ['recent']);
+    });
+
+    test('one without a known completed date counts as old', () async {
+      await store.putCompleted({..._remittance('none', status: 'DELIVERED')});
+      await store.putCompleted({..._done('bad', now), 'completedAt': 'not a date'});
+
+      expect(await store.completed(), isEmpty);
+    });
+
+    group('when the app opens', () {
+      late String path;
+
+      setUp(() {
+        final dir = Directory.systemTemp.createTempSync('ottos_store_open');
+        addTearDown(() => dir.deleteSync(recursive: true));
+        path = '${dir.path}/offline.db';
+      });
+
+      Future<OfflineStore> reopen(DateTime at) =>
+          OfflineStore.open(path: path, factory: databaseFactoryFfiNoIsolate, now: () => at);
+
+      test('deletes the ones older than 7 days, keeps the rest, touches nothing else', () async {
+        final first = await reopen(now);
+        await first.saveSetting('lang', 'es');
+        await first.applyState(
+          SyncState(
+            serverTime: 't1',
+            full: true,
+            remittances: [_remittance('open')],
+            completed: [
+              _done('old', cutoff.subtract(const Duration(seconds: 1))),
+              _done('edge', cutoff),
+              _done('new', now),
+            ],
+          ),
+        );
+        await first.enqueue(_action('open'));
+        await first.close();
+
+        // Nobody signs in: opening alone prunes.
+        final reopened = await reopen(now);
+        addTearDown(reopened.close);
+
+        expect((await reopened.completed()).map((r) => r['id']), ['new', 'edge']);
+        expect((await reopened.remittances()).single['id'], 'open');
+        expect(await reopened.pending(), hasLength(1));
+        expect(await reopened.setting('lang'), 'es');
+      });
+
+      test('a stored one that is 8 days old is gone right after opening', () async {
+        final first = await reopen(now);
+        await first.applyState(SyncState(serverTime: 't1', full: true, completed: [_done('x', now)]));
+        await first.close();
+
+        // No read, no sync: opening alone must have deleted the row.
+        final reopened = await reopen(now.add(const Duration(days: 8)));
+        await reopened.close();
+
+        final raw = await databaseFactoryFfiNoIsolate.openDatabase(path);
+        addTearDown(raw.close);
+        expect(await raw.query('completed'), isEmpty);
+      });
+
+      test('REQ-017 CR-6: rows written with microseconds by the previous version are judged by the cutoff', () async {
+        final first = await reopen(now);
+        await first.close();
+        final raw = await databaseFactoryFfiNoIsolate.openDatabase(path);
+        for (final (id, at) in [
+          ('inside', '2026-10-29T13:00:00.001123Z'),
+          ('outside', '2026-10-29T12:59:59.999999Z'),
+          // Same millisecond as the cutoff: text order puts it before it, so it goes up to 1 ms early.
+          ('same-ms', '2026-10-29T13:00:00.000123Z'),
+        ]) {
+          await raw.insert('completed', {'id': id, 'completed_at': at, 'json': '{"id":"$id"}'});
+        }
+        await raw.close();
+
+        final reopened = await reopen(now);
+        addTearDown(reopened.close);
+
+        expect((await reopened.completed()).map((r) => r['id']), ['inside']);
+      });
+
+      test('a failing prune does not stop the app from opening', () async {
+        final broken = await databaseFactoryFfiNoIsolate.openDatabase(
+          path,
+          options: OpenDatabaseOptions(
+            version: 2,
+            onCreate: (db, _) async {
+              await db.execute('CREATE TABLE remittances (id TEXT PRIMARY KEY, json TEXT NOT NULL)');
+              await db.execute('CREATE TABLE settings (key TEXT PRIMARY KEY, value TEXT NOT NULL)');
+              await db.insert('remittances', {'id': 'a', 'json': '{"id":"a"}'});
+            },
+          ),
+        );
+        await broken.close();
+
+        final lines = <String?>[];
+        final original = debugPrint;
+        debugPrint = (message, {wrapWidth}) => lines.add(message);
+        addTearDown(() => debugPrint = original);
+
+        final reopened = await reopen(now);
+        addTearDown(reopened.close);
+
+        expect((await reopened.remittances()).single['id'], 'a');
+        // REQ-017 CR-9: the failure leaves one line, with no personal data.
+        expect(lines, hasLength(1));
+        expect(lines.single, startsWith('Offline database: could not prune'));
+      });
+    });
+
+    test('the cap of 20 still applies inside the 7 days', () async {
+      await store.applyState(SyncState(serverTime: 't1', full: true, completed: _doneList(25)));
+
+      expect(await store.completed(), hasLength(20));
+    });
+
+    test('open remittances and unsent actions are never touched', () async {
+      var clock = now;
+      final aging = await openAt(() => clock);
+      await aging.useFor('u1');
+      await aging.applyState(SyncState(serverTime: 't1', full: true, remittances: [_remittance('a')]));
+      await aging.enqueue(_action('a'));
+
+      clock = now.add(const Duration(days: 30));
+      await aging.completed();
+      await aging.applyState(const SyncState(serverTime: 't2', full: false));
+
+      expect((await aging.remittances()).single['id'], 'a');
+      expect(await aging.pending(), hasLength(1));
     });
   });
 }

@@ -81,6 +81,8 @@ final class AssignedState extends Equatable {
     return [...items]..sort(
       (a, b) => switch (sort) {
         _ when a.isCompleted != b.isCompleted => a.isCompleted ? 1 : -1,
+        // Safe: isCompleted is completedAt != null, so both have a date here. One
+        // without a date is not completed by definition and sorts with the open ones.
         _ when a.isCompleted => switch (b.completedAt!.compareTo(a.completedAt!)) {
           0 => a.code.compareTo(b.code),
           final order => order,

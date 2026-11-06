@@ -72,11 +72,14 @@ abstract final class ReportTexts {
   // Inside the exported files
   static const brand = "Otto's Bussines";
   static const summaryFooter = '$brand · Panel de operaciones';
-  static String detailFooter(String month) => '$brand · Resumen a detalle de $month';
+  static String detailFooter(String month) => '$brand · $detailTitle de $month';
   static String pageNumber(int page, int pages) => 'Página $page de $pages';
   static const monthEndStatusShort = 'Estado al cierre';
   static const yes = 'Sí';
   static const no = 'No';
+  static const voidedOnColumn = 'Anulada el';
+  static const voidedReasonColumn = 'Motivo de la anulación';
+  static const detailTitle = 'Resumen a detalle';
   static const csvColumns = [
     beneficiary,
     'Código',
@@ -97,8 +100,8 @@ abstract final class ReportTexts {
     'Por la casa',
     'Comisión no cobrada',
     'Anulada',
-    'Anulada el',
-    'Motivo de la anulación',
+    voidedOnColumn,
+    voidedReasonColumn,
   ];
 
   // The month's remittances

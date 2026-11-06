@@ -150,12 +150,12 @@ class _BusinessTimeRefresher extends StatefulWidget {
 }
 
 class _BusinessTimeRefresherState extends State<_BusinessTimeRefresher> {
-  late final AppLifecycleListener _lifecycle = AppLifecycleListener(onResume: _refresh);
+  late final AppLifecycleListener _lifecycle;
 
   @override
   void initState() {
     super.initState();
-    _lifecycle;
+    _lifecycle = AppLifecycleListener(onResume: _refresh);
     _refresh();
   }
 

@@ -54,7 +54,11 @@ void main() {
   });
 
   setUp(() async {
-    store = await OfflineStore.open(path: inMemoryDatabasePath, factory: databaseFactoryFfiNoIsolate);
+    store = await OfflineStore.open(
+      path: inMemoryDatabasePath,
+      factory: databaseFactoryFfiNoIsolate,
+      now: () => DateTime.utc(2026, 11, 5, 13),
+    );
     server = _MockSync();
     sync = SyncCubit(store: store, sync: server);
     source = OfflineSource(sync: sync);
@@ -84,6 +88,59 @@ void main() {
     expect(page.items.skip(2).map((r) => r.id), [for (var i = 0; i < 18; i++) 'd$i'], reason: 'newest stored');
     expect(page.page, 0);
     expect(page.items.map((r) => r.id).toSet(), hasLength(20), reason: 'no repeats');
+  });
+
+  test(
+    'SEC-32: stored ones older than 7 days are gone from the list and from get; an unsent one shows at any age',
+    () async {
+      await start(
+        open: [_open('a')],
+        completed: [_done('fresh', 60), _done('stale', 8 * 24 * 60), _done('edge', 7 * 24 * 60 - 60)],
+      );
+      await store.enqueue(
+        SyncAction(
+          id: 'act-a',
+          type: SyncActionType.deliver,
+          remittanceId: 'a',
+          occurredAt: _now.subtract(const Duration(days: 30)),
+        ),
+      );
+
+      final page = await source.completed();
+
+      expect(page.items.map((r) => r.id), ['a', 'fresh', 'edge']);
+      await expectLater(source.get('stale'), throwsA(isA<ApiException>()));
+      expect((await source.get('a')).id, 'a');
+      expect((await source.list()), isEmpty, reason: 'the open one is completed on the phone');
+    },
+  );
+
+  test('AC-1.9 (clock moves, offline): a stored one shows at 7 days and is gone a second later', () async {
+    var clock = DateTime.utc(2026, 11, 5, 13);
+    final aging = await OfflineStore.open(
+      path: inMemoryDatabasePath,
+      factory: databaseFactoryFfiNoIsolate,
+      now: () => clock,
+    );
+    final agingSync = SyncCubit(store: aging, sync: server);
+    addTearDown(() async {
+      await agingSync.close();
+      await aging.close();
+    });
+    when(() => server.state(since: any(named: 'since'))).thenAnswer(
+      (_) async => SyncState(serverTime: 't1', full: true, remittances: [_open('a')], completed: [_done('x', 60)]),
+    );
+    await agingSync.start('u1');
+    when(() => server.state(since: any(named: 'since'))).thenThrow(_offline);
+    final aged = OfflineSource(sync: agingSync);
+
+    clock = _now.subtract(const Duration(minutes: 60)).add(const Duration(days: 7));
+    expect((await aged.completed()).items.map((r) => r.id), ['x'], reason: 'exactly 7 days');
+
+    clock = clock.add(const Duration(seconds: 1));
+    expect((await aged.completed()).items, isEmpty);
+    await expectLater(aged.get('x'), throwsA(isA<ApiException>()));
+    expect((await aged.get('a')).id, 'a', reason: 'the open one stays');
   });
 
   test('AC-2.1: offline, the list is what the last sync left, newest first', () async {

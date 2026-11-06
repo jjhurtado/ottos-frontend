@@ -322,16 +322,28 @@ class _TotalsStrip extends StatelessWidget {
 /// How the status reads, the colour of its tint and of its text: voided grey,
 /// incident red, completed green, assigned amber, paid teal. Green and amber
 /// text use their darker shades so they read at 4.5:1 on the tint.
-(String, Color, Color) _status(ReportRemittance row) => switch (row) {
-  ReportRemittance(isVoided: true) => (ReportTexts.voided, const Color(0xFF44474E), const Color(0xFF44474E)),
-  ReportRemittance(withIncident: true) => (
-    '${reportStatusName(row)} · ${ReportTexts.statusIncident.toLowerCase()}',
-    OttosColors.danger,
-    OttosColors.danger,
+({String label, Color tint, Color text}) _status(ReportRemittance row) => switch (row) {
+  ReportRemittance(isVoided: true) => (
+    label: ReportTexts.voided,
+    tint: OttosColors.voidedGrey,
+    text: OttosColors.voidedGrey,
   ),
-  ReportRemittance(isCompleted: true) => (reportStatusName(row), OttosColors.success, OttosColors.successText),
-  ReportRemittance(status: 'ASSIGNED') => (reportStatusName(row), OttosColors.warning, OttosColors.warningText),
-  _ => (reportStatusName(row), OttosColors.tealDark, OttosColors.tealDark),
+  ReportRemittance(withIncident: true) => (
+    label: '${reportStatusName(row)} · ${ReportTexts.statusIncident.toLowerCase()}',
+    tint: OttosColors.danger,
+    text: OttosColors.danger,
+  ),
+  ReportRemittance(isCompleted: true) => (
+    label: reportStatusName(row),
+    tint: OttosColors.success,
+    text: OttosColors.successText,
+  ),
+  ReportRemittance(status: 'ASSIGNED') => (
+    label: reportStatusName(row),
+    tint: OttosColors.warning,
+    text: OttosColors.warningText,
+  ),
+  _ => (label: reportStatusName(row), tint: OttosColors.tealDark, text: OttosColors.tealDark),
 };
 
 String _courier(ReportRemittance row) =>
@@ -344,14 +356,14 @@ class _StatusChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final (label, color, textColor) = _status(row);
+    final status = _status(row);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-      decoration: BoxDecoration(color: color.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(12)),
+      decoration: BoxDecoration(color: status.tint.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(12)),
       child: Text(
-        label,
+        status.label,
         overflow: TextOverflow.ellipsis,
-        style: TextStyle(color: textColor, fontSize: 12, fontWeight: FontWeight.w500),
+        style: TextStyle(color: status.text, fontSize: 12, fontWeight: FontWeight.w500),
       ),
     );
   }
@@ -441,9 +453,9 @@ class _Table extends StatelessWidget {
     Widget Function(String, {TextStyle? style}) text,
   ) {
     final voided = row.isVoided;
-    final grey = voided ? const TextStyle(color: Color(0xFF44474E)) : null;
+    final grey = voided ? const TextStyle(color: OttosColors.voidedGrey) : null;
     final money = voided
-        ? const TextStyle(color: Color(0xFF44474E), decoration: TextDecoration.lineThrough)
+        ? const TextStyle(color: OttosColors.voidedGrey, decoration: TextDecoration.lineThrough)
         : const TextStyle(fontFeatures: [FontFeature.tabularFigures()]);
     final open = onOpen;
     return Container(
@@ -455,8 +467,8 @@ class _Table extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(
-            height: 52,
+          ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 52),
             child: Row(
               children: [
                 cell(
@@ -533,7 +545,7 @@ class _RemittanceCard extends StatelessWidget {
     final type = row.isPickup
         ? ReportTexts.pickupType
         : (row.onTheHouse ? ReportTexts.onTheHouseDelivery : ReportTexts.deliveryType);
-    final (status, _, _) = _status(row);
+    final status = _status(row).label;
     final details = [
       type,
       BusinessTime.shortDate(row.createdAt),
@@ -565,7 +577,7 @@ class _RemittanceCard extends StatelessWidget {
                   Formatters.money(row.isPickup ? row.collected : row.total, currency),
                   style: textTheme.titleMedium?.copyWith(
                     decoration: voided ? TextDecoration.lineThrough : null,
-                    color: voided ? const Color(0xFF44474E) : null,
+                    color: voided ? OttosColors.voidedGrey : null,
                   ),
                 ),
               ],
@@ -602,7 +614,7 @@ class _TotalsTiles extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
     String money(double value) => Formatters.money(value, currency);
     Widget tile(String label, String value, Color color, {bool valueFirst = false}) {
-      final labelText = Text(label, style: textTheme.bodySmall?.copyWith(color: const Color(0xFF44474E)));
+      final labelText = Text(label, style: textTheme.bodySmall?.copyWith(color: OttosColors.voidedGrey));
       final valueText = Text(
         value,
         style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: OttosColors.navy),
