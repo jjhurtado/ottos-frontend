@@ -11,6 +11,8 @@ Cambios notables del frontend de Ottos (panel de operaciones y app de repartidor
 - App › ventas: botón **«Entregada por el negocio»** («Recogida por el negocio» en una recogida) en el detalle de una remesa abierta y no anulada, con o sin repartidor, igual que en el panel. Solo para quien tiene el permiso «Completar desde el negocio»; los repartidores no lo ven. Pide confirmación, explica qué pasa con la caja del negocio y, si la remesa tenía repartidor, que se le quita; admite una nota opcional y no pide PIN. Necesita conexión. Después, el detalle muestra «Entregada por: El negocio». Las versiones anteriores de la app siguen funcionando, sin el botón.
 - Panel › Auditoría: el filtro «Sobre» tiene la opción **«Remesas antiguas»** y su acción **«Remesas antiguas importadas»**, para encontrar las importaciones de remesas antiguas; en la lista esas entradas ya salen en español.
 
+- Panel › Configuración: **zona horaria del negocio**, una hora fija de UTC−12 a UTC+14 (hoy UTC−4). Los ajustes generales la muestran con la hora actual del negocio; quien puede cambiar la configuración la elige en «Editar», que dice qué hora sería con cada una, y antes de guardar confirma que «hoy», las remesas atrasadas y los informes de todos los meses pasan a calcularse con ella. El cambio queda en Auditoría («Zona horaria cambiada», de una zona a otra). Necesita el backend con la REQ-006; con uno anterior todo sigue con UTC−4.
+
 ### Cambiado
 
 - Panel › Usuarios: en tu propia fila ya no aparece «Restablecer contraseña»; tu contraseña se cambia desde «Cambiar contraseña», en el menú de tu cuenta. Si no tienes todos los permisos de otro usuario, no puedes restablecer su contraseña, desactivarlo ni activarlo, y el panel lo explica con «Esta acción necesita permisos que tú no tienes.».
@@ -22,6 +24,11 @@ Cambios notables del frontend de Ottos (panel de operaciones y app de repartidor
 - Panel y app: el texto de los botones principales turquesa (por ejemplo «Entrar» o «Guardar») pasa de blanco a azul marino, para que se lea mejor (de 3.5:1 a 5.5:1 de contraste). El turquesa no cambia. Los botones de otros colores (rojo de anular, morado de recogida, magenta de por la casa) siguen con el texto blanco.
 - Panel y app › Reportes y Estadísticas: ya no muestran el aviso «Esta sección todavía no está disponible». Si el servidor no responde bien, sale el mensaje de error con el botón «Reintentar», como en el resto de la aplicación. Necesita el backend 1.0.0-rc.4 o posterior.
 - Panel y app: las etiquetas de estado «Pagada», «Asignada» y «Entregada» o «Recogida» se leen mejor (texto más oscuro, del mismo color, con al menos 4.5:1 de contraste). El fondo de la etiqueta no cambia. También el aviso y la etiqueta «Para revisar», la etiqueta «Sin enviar» de la app y las etiquetas de estado de «Remesas del mes» en Reportes. Las etiquetas rojas (con retraso, anulada) siguen igual.
+
+### Corregido
+
+- Panel y app: todas las fechas y horas se muestran en la zona horaria del negocio, tenga el ordenador o el teléfono la zona que tenga. Desde el 1 de noviembre los informes y las estadísticas usaban la regla antigua del horario de verano y daban una hora menos, y el resto de pantallas seguía la zona del dispositivo.
+- App: lo que el repartidor hace sin conexión se guarda con la hora del servidor aunque el reloj del teléfono esté mal o se cambie, y el teléfono recuerda la zona del negocio y la diferencia de hora para cuando abre sin conexión.
 
 ### Seguridad
 

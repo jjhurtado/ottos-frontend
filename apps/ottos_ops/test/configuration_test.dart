@@ -257,5 +257,143 @@ void main() {
           .called(1);
       expect(find.text(OpsTexts.settingsSaved), findsOneWidget);
     });
+
+    group('business time zone (REQ-006)', () {
+      setUp(() {
+        BusinessTime.setForTest(deviceClock: () => DateTime.utc(2026, 11, 5, 18, 32));
+        when(() => rates.settings()).thenAnswer(
+          (_) async => const Settings(businessTime: BusinessTimeZone(timeZone: 'UTC-04:00', offsetMinutes: -240)),
+        );
+      });
+      tearDown(BusinessTime.reset);
+
+      testWidgets('AC-1.1 AC-1.3: a reader sees the zone and the business time, without «Editar»', (tester) async {
+        await pumpPage(tester, {Permissions.configurationRead});
+
+        expect(find.text(OpsTexts.businessTimeZone), findsOneWidget);
+        expect(find.textContaining('UTC−4 · ahora son las 14:32'), findsOneWidget);
+        expect(find.text(OpsTexts.edit), findsNothing);
+      });
+
+      testWidgets('AC-1.5: a new zone asks for confirmation and saves it', (tester) async {
+        when(
+          () => rates.updateSettings(
+            minimumAmount: 0,
+            defaultDeliveryDays: 2,
+            exchangeRateTolerancePercent: 20,
+            businessTimeZone: 'UTC-05:00',
+          ),
+        ).thenAnswer(
+          (_) async => const Settings(businessTime: BusinessTimeZone(timeZone: 'UTC-05:00', offsetMinutes: -300)),
+        );
+        await pumpPage(tester, {Permissions.configurationRead, Permissions.configurationWrite});
+
+        await tester.tap(find.text(OpsTexts.edit));
+        await tester.pumpAndSettle();
+        expect(find.text('UTC−4 · ${OpsTexts.businessTimeZoneCurrent}'), findsOneWidget);
+        await tester.tap(find.text('UTC−4 · ${OpsTexts.businessTimeZoneCurrent}'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('UTC−5').last);
+        await tester.pumpAndSettle();
+        expect(find.textContaining('Con UTC−5 ahora serían las 13:32'), findsOneWidget);
+
+        await tester.tap(find.text(OpsTexts.save));
+        await tester.pumpAndSettle();
+        expect(find.text(OpsTexts.businessTimeZoneConfirmTitle('UTC−5')), findsOneWidget);
+        await tester.tap(find.text(CoreTexts.cancel).last);
+        await tester.pumpAndSettle();
+        verifyNever(
+          () => rates.updateSettings(
+            minimumAmount: any(named: 'minimumAmount'),
+            defaultDeliveryDays: any(named: 'defaultDeliveryDays'),
+            exchangeRateTolerancePercent: any(named: 'exchangeRateTolerancePercent'),
+            businessTimeZone: any(named: 'businessTimeZone'),
+          ),
+        );
+
+        await tester.tap(find.text(OpsTexts.save));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text(OpsTexts.businessTimeZoneConfirm));
+        await tester.pumpAndSettle();
+        verify(
+          () => rates.updateSettings(
+            minimumAmount: 0,
+            defaultDeliveryDays: 2,
+            exchangeRateTolerancePercent: 20,
+            businessTimeZone: 'UTC-05:00',
+          ),
+        ).called(1);
+      });
+
+      testWidgets('AC-1.4: a refused zone keeps the dialog open with the message', (tester) async {
+        when(
+          () => rates.updateSettings(
+            minimumAmount: any(named: 'minimumAmount'),
+            defaultDeliveryDays: any(named: 'defaultDeliveryDays'),
+            exchangeRateTolerancePercent: any(named: 'exchangeRateTolerancePercent'),
+            businessTimeZone: any(named: 'businessTimeZone'),
+          ),
+        ).thenThrow(
+          ApiException(CoreTexts.errorCodes['INVALID_TIME_ZONE']!, statusCode: 400, code: 'INVALID_TIME_ZONE'),
+        );
+        await pumpPage(tester, {Permissions.configurationRead, Permissions.configurationWrite});
+
+        await tester.tap(find.text(OpsTexts.edit));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('UTC−4 · ${OpsTexts.businessTimeZoneCurrent}'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('UTC−5').last);
+        await tester.pumpAndSettle();
+        await tester.tap(find.text(OpsTexts.save));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text(OpsTexts.businessTimeZoneConfirm));
+        await tester.pumpAndSettle();
+
+        expect(find.text(CoreTexts.errorCodes['INVALID_TIME_ZONE']!), findsOneWidget);
+        expect(find.text(OpsTexts.save), findsOneWidget, reason: 'the edit dialog is still open');
+      });
+
+      testWidgets('AC-1.5 (same zone): saving without a change asks for no confirmation', (tester) async {
+        when(
+          () => rates.updateSettings(
+            minimumAmount: any(named: 'minimumAmount'),
+            defaultDeliveryDays: any(named: 'defaultDeliveryDays'),
+            exchangeRateTolerancePercent: any(named: 'exchangeRateTolerancePercent'),
+            businessTimeZone: any(named: 'businessTimeZone'),
+          ),
+        ).thenAnswer(
+          (_) async => const Settings(businessTime: BusinessTimeZone(timeZone: 'UTC-04:00', offsetMinutes: -240)),
+        );
+        await pumpPage(tester, {Permissions.configurationRead, Permissions.configurationWrite});
+
+        await tester.tap(find.text(OpsTexts.edit));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text(OpsTexts.save));
+        await tester.pumpAndSettle();
+
+        expect(find.text(OpsTexts.businessTimeZoneConfirm), findsNothing);
+        verify(
+          () => rates.updateSettings(
+            minimumAmount: any(named: 'minimumAmount'),
+            defaultDeliveryDays: any(named: 'defaultDeliveryDays'),
+            exchangeRateTolerancePercent: any(named: 'exchangeRateTolerancePercent'),
+            businessTimeZone: null,
+          ),
+        ).called(1);
+      });
+
+      test('the audit log says the change in labels', () {
+        final entry = AuditEntry.fromJson({
+          'id': 'a1',
+          'occurredAt': '2026-11-05T18:00:00Z',
+          'action': 'BUSINESS_TIME_ZONE_CHANGED',
+          'targetType': 'SETTINGS',
+          'details': {'from': 'UTC-04:00', 'to': 'UTC-05:00'},
+        });
+        expect(OpsTexts.auditAction(entry.action), 'Zona horaria cambiada');
+        expect(OpsTexts.auditTargetLabel(entry), 'Configuración');
+        expect(OpsTexts.auditDetails(entry), ['De UTC−4 a UTC−5']);
+      });
+    });
   });
 }

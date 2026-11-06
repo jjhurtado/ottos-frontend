@@ -3,6 +3,7 @@ import 'package:equatable/equatable.dart';
 import '../models/cash.dart';
 import '../models/remittance.dart';
 import '../models/workflow.dart';
+import '../utils/business_time.dart';
 
 /// What the mobile app keeps to work offline (`GET /sync/state`). The
 /// remittances stay as JSON so they can be stored as they arrived.
@@ -14,6 +15,7 @@ class SyncState {
     this.removedIds = const [],
     this.cash,
     this.workflow,
+    this.businessTime,
     this.completed,
   });
 
@@ -24,6 +26,7 @@ class SyncState {
     removedIds: [for (final id in json['removedIds'] as List? ?? const []) id as String],
     cash: json['cash'] as Map<String, dynamic>?,
     workflow: json['workflow'] as Map<String, dynamic>?,
+    businessTime: BusinessTimeZone.fromJson(json['businessTime']),
     completed: switch (json['completed']) {
       final List<dynamic> items => [for (final item in items) item as Map<String, dynamic>],
       _ => null,
@@ -41,6 +44,9 @@ class SyncState {
   /// `CourierStatement` JSON; null for who carries no cash.
   final Map<String, dynamic>? cash;
   final Map<String, dynamic>? workflow;
+
+  /// The business time zone; null from a server older than REQ-006.
+  final BusinessTimeZone? businessTime;
 
   /// The caller's latest completed remittances (at most 20, newest first),
   /// always the whole list even when the rest is a delta: the phone replaces

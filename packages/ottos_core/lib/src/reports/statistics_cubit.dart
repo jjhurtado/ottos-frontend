@@ -3,7 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../api/api_exception.dart';
 import '../models/statistics.dart';
-import '../utils/cuba_time.dart';
+import '../utils/business_time.dart';
 import 'report_repository.dart';
 
 enum StatisticsPeriod { currentMonth, previousMonth, lastThreeMonths, custom }
@@ -42,7 +42,7 @@ final class StatisticsState extends Equatable {
 class StatisticsCubit extends Cubit<StatisticsState> {
   StatisticsCubit({required this._reports, DateTime? today, StatisticsPeriod period = StatisticsPeriod.currentMonth})
     : _today = today,
-      super(_initial(period, today ?? CubaTime.today()));
+      super(_initial(period, today ?? BusinessTime.today()));
 
   final ReportRepository _reports;
   final DateTime? _today;
@@ -50,7 +50,7 @@ class StatisticsCubit extends Cubit<StatisticsState> {
   /// The longest period the backend takes.
   static const maxDays = 366;
 
-  DateTime get today => _today ?? CubaTime.today();
+  DateTime get today => _today ?? BusinessTime.today();
 
   static StatisticsState _initial(StatisticsPeriod period, DateTime today) {
     final range = rangeFor(period, today);

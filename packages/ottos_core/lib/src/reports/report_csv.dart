@@ -1,6 +1,6 @@
 import '../models/report_detail.dart';
 import '../utils/csv.dart';
-import '../utils/cuba_time.dart';
+import '../utils/business_time.dart';
 import '../utils/formatters.dart';
 import 'report_pdf.dart';
 import 'report_texts.dart';
@@ -23,8 +23,8 @@ abstract final class ReportCsv {
           row.code,
           row.isPickup ? ReportTexts.pickupType : ReportTexts.deliveryType,
           reportStatusName(row),
-          CubaTime.sortable(row.createdAt),
-          CubaTime.sortable(row.completedAt),
+          BusinessTime.sortable(row.createdAt),
+          BusinessTime.sortable(row.completedAt),
           row.municipalityName ?? '',
           row.completedFromBusiness ? ReportTexts.business : (row.courierName ?? ''),
           row.sourceCurrency,
@@ -38,7 +38,7 @@ abstract final class ReportCsv {
           yesNo(row.onTheHouse),
           number(row.waivedFee ?? 0),
           yesNo(row.isVoided),
-          CubaTime.sortable(row.voided?.at),
+          BusinessTime.sortable(row.voided?.at),
           row.voided?.reason ?? '',
         ],
     ]);

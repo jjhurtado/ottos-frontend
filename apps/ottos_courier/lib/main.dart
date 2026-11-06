@@ -12,6 +12,12 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await OttosLocalization.initialize();
   final store = await OfflineStore.open();
+  // REQ-006: the last business time zone and clock difference, until the next sync.
+  BusinessTime.restore(
+    zone: await store.businessTime(),
+    clockOffset: await store.clockOffset(),
+    sampledAt: await store.clockOffsetSampledAt(),
+  );
   final info = await PackageInfo.fromPlatform();
   final notifier = await _notifier();
   runApp(

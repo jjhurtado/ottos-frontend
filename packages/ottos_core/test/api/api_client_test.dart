@@ -22,9 +22,12 @@ class _MemoryTokenStorage implements TokenStorage {
 
 /// Answers each request with `routes[path](request)` and records the requests.
 class _FakeAdapter implements HttpClientAdapter {
-  _FakeAdapter(this.routes);
+  _FakeAdapter(this.routes, {this.date});
 
   final Map<String, (int, Object?) Function(RequestOptions)> routes;
+
+  /// The `Date` header of every answer, if any.
+  final String? date;
   final requests = <RequestOptions>[];
 
   @override
@@ -40,6 +43,7 @@ class _FakeAdapter implements HttpClientAdapter {
       status,
       headers: {
         Headers.contentTypeHeader: [Headers.jsonContentType],
+        'date': ?(date == null ? null : [date!]),
       },
     );
   }
@@ -132,5 +136,36 @@ void main() {
     final adapter = _FakeAdapter({'/auth/me': (_) => (200, _me)});
     await clientWith(adapter).get<Object>('/auth/me');
     expect(adapter.requests.single.headers.containsKey('X-App-Build'), isFalse);
+  });
+
+  group('server clock (REQ-006)', () {
+    tearDown(BusinessTime.reset);
+
+    test('reads an HTTP date', () {
+      expect(ApiClient.parseHttpDate('Thu, 05 Nov 2026 18:32:10 GMT'), DateTime.utc(2026, 11, 5, 18, 32, 10));
+      expect(ApiClient.parseHttpDate('yesterday'), isNull);
+    });
+
+    test('AC-3.1: the Date header of an answer corrects a wrong device clock', () async {
+      // The phone is two hours ahead.
+      BusinessTime.setForTest(deviceClock: () => DateTime.utc(2026, 11, 5, 20, 32, 10), elapsed: () => Duration.zero);
+      final adapter = _FakeAdapter({'/auth/me': (_) => (200, _me)}, date: 'Thu, 05 Nov 2026 18:32:10 GMT');
+
+      await clientWith(adapter).get<Map<String, dynamic>>('/auth/me');
+
+      expect(BusinessTime.now(), DateTime.utc(2026, 11, 5, 18, 32, 10));
+      expect(BusinessTime.clockOffset, const Duration(hours: -2));
+    });
+
+    test('an error answer also brings the server time', () async {
+      BusinessTime.setForTest(deviceClock: () => DateTime.utc(2026, 11, 5, 20), elapsed: () => Duration.zero);
+      final adapter = _FakeAdapter({
+        '/remittances': (_) => (404, {'status': 404, 'detail': 'No'}),
+      }, date: 'Thu, 05 Nov 2026 18:00:00 GMT');
+
+      await expectLater(clientWith(adapter).get<Map<String, dynamic>>('/remittances'), throwsA(isA<ApiException>()));
+
+      expect(BusinessTime.now(), DateTime.utc(2026, 11, 5, 18));
+    });
   });
 }

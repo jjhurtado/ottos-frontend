@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
 
 import '../l10n/core_texts.dart';
+import '../utils/business_time.dart';
 import 'json.dart';
 
 enum RemittanceType {
@@ -262,11 +263,14 @@ class Remittance extends Equatable {
   final bool late;
 
   /// Whole days past the expected date, by calendar day (hours do not count);
-  /// 0 when it is due today or later, or has no date.
+  /// 0 when it is due today or later, or has no date. «Today» is the
+  /// business's at [now] (default [BusinessTime.now]); the exception of BR-8.
   int daysLate({DateTime? now}) {
-    final expected = expectedDate?.toLocal();
-    if (expected == null) return 0;
-    final today = (now ?? DateTime.now()).toLocal();
+    final due = expectedDate;
+    if (due == null) return 0;
+    // A plain date as it came; an instant, on the business's calendar.
+    final expected = due.isUtc ? BusinessTime.of(due) : due;
+    final today = BusinessTime.today(now);
     // UTC midnights: a daylight saving change cannot shorten a day.
     final days = DateTime.utc(
       today.year,

@@ -160,7 +160,7 @@ void main() {
   });
 
   testWidgets('a late remittance says how many days late it is', (tester) async {
-    final threeDaysAgo = DateUtils.dateOnly(DateTime.now()).subtract(const Duration(days: 3));
+    final threeDaysAgo = BusinessTime.today().subtract(const Duration(days: 3));
     await pumpList(tester, [_remittance('OT-1', RemittanceType.delivery, expectedDate: threeDaysAgo, late: true)]);
 
     expect(find.text(CourierTexts.daysLate(3)), findsOneWidget);

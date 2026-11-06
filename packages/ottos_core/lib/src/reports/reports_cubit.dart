@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../api/api_exception.dart';
 import '../models/monthly_report.dart';
+import '../utils/business_time.dart';
 import 'report_repository.dart';
 
 enum ReportsStatus { loading, success, failure }
@@ -18,8 +19,8 @@ final class ReportsState extends Equatable {
 
   /// The current month is the last one with sales so far.
   bool get isCurrentMonth {
-    final now = DateTime.now();
-    return month.year == now.year && month.month == now.month;
+    final today = BusinessTime.today();
+    return month.year == today.year && month.month == today.month;
   }
 
   @override
@@ -29,7 +30,9 @@ final class ReportsState extends Equatable {
 /// The monthly summary of sales, one month at a time; starts at the current one.
 class ReportsCubit extends Cubit<ReportsState> {
   ReportsCubit({required this._reports, DateTime? now})
-    : super(ReportsState(month: DateTime((now ?? DateTime.now()).year, (now ?? DateTime.now()).month)));
+    : super(ReportsState(month: _month(now ?? BusinessTime.today())));
+
+  static DateTime _month(DateTime day) => DateTime(day.year, day.month);
 
   final ReportRepository _reports;
 
@@ -47,8 +50,7 @@ class ReportsCubit extends Cubit<ReportsState> {
   /// [delta] months back (negative) or forward; never past the current month.
   Future<void> moveMonth(int delta) {
     final month = DateTime(state.month.year, state.month.month + delta);
-    final now = DateTime.now();
-    if (month.isAfter(DateTime(now.year, now.month))) return Future.value();
+    if (month.isAfter(_month(BusinessTime.today()))) return Future.value();
     emit(ReportsState(month: month));
     return load();
   }

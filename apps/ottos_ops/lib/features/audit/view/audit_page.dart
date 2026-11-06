@@ -73,7 +73,7 @@ class _Filters extends StatelessWidget {
         : OpsTexts.auditActions[filter.targetType] ?? const <String>[];
 
     Future<void> pickDate({required bool from}) async {
-      final now = DateTime.now();
+      final now = BusinessTime.today();
       final picked = await showDatePicker(
         context: context,
         initialDate: (from ? filter.from : filter.to) ?? now,
