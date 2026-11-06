@@ -14,6 +14,7 @@ class SyncState {
     this.removedIds = const [],
     this.cash,
     this.workflow,
+    this.completed,
   });
 
   factory SyncState.fromJson(Map<String, dynamic> json) => SyncState(
@@ -23,6 +24,10 @@ class SyncState {
     removedIds: [for (final id in json['removedIds'] as List? ?? const []) id as String],
     cash: json['cash'] as Map<String, dynamic>?,
     workflow: json['workflow'] as Map<String, dynamic>?,
+    completed: switch (json['completed']) {
+      final List<dynamic> items => [for (final item in items) item as Map<String, dynamic>],
+      _ => null,
+    },
   );
 
   /// The server's clock, as it came: the `since` of the next download.
@@ -36,6 +41,12 @@ class SyncState {
   /// `CourierStatement` JSON; null for who carries no cash.
   final Map<String, dynamic>? cash;
   final Map<String, dynamic>? workflow;
+
+  /// The caller's latest completed remittances (at most 20, newest first),
+  /// always the whole list even when the rest is a delta: the phone replaces
+  /// its copy. Null when the server does not send it (an older backend), and
+  /// then the copy is left as it is (REQ-017).
+  final List<Map<String, dynamic>>? completed;
 
   List<Remittance> get parsedRemittances => remittances.map(Remittance.fromJson).toList();
 

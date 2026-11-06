@@ -77,6 +77,7 @@ abstract final class CourierTexts {
   static const sortByDay = 'Del día';
   static const sortMostLate = 'Más atrasadas primero';
   static const showCompleted = 'Completadas';
+  static String latestCompleted(int count) => 'Completadas (últimas $count)';
   static const noRemittances = 'No hay remesas.';
   static const showMore = 'Ver más';
   static String completedOn(String date) => 'Completada el $date';

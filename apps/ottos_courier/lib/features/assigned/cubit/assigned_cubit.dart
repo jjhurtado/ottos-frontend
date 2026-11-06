@@ -36,7 +36,8 @@ final class AssignedState extends Equatable {
   final List<Remittance> items;
   final AssignedSort sort;
 
-  /// Also lists the delivered and collected remittances, after the open ones (sales).
+  /// Also lists the delivered and collected remittances, after the open ones
+  /// (sales; the courier's latest 20, REQ-017). Off by default, not remembered.
   final bool showCompleted;
 
   /// How many pages of completed ones are loaded, and whether there are more.
@@ -149,8 +150,12 @@ class AssignedCubit extends Cubit<AssignedState> {
 
   void sortBy(AssignedSort sort) => emit(state.copyWith(sort: sort));
 
-  /// Whether the source can list the completed ones too (sales).
+  /// Whether the source can list the completed ones too (sales, and the
+  /// courier's latest ones).
   bool get canShowCompleted => _source.canShowCompleted;
+
+  /// Whether the completed ones are only the latest few (the courier), with a heading.
+  bool get completedAreLatest => _source.completedAreLatest;
 
   /// Shows or hides the completed remittances and reloads.
   Future<void> showCompleted(bool show) async {
