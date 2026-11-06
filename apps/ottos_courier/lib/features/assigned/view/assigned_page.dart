@@ -262,8 +262,14 @@ class _AssignedCard extends StatelessWidget {
       (false, true) => CourierTexts.delivered,
       (false, false) => CourierTexts.toDeliver,
     };
+    // A completed remittance looks done at a glance (REQ-020): grey, outlined
+    // and with a check mark, never only by colour.
+    final completed = remittance.isCompleted && !remittance.isVoided;
+    final muted = completed ? OttosColors.inkMuted : null;
     return Card(
       clipBehavior: Clip.antiAlias,
+      color: completed ? OttosColors.completedSurface : null,
+      shape: completed ? const DashedRoundedBorder(color: OttosColors.completedBorder) : null,
       child: InkWell(
         onTap: onTap,
         child: IntrinsicHeight(
@@ -281,7 +287,7 @@ class _AssignedCard extends StatelessWidget {
                       Row(
                         children: [
                           Expanded(child: Text(remittance.code, style: textTheme.titleMedium)),
-                          RemittanceStatusChip(remittance: remittance),
+                          RemittanceStatusChip(remittance: remittance, showCheck: true),
                         ],
                       ),
                       const SizedBox(height: 8),
@@ -297,7 +303,7 @@ class _AssignedCard extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: 8),
-                      Text(remittance.beneficiaryName ?? '', style: textTheme.titleSmall),
+                      Text(remittance.beneficiaryName ?? '', style: textTheme.titleSmall?.copyWith(color: muted)),
                       // The address already ends with the municipality and province.
                       Text(
                         remittance.beneficiaryAddress ?? remittance.municipalityName ?? '',
@@ -311,7 +317,10 @@ class _AssignedCard extends StatelessWidget {
                           Expanded(
                             child: Text(
                               '$action: ${Formatters.money(remittance.cashAmount, remittance.cashCurrency)}',
-                              style: textTheme.titleSmall?.copyWith(color: type.color, fontWeight: FontWeight.w700),
+                              style: textTheme.titleSmall?.copyWith(
+                                color: muted ?? type.color,
+                                fontWeight: completed ? FontWeight.w500 : FontWeight.w700,
+                              ),
                             ),
                           ),
                           Text(
@@ -360,7 +369,7 @@ class _UnsentBadge extends StatelessWidget {
           SizedBox(width: 6),
           Text(
             CourierTexts.unsent,
-            style: TextStyle(color: OttosColors.warning, fontWeight: FontWeight.w600),
+            style: TextStyle(color: OttosColors.warningText, fontWeight: FontWeight.w600),
           ),
         ],
       ),

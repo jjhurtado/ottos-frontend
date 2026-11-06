@@ -70,6 +70,7 @@ abstract final class CourierTexts {
   static const toCollect = 'Recoger';
   static const delivered = 'Entregado';
   static const collected = 'Recogido';
+  static String completedAt(bool pickup, String when) => '${pickup ? 'Recogida' : 'Entregada'} el $when';
   static String dueOn(String date) => 'Para el $date';
   static String daysLate(int days) => days == 1 ? '1 día de atraso' : '$days días de atraso';
   static const sortByDay = 'Del día';

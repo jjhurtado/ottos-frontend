@@ -69,6 +69,7 @@ export 'src/widgets/balances_text.dart';
 export 'src/widgets/beneficiary_form_dialog.dart';
 export 'src/widgets/beneficiary_search_dialog.dart';
 export 'src/widgets/contact_picker_button.dart';
+export 'src/widgets/dashed_rounded_border.dart';
 export 'src/widgets/customer_form_dialog.dart';
 export 'src/widgets/form_pair.dart';
 export 'src/widgets/async_view.dart';
