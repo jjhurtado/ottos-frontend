@@ -293,7 +293,7 @@ class _RemittanceTable extends StatelessWidget {
               final remittance = items[index];
               return ListTile(
                 onTap: () => open(remittance),
-                title: Text('${remittance.code} · ${remittance.beneficiaryName ?? ''}'),
+                title: RemittanceTitle(name: remittance.beneficiaryName, code: remittance.code),
                 subtitle: Text('${remittance.municipalityName ?? ''} · ${Formatters.date(remittance.expectedDate)}'),
                 trailing: _StatusCell(remittance: remittance),
               );
@@ -309,11 +309,10 @@ class _RemittanceTable extends StatelessWidget {
                 showCheckboxColumn: false,
                 headingTextStyle: const TextStyle(fontWeight: FontWeight.w600, color: OttosColors.navy),
                 columns: const [
-                  DataColumn(label: Text(OpsTexts.code)),
+                  DataColumn(label: Text(OpsTexts.beneficiary)),
                   DataColumn(label: Text(OpsTexts.type)),
                   DataColumn(label: Text(OpsTexts.status)),
                   DataColumn(label: Text(OpsTexts.customer)),
-                  DataColumn(label: Text(OpsTexts.beneficiary)),
                   DataColumn(label: Text(OpsTexts.municipality)),
                   DataColumn(label: Text(OpsTexts.amount), numeric: true),
                   DataColumn(label: Text(OpsTexts.expectedDate)),
@@ -324,11 +323,16 @@ class _RemittanceTable extends StatelessWidget {
                     DataRow(
                       onSelectChanged: (_) => open(remittance),
                       cells: [
-                        DataCell(Text(remittance.code, style: const TextStyle(fontWeight: FontWeight.w600))),
+                        DataCell(
+                          RemittanceTitle(
+                            name: remittance.beneficiaryName,
+                            code: remittance.code,
+                            style: const TextStyle(fontWeight: FontWeight.w600),
+                          ),
+                        ),
                         DataCell(Text(remittance.isPickup ? CoreTexts.pickup : CoreTexts.delivery)),
                         DataCell(_StatusCell(remittance: remittance)),
                         DataCell(Text(remittance.customerName ?? '')),
-                        DataCell(Text(remittance.beneficiaryName ?? '')),
                         DataCell(Text(remittance.municipalityName ?? '')),
                         DataCell(Text(Formatters.money(remittance.amount, remittance.sourceCurrency))),
                         DataCell(Text(Formatters.date(remittance.expectedDate))),

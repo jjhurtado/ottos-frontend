@@ -59,6 +59,21 @@ void main() {
       ]);
     });
 
+    test('the import of old remittances reads in Spanish and can be filtered', () {
+      final imported = AuditEntry.fromJson(const {
+        'id': 'h1',
+        'occurredAt': '2026-10-11T15:31:05Z',
+        'actorName': 'Administrator',
+        'action': 'HISTORICAL_REMITTANCES_IMPORTED',
+        'targetType': 'REMITTANCES',
+        'targetLabel': 'historical import',
+        'details': <String, dynamic>{},
+      });
+      expect(OpsTexts.auditAction(imported.action), 'Remesas antiguas importadas');
+      expect(OpsTexts.auditTargetLabel(imported), 'Remesas antiguas');
+      expect(OpsTexts.auditActions['REMITTANCES'], ['HISTORICAL_REMITTANCES_IMPORTED']);
+    });
+
     test('roles and permissions read by their Spanish names', () {
       expect(
         OpsTexts.auditDetails(

@@ -31,7 +31,7 @@ class _VoidRemittanceDialogState extends State<_VoidRemittanceDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text(OpsTexts.voidTitle(widget.remittance.code)),
+      title: Text(OpsTexts.voidTitle(remittanceLabel(widget.remittance.beneficiaryName, widget.remittance.code))),
       content: SizedBox(
         width: 460,
         child: Form(
@@ -57,7 +57,7 @@ class _VoidRemittanceDialogState extends State<_VoidRemittanceDialog> {
       actions: [
         TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text(CoreTexts.cancel)),
         FilledButton(
-          style: FilledButton.styleFrom(backgroundColor: OttosColors.danger),
+          style: FilledButton.styleFrom(backgroundColor: OttosColors.danger, foregroundColor: Colors.white),
           onPressed: () {
             if (_formKey.currentState!.validate()) Navigator.of(context).pop(_reason.text.trim());
           },

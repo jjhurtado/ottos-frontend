@@ -1,8 +1,9 @@
 import 'dart:convert';
 
 import 'package:ottos_core/ottos_core.dart';
-import 'package:path/path.dart' as p;
 import 'package:sqflite/sqflite.dart';
+
+import 'offline_location.dart';
 
 /// An action that the server rejected; kept so the courier sees why.
 class RejectedAction {
@@ -14,22 +15,35 @@ class RejectedAction {
 }
 
 /// What the courier needs to work without network, in SQLite on the phone:
-/// the assigned remittances as the server sent them, the cash, the workflow,
-/// and the queue of actions waiting to be sent.
+/// the assigned remittances as the server sent them, the latest ones they
+/// completed, the cash, the workflow, and the queue of actions waiting to be
+/// sent.
 class OfflineStore {
   OfflineStore._(this._db);
 
   final Database _db;
 
-  static const _version = 1;
+  /// 2: the `completed` table (REQ-017).
+  static const _version = 2;
+
+  /// How many completed remittances the phone keeps (REQ-017 BR-1).
+  static const maxCompleted = 20;
+  static const _fileName = 'ottos_offline.db';
 
   /// Opens the store of the app ([path] for tests, e.g. `inMemoryDatabasePath`).
   static Future<OfflineStore> open({String? path, DatabaseFactory? factory}) async {
     final dbFactory = factory ?? databaseFactory;
-    final dbPath = path ?? p.join(await dbFactory.getDatabasesPath(), 'ottos_offline.db');
+    final dbPath = path ?? await offlineDatabasePath(dbFactory, _fileName);
     final db = await dbFactory.openDatabase(
       dbPath,
-      options: OpenDatabaseOptions(version: _version, onCreate: (db, _) => _create(db)),
+      options: OpenDatabaseOptions(
+        version: _version,
+        onCreate: (db, _) => _create(db),
+        // Empty until the next download fills it.
+        onUpgrade: (db, oldVersion, _) async {
+          if (oldVersion < 2) await _createCompleted(db);
+        },
+      ),
     );
     return OfflineStore._(db);
   }
@@ -49,7 +63,13 @@ class OfflineStore {
         message TEXT
       )
     ''');
+    await _createCompleted(db);
   }
+
+  /// The courier's latest completed remittances, as the server sent them;
+  /// completed_at orders them, newest first.
+  static Future<void> _createCompleted(DatabaseExecutor db) =>
+      db.execute('CREATE TABLE completed (id TEXT PRIMARY KEY, completed_at TEXT NOT NULL, json TEXT NOT NULL)');
 
   Future<void> close() => _db.close();
 
@@ -65,7 +85,8 @@ class OfflineStore {
   }
 
   /// Applies a download: replaces everything when [full], otherwise adds or
-  /// updates [remittances] and drops [removedIds].
+  /// updates [remittances] and drops [removedIds]. The completed list, when it
+  /// comes, always replaces the copy whole.
   Future<void> applyState(SyncState state) => _db.transaction((txn) async {
     if (state.full) await txn.delete('remittances');
     for (final id in state.removedIds) {
@@ -74,9 +95,17 @@ class OfflineStore {
     for (final json in state.remittances) {
       await _put(txn, json);
     }
+    if (state.completed case final completed?) {
+      await txn.delete('completed');
+      for (final json in completed) {
+        await _putCompleted(txn, json);
+      }
+      await _trimCompleted(txn);
+    }
     await _set(txn, _serverTime, state.serverTime);
     if (state.cash != null) await _set(txn, _cash, jsonEncode(state.cash));
     if (state.workflow != null) await _set(txn, _workflow, jsonEncode(state.workflow));
+    if (state.businessTime != null) await _set(txn, _businessTime, jsonEncode(state.businessTime!.toJson()));
     await _set(txn, _lastSync, DateTime.now().toUtc().toIso8601String());
   });
 
@@ -90,6 +119,42 @@ class OfflineStore {
     'json': jsonEncode(json),
   }, conflictAlgorithm: ConflictAlgorithm.replace);
 
+  // Completed remittances (REQ-017)
+
+  /// The latest completed ones, newest first; at most [maxCompleted].
+  Future<List<Map<String, dynamic>>> completed() async => [
+    for (final row in await _db.query('completed', orderBy: 'completed_at DESC, id', limit: maxCompleted))
+      jsonDecode(row['json']! as String) as Map<String, dynamic>,
+  ];
+
+  Future<Map<String, dynamic>?> completedRemittance(String id) async {
+    final rows = await _db.query('completed', where: 'id = ?', whereArgs: [id]);
+    return rows.isEmpty ? null : jsonDecode(rows.single['json']! as String) as Map<String, dynamic>;
+  }
+
+  /// One just completed, as the server returned it, until the next download
+  /// brings the whole list; the oldest beyond [maxCompleted] leave (BR-1).
+  Future<void> putCompleted(Map<String, dynamic> json) => _db.transaction((txn) async {
+    await _putCompleted(txn, json);
+    await _trimCompleted(txn);
+  });
+
+  /// Keeps only the [maxCompleted] most recent.
+  static Future<void> _trimCompleted(DatabaseExecutor db) => db.rawDelete(
+    'DELETE FROM completed WHERE id NOT IN (SELECT id FROM completed ORDER BY completed_at DESC, id LIMIT ?)',
+    [maxCompleted],
+  );
+
+  /// completed_at in UTC ISO 8601, so text order is time order.
+  static Future<void> _putCompleted(DatabaseExecutor db, Map<String, dynamic> json) => db.insert('completed', {
+    'id': json['id'],
+    'completed_at': switch (json['completedAt']) {
+      final String at => DateTime.tryParse(at)?.toUtc().toIso8601String() ?? '',
+      _ => '',
+    },
+    'json': jsonEncode(json),
+  }, conflictAlgorithm: ConflictAlgorithm.replace);
+
   // Settings
 
   static const _serverTime = 'serverTime';
@@ -97,6 +162,33 @@ class OfflineStore {
   static const _workflow = 'workflow';
   static const _lastSync = 'lastSync';
   static const _userId = 'userId';
+  static const _businessTime = 'businessTime';
+  static const _clockOffset = 'server_clock_offset_ms';
+  static const _clockOffsetSampledAt = 'server_clock_offset_sampled_at';
+
+  /// The last business time zone the server sent (REQ-006, AC-2.4).
+  Future<BusinessTimeZone?> businessTime() async {
+    final raw = await _get(_businessTime);
+    return raw == null ? null : BusinessTimeZone.fromJson(jsonDecode(raw));
+  }
+
+  /// Server minus phone clock at the last answer, for a start without network (AC-3.2).
+  Future<Duration?> clockOffset() async {
+    final raw = await _get(_clockOffset);
+    final ms = raw == null ? null : int.tryParse(raw);
+    return ms == null ? null : Duration(milliseconds: ms);
+  }
+
+  /// When [clockOffset] was measured, on the phone's clock (UTC).
+  Future<DateTime?> clockOffsetSampledAt() async {
+    final raw = await _get(_clockOffsetSampledAt);
+    return raw == null ? null : DateTime.tryParse(raw);
+  }
+
+  Future<void> saveClockOffset(Duration offset, DateTime sampledAt) => _db.transaction((txn) async {
+    await _set(txn, _clockOffset, '${offset.inMilliseconds}');
+    await _set(txn, _clockOffsetSampledAt, sampledAt.toUtc().toIso8601String());
+  });
 
   /// The `since` of the next download.
   Future<String?> serverTime() => _get(_serverTime);
@@ -114,7 +206,8 @@ class OfflineStore {
   /// When the last download finished, on this phone's clock.
   Future<DateTime?> lastSync() async {
     final raw = await _get(_lastSync);
-    return raw == null ? null : DateTime.parse(raw).toLocal();
+    // An instant (UTC): shown in the business time zone, not the phone's (CR-3).
+    return raw == null ? null : DateTime.parse(raw);
   }
 
   /// Empties the store when another user logs in on this phone. Their queue
@@ -123,11 +216,24 @@ class OfflineStore {
     if (await _get(_userId) == userId) return;
     await _db.transaction((txn) async {
       await txn.delete('remittances');
+      await txn.delete('completed');
       await txn.delete('settings');
       await txn.delete('actions');
       await _set(txn, _userId, userId);
     });
   }
+
+  /// On an explicit logout (SEC-2): the remittances, the completed ones
+  /// (REQ-017 BR-4), the cash, the settings and the rejected actions leave the
+  /// phone. Only the actions not sent yet stay,
+  /// with whose they are, so they go out when the same user logs in again;
+  /// another user's login empties them too ([useFor]).
+  Future<void> clearForLogout() => _db.transaction((txn) async {
+    await txn.delete('remittances');
+    await txn.delete('completed');
+    await txn.delete('settings', where: 'key != ?', whereArgs: [_userId]);
+    await txn.delete('actions', where: 'rejected = 1');
+  });
 
   /// A value of this user's that is not part of the sync, e.g. where the
   /// completed remittances feed goes. Forgotten when another user logs in.

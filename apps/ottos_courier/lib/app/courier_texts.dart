@@ -18,6 +18,7 @@ abstract final class CourierTexts {
   static String completedTitle(Remittance remittance) =>
       remittance.isPickup ? 'Recogida completada' : 'Remesa entregada';
   static String completedManyTitle(int count) => '$count remesas completadas';
+  static String andMore(String names, int rest) => '$names y $rest más';
   static const tapToSee = 'Toca para verlas';
 
   // Navigation
@@ -53,7 +54,7 @@ abstract final class CourierTexts {
   static const noCourier = 'Sin asignar';
   static const notesOptional = 'Notas (opcional)';
   static const register = 'Registrar';
-  static String registered(String code) => 'Remesa $code registrada';
+  static String registered(String label) => 'Remesa registrada: $label';
 
   // Cash of the couriers
   static const couriersCash = 'Efectivo de los repartidores';
@@ -70,11 +71,13 @@ abstract final class CourierTexts {
   static const toCollect = 'Recoger';
   static const delivered = 'Entregado';
   static const collected = 'Recogido';
+  static String completedAt(bool pickup, String when) => '${pickup ? 'Recogida' : 'Entregada'} el $when';
   static String dueOn(String date) => 'Para el $date';
   static String daysLate(int days) => days == 1 ? '1 día de atraso' : '$days días de atraso';
   static const sortByDay = 'Del día';
   static const sortMostLate = 'Más atrasadas primero';
   static const showCompleted = 'Completadas';
+  static String latestCompleted(int count) => 'Completadas (últimas $count)';
   static const noRemittances = 'No hay remesas.';
   static const showMore = 'Ver más';
   static String completedOn(String date) => 'Completada el $date';
@@ -96,6 +99,9 @@ abstract final class CourierTexts {
   static const completed = 'Remesa completada';
   static const postponed = 'Remesa aplazada';
   static const assignToCourier = 'Asignar a repartidor';
+  static const deliveredBy = 'Entregada por';
+  static const collectedBy = 'Recogida por';
+  static const theBusiness = 'El negocio';
 
   // Offline
   static const unsent = 'Sin enviar';
@@ -112,8 +118,8 @@ abstract final class CourierTexts {
   static String pendingActions(int count) => count == 1 ? '1 sin enviar' : '$count sin enviar';
   static String unsentOnLogout(int count) =>
       'Tienes ${count == 1 ? '1 acción' : '$count acciones'} sin enviar en el teléfono. '
-      'Si cierras sesión ahora se perderán. '
-      'Conéctate y sincroniza antes de salir.';
+      'Se quedan guardadas y se enviarán cuando vuelvas a entrar con tu cuenta. '
+      'Si entra otra persona en este teléfono, se perderán.';
   static const logoutAnyway = 'Cerrar sesión igualmente';
 
   static String actionName(SyncActionType type) => switch (type) {
@@ -164,7 +170,6 @@ abstract final class CourierTexts {
     'DELIVERY_PAYOUT' => 'Entrega de remesa',
     'PICKUP_COLLECTION' => 'Recogida de remesa',
     'COURIER_RETURN' => 'Devolución al negocio',
-    'COURIER_SURPLUS' => 'Sobrante en cierre',
     'COURIER_EXCHANGE_OUT' => 'Cambio de moneda: entregado',
     'COURIER_EXCHANGE_IN' => 'Cambio de moneda: recibido',
     _ => 'Movimiento',

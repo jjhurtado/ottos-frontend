@@ -106,14 +106,15 @@ void main() {
       verify(() => reports.statistics(DateTime(2026, 9), DateTime(2026, 9, 23))).called(1);
     });
 
-    test('a backend without statistics (404) leaves a friendly notice', () async {
+    test('a 404 is an error like any other', () async {
       when(() => reports.statistics(any(), any())).thenThrow(const ApiException('No', statusCode: 404));
       final cubit = StatisticsCubit(reports: reports, today: today);
       addTearDown(cubit.close);
 
       await cubit.load();
 
-      expect(cubit.state.status, StatisticsStatus.unavailable);
+      expect(cubit.state.status, StatisticsStatus.failure);
+      expect(cubit.state.error, 'No');
     });
 
     test('the comparison failing does not stop the statistics', () async {
@@ -167,14 +168,15 @@ void main() {
       expect(cubit.state.totals.pickupCollected, 200);
     });
 
-    test('a backend without the detail (404) leaves a friendly notice', () async {
+    test('a 404 on the detail is an error like any other', () async {
       when(() => reports.monthlyRemittances(any(), any())).thenThrow(const ApiException('No', statusCode: 404));
       final cubit = ReportRemittancesCubit(reports: reports, month: DateTime(2026, 10));
       addTearDown(cubit.close);
 
       await cubit.load();
 
-      expect(cubit.state.status, ReportDetailStatus.unavailable);
+      expect(cubit.state.status, ReportDetailStatus.failure);
+      expect(cubit.state.error, 'No');
     });
 
     test('other errors can be retried', () async {
@@ -189,20 +191,19 @@ void main() {
     });
   });
 
-  group('Cuba time', () {
-    test('UTC−4 in summer, UTC−5 in winter, whatever the device zone', () {
-      expect(CubaTime.of(DateTime.utc(2026, 10, 1, 16, 30)), DateTime.utc(2026, 10, 1, 12, 30));
-      expect(CubaTime.of(DateTime.utc(2026, 12, 1, 16, 30)), DateTime.utc(2026, 12, 1, 11, 30));
-      // 2026: from Sunday 8 March to Sunday 1 November, both at 05:00 UTC.
-      expect(CubaTime.isDaylightSaving(DateTime.utc(2026, 3, 8, 4, 59)), isFalse);
-      expect(CubaTime.isDaylightSaving(DateTime.utc(2026, 3, 8, 5)), isTrue);
-      expect(CubaTime.isDaylightSaving(DateTime.utc(2026, 11, 1, 4, 59)), isTrue);
-      expect(CubaTime.isDaylightSaving(DateTime.utc(2026, 11, 1, 5)), isFalse);
+  group('business time', () {
+    tearDown(BusinessTime.reset);
+
+    test('AC-2.2: a fixed offset all year, with no summer time', () {
+      expect(BusinessTime.of(DateTime.utc(2026, 10, 1, 16, 30)), DateTime.utc(2026, 10, 1, 12, 30));
+      expect(BusinessTime.of(DateTime.utc(2026, 12, 1, 16, 30)), DateTime.utc(2026, 12, 1, 12, 30));
     });
 
-    test('today is Cuba\'s date', () {
-      // 02:00 UTC on the 1st is still the 31st in Havana.
-      expect(CubaTime.today(DateTime.utc(2026, 11, 1, 2)), DateTime(2026, 10, 31));
+    test('AC-2.2: today is the business date', () {
+      // 02:00 UTC on the 1st is still the 31st at UTC−4.
+      expect(BusinessTime.today(DateTime.utc(2026, 11, 1, 2)), DateTime(2026, 10, 31));
+      BusinessTime.setForTest(zone: BusinessTimeZone.ofMinutes(-60));
+      expect(BusinessTime.today(DateTime.utc(2026, 11, 1, 2)), DateTime(2026, 11, 1));
     });
   });
 }

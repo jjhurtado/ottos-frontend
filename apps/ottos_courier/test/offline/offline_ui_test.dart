@@ -131,6 +131,28 @@ void main() {
       expect(authBloc.state.isAuthenticated, isTrue);
     });
 
+    testWidgets('SEC-2: logging out leaves only the unsent actions on the phone', (tester) async {
+      await pumpShell(tester, queued: [_action(SyncActionType.deliver)], rejected: 1);
+      await tester.runAsync(() => store.applyState(const SyncState(serverTime: 't1', full: true, remittances: [])));
+
+      await tester.tap(find.byTooltip(CourierTexts.account));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(CoreTexts.logout));
+      await tester.pumpAndSettle();
+      await tester.runAsync(() async {
+        await tester.tap(find.text(CourierTexts.logoutAnyway));
+        await Future<void>.delayed(const Duration(milliseconds: 200));
+      });
+      await tester.pumpAndSettle();
+
+      verify(() => auth.logout()).called(1);
+      await tester.runAsync(() async {
+        expect(await store.pending(), hasLength(1));
+        expect(await store.rejected(), isEmpty);
+        expect(await store.serverTime(), isNull);
+      });
+    });
+
     testWidgets('lists the rejected actions with why, to dismiss them', (tester) async {
       await pumpShell(tester, rejected: 1);
 

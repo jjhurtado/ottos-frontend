@@ -39,6 +39,11 @@ void main() {
       expect(row.type, RemittanceType.delivery);
       expect(row.isVoided, isFalse);
       expect(row.amount, 0);
+      expect(row.beneficiaryName, isNull);
+    });
+
+    test('REQ-019: reads the beneficiary name', () {
+      expect(detail.remittances.firstWhere((row) => row.code == 'OT-P3X8RA').beneficiaryName, 'Juan Gómez');
     });
   });
 
@@ -80,6 +85,10 @@ void main() {
 
     test('by code, type, status, courier, on the house and voided', () {
       expect(codes(const ReportFilter(code: 'p3x')), ['OT-P3X8RA']);
+      // REQ-019: the search box also finds the beneficiary.
+      expect(codes(const ReportFilter(code: 'juan')), ['OT-P3X8RA']);
+      expect(codes(const ReportFilter(code: 'gomez')), ['OT-P3X8RA'], reason: 'DEF-1: accents do not matter');
+      expect(codes(const ReportFilter(code: 'GÓMEZ')), ['OT-P3X8RA']);
       expect(codes(const ReportFilter(type: 'PICKUP')), ['OT-P3X8RA']);
       expect(codes(const ReportFilter(status: ReportStatusFilter.completed)), ['OT-P3X8RA', 'OT-K7Q2MA']);
       expect(codes(const ReportFilter(status: ReportStatusFilter.paid)), ['OT-H2N6LC'], reason: 'voided apart');
@@ -95,51 +104,71 @@ void main() {
     final csv = ReportCsv.encode(detail);
     final rows = Csv.decode(csv);
 
+    test('SEC-3: a typed courier name or void reason cannot become a formula', () {
+      final json = jsonDecode(jsonEncode(detailJson)) as Map<String, dynamic>;
+      final remittances = json['remittances'] as List;
+      final voided = remittances.cast<Map<String, dynamic>>().singleWhere((row) => row['voided'] != null);
+      voided['voided']['reason'] = '=HYPERLINK("https://example.test")';
+      voided['courierName'] = '@SUM(1)';
+      voided['completedFromBusiness'] = false;
+
+      final row = Csv.decode(ReportCsv.encode(MonthlyReportDetail.fromJson(json))).singleWhere((r) => r[18] == 'Sí');
+
+      expect(row[20], '\'=HYPERLINK("https://example.test")');
+      expect(row[7], "'@SUM(1)");
+      expect(row[10], isNot(startsWith("'")), reason: 'amounts stay numbers');
+    });
+
     test('a header and one row per remittance, voided included', () {
       expect(csv.startsWith(Csv.bom), isTrue);
       expect(rows.first, ReportCsv.columns);
       expect(rows, hasLength(1 + 5));
-      expect(rows.first.any((column) => column.toLowerCase().contains('nombre')), isFalse, reason: 'no personal data');
+      // REQ-019 AC-3.1: the beneficiary's name comes before the code.
+      expect(rows.first.take(2), ['Beneficiario', 'Código']);
     });
 
-    test('dates in Cuba time, decimal commas and the void reason as typed', () {
+    test('dates in business time, decimal commas and the void reason as typed', () {
       final first = rows[1];
-      expect(first[0], 'OT-K7Q2MA');
+      expect(first[1], 'OT-K7Q2MA');
       // 16:30 UTC in October is 12:30 in Havana (UTC−4).
-      expect(first[3], '2026-10-01 12:30');
-      expect(first[8], '100,00');
-      expect(first[10], '110,00');
-      expect(first[13], '41.000,00');
-      expect(first[14], '410');
-      expect(first[17], 'No');
+      expect(first[4], '2026-10-01 12:30');
+      expect(first[9], '100,00');
+      expect(first[11], '110,00');
+      expect(first[14], '41.000,00');
+      expect(first[15], '410');
+      expect(first[18], 'No');
 
-      final voided = rows.singleWhere((row) => row[0] == 'OT-F9V3GA');
-      expect(voided[2], 'Anulada');
-      expect(voided[17], 'Sí');
-      expect(voided[18], '2026-10-12 09:03');
-      expect(voided[19], reasonWithSeparator);
+      final voided = rows.singleWhere((row) => row[1] == 'OT-F9V3GA');
+      expect(voided[3], 'Anulada');
+      expect(voided[18], 'Sí');
+      expect(voided[19], '2026-10-12 09:03');
+      expect(voided[20], reasonWithSeparator);
 
-      final pickup = rows.singleWhere((row) => row[0] == 'OT-P3X8RA');
-      expect(pickup[1], 'Recogida');
-      expect(pickup[6], 'El negocio');
-      expect(pickup[8], '', reason: 'nothing sent in a pickup');
-      expect(pickup[11], '200,00');
+      expect(first[0], 'Rosa Pérez');
+      expect(rows.singleWhere((row) => row[1] == 'OT-H2N6LC')[0], '', reason: 'no name, empty cell');
+
+      final pickup = rows.singleWhere((row) => row[1] == 'OT-P3X8RA');
+      expect(pickup[0], 'Juan Gómez', reason: 'the person the cash is collected from');
+      expect(pickup[2], 'Recogida');
+      expect(pickup[7], 'El negocio');
+      expect(pickup[9], '', reason: 'nothing sent in a pickup');
+      expect(pickup[12], '200,00');
     });
 
     test('its columns add up to the summary, voided ones aside', () {
       double sum(int column, bool Function(List<String>) where) => rows
           .skip(1)
-          .where((row) => row[17] == 'No' && where(row))
+          .where((row) => row[18] == 'No' && where(row))
           .fold(
             0,
             (total, row) => total + (double.tryParse(row[column].replaceAll('.', '').replaceAll(',', '.')) ?? 0),
           );
       bool all(List<String> _) => true;
 
-      expect(sum(10, all), report.collected);
-      expect(sum(9, all), report.fees);
-      expect(sum(11, all), report.pickupsCollected);
-      expect(sum(16, all), report.onTheHouse!.waivedFees);
+      expect(sum(11, all), report.collected);
+      expect(sum(10, all), report.fees);
+      expect(sum(12, all), report.pickupsCollected);
+      expect(sum(17, all), report.onTheHouse!.waivedFees);
     });
 
     test('UTF-8 keeps the accents', () {

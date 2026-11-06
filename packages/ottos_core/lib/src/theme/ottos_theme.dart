@@ -10,7 +10,7 @@ abstract final class OttosTheme {
       primary: OttosColors.navy,
       onPrimary: Colors.white,
       secondary: OttosColors.teal,
-      onSecondary: Colors.white,
+      onSecondary: OttosColors.navy,
       tertiary: OttosColors.cream,
       onTertiary: OttosColors.navy,
       error: OttosColors.danger,
@@ -37,7 +37,8 @@ abstract final class OttosTheme {
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
           backgroundColor: OttosColors.teal,
-          foregroundColor: Colors.white,
+          // Navy, not white: white on teal is 3.5:1, navy is 5.5:1 (WCAG AA).
+          foregroundColor: OttosColors.navy,
           minimumSize: const Size(64, 48),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         ),

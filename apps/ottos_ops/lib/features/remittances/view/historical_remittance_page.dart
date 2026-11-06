@@ -11,7 +11,7 @@ import '../cubit/historical_remittance_cubit.dart';
 /// Types in an old remittance from its ticket (`remittances:historical`, admin):
 /// completed on that date, with no courier, moving no cash. Opens it when done.
 class HistoricalRemittancePage extends StatelessWidget {
-  const HistoricalRemittancePage({super.key, this.now = DateTime.now});
+  const HistoricalRemittancePage({super.key, this.now = BusinessTime.wallClock});
 
   /// The clock that decides what is in the future; tests pass a fixed one.
   final DateTime Function() now;
@@ -26,8 +26,13 @@ class HistoricalRemittancePage extends StatelessWidget {
       child: BlocListener<HistoricalRemittanceCubit, HistoricalRemittanceState>(
         listenWhen: (previous, current) => previous.created == null && current.created != null,
         listener: (context, state) {
-          ScaffoldMessenger.of(context)
-              .showSnackBar(SnackBar(content: Text(OpsTexts.historicalRegistered(state.created!.code))));
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                OpsTexts.historicalRegistered(remittanceLabel(state.created!.beneficiaryName, state.created!.code)),
+              ),
+            ),
+          );
           context.go(Routes.remittance(state.created!.id));
         },
         child: _HistoricalForm(now: now),
@@ -205,7 +210,7 @@ class _HistoricalFormState extends State<_HistoricalForm> {
                             ],
                           ),
                           const SizedBox(height: 4),
-                          Text(OpsTexts.historicalCubaTime, style: textTheme.bodySmall),
+                          Text(OpsTexts.historicalBusinessTime, style: textTheme.bodySmall),
                           const SizedBox(height: 16),
                           if (_type == RemittanceType.delivery)
                             SegmentedButton<String>(

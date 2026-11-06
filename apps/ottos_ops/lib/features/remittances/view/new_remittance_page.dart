@@ -25,8 +25,13 @@ class NewRemittancePage extends StatelessWidget {
       child: BlocConsumer<NewRemittanceCubit, NewRemittanceState>(
         listenWhen: (previous, current) => previous.created == null && current.created != null,
         listener: (context, state) {
-          ScaffoldMessenger.of(context)
-              .showSnackBar(SnackBar(content: Text(OpsTexts.remittanceRegistered(state.created!.code))));
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                OpsTexts.remittanceRegistered(remittanceLabel(state.created!.beneficiaryName, state.created!.code)),
+              ),
+            ),
+          );
           context.go(Routes.remittance(state.created!.id));
         },
         buildWhen: (previous, current) => previous.corridorsStatus != current.corridorsStatus,
@@ -163,7 +168,10 @@ class _NewRemittanceViewState extends State<_NewRemittanceView> {
                           const SizedBox(width: 12),
                           FilledButton(
                             style: state.onTheHouse
-                                ? FilledButton.styleFrom(backgroundColor: OttosColors.onTheHouse)
+                                ? FilledButton.styleFrom(
+                                    backgroundColor: OttosColors.onTheHouse,
+                                    foregroundColor: Colors.white,
+                                  )
                                 : null,
                             onPressed: state.canSubmit ? () => cubit.submit(notes: _notes.text) : null,
                             child: state.submitting

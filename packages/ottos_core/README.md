@@ -1,7 +1,7 @@
 # ottos_core · shared code
 
 Everything the panel (`apps/ottos_ops`) and the app (`apps/ottos_courier`) both use. An app never imports from the
-other; anything they share comes here. Layers and conventions are in [STANDARDS.md](../../STANDARDS.md#2-arquitectura-del-frontend).
+other; anything they share comes here. Layers and conventions are in `ottos/docs/STANDARDS.md` › Code style › Frontend.
 
 ## Layout (`lib/src/`)
 
@@ -17,7 +17,7 @@ other; anything they share comes here. Layers and conventions are in [STANDARDS.
 | `l10n/core_texts.dart` | Shared UI texts (Spanish) and the translation of backend error codes, statuses, roles and permissions |
 | `theme/` | Colors and Material theme |
 | `reports/` | Besides the repository: the reports' cubits, the month's remittances and statistics views, and the PDF (`pdf`) and CSV builders, shared by the panel and the app. `ReportTexts` holds their texts |
-| `utils/` | Formatters, CSV, phones, `CubaTime` (Havana wall clock, whatever the device zone), auth redirect for go_router |
+| `utils/` | Formatters, CSV, phones, `BusinessTime` (the business time zone and the server clock, REQ-006; see below), auth redirect for go_router |
 
 ## Rules worth knowing
 
@@ -37,3 +37,17 @@ flutter test --exclude-tags integration
 
 `test/integration` runs against a live backend (tag `integration`). It is skipped unless `OTTOS_TEST_EMAIL` and
 `OTTOS_TEST_PASSWORD` are set, and it writes data to that backend.
+
+## Business time (REQ-006)
+
+Every date and time is shown in the business time zone, never the device's:
+
+- `BusinessTime` (static): the zone is a fixed UTC offset the server sends as `businessTime` (UTC−4 until it does).
+  `BusinessTime.of(instant)` gives the business wall clock; `Formatters.date/dateTime/time` use it.
+- The server's clock comes from the `Date` header of every answer (`ApiClient`) and from sync's `serverTime`.
+  `BusinessTime.now()` is the last server time plus the time passed on a clock that keeps counting while the device
+  sleeps (`boot_clock.dart`: `CLOCK_BOOTTIME` on Android, `CLOCK_MONOTONIC` on iOS; a `Stopwatch` on the web), so a
+  changed phone clock does not move it. The courier app saves the difference for a start without network
+  (`BusinessTime.restore`, dropped after 24 h or if the device clock went back).
+- `BusinessTimeScope` rebuilds the screens below it when the zone changes.
+- Tests set the clocks with `BusinessTime.setForTest` and call `BusinessTime.reset` in `tearDown`.

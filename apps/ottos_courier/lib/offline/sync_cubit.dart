@@ -88,6 +88,9 @@ class SyncCubit extends Cubit<SyncStatus> {
   final void Function(List<Remittance> remittances)? _onNewRemittances;
   Future<void>? _running;
 
+  /// Logging out: nothing more is downloaded into the store.
+  bool _loggingOut = false;
+
   OfflineStore get store => _store;
 
   /// For [userId]: another user's data never shows; then syncs.
@@ -102,7 +105,7 @@ class SyncCubit extends Cubit<SyncStatus> {
   Future<void> sync() => _running ??= _syncOnce().whenComplete(() => _running = null);
 
   Future<void> _syncOnce() async {
-    if (isClosed) return;
+    if (isClosed || _loggingOut) return;
     emit(state.copyWith(syncing: true));
     var offline = false;
     try {
@@ -111,6 +114,13 @@ class SyncCubit extends Cubit<SyncStatus> {
       final known = {for (final json in await _store.remittances()) json['id']};
       final downloaded = await _sync.state(since: since);
       await _store.applyState(downloaded);
+      // REQ-006: the business time zone and the server's clock of this answer.
+      BusinessTime.setZone(downloaded.businessTime);
+      final serverTime = DateTime.tryParse(downloaded.serverTime);
+      if (serverTime != null) BusinessTime.serverTimeReceived(serverTime);
+      final offset = BusinessTime.clockOffset;
+      final sampledAt = BusinessTime.clockOffsetSampledAt;
+      if (offset != null && sampledAt != null) await _store.saveClockOffset(offset, sampledAt);
       final arrived = [
         for (final json in downloaded.remittances)
           if (!known.contains(json['id'])) Remittance.fromJson(json),
@@ -147,12 +157,15 @@ class SyncCubit extends Cubit<SyncStatus> {
     }
   }
 
-  /// Keeps the remittance as the server returned it; a completed one leaves the phone.
+  /// Keeps the remittance as the server returned it; a completed one leaves
+  /// the open ones for the completed list (REQ-017), so it does not vanish
+  /// until the next download brings the whole list.
   Future<void> _keep(Map<String, dynamic>? json) async {
     if (json == null) return;
     final remittance = Remittance.fromJson(json);
     if (remittance.isCompleted) {
       await _store.removeRemittance(remittance.id);
+      if (!remittance.isVoided) await _store.putCompleted(json);
     } else {
       await _store.putRemittance(json);
     }
@@ -210,7 +223,7 @@ class SyncCubit extends Cubit<SyncStatus> {
     SyncAction(
       id: SyncRepository.newActionId(),
       type: SyncActionType.cashExchange,
-      occurredAt: DateTime.now(),
+      occurredAt: BusinessTime.now(),
       payload: input.toJson(),
     ),
   );
@@ -275,7 +288,7 @@ class SyncCubit extends Cubit<SyncStatus> {
           signedAmount: remittance.isPickup ? amount : -amount,
           currency: currency,
           remittanceId: remittance.id,
-          note: remittance.code,
+          note: remittanceLabel(remittance.beneficiaryName, remittance.code),
           occurredAt: action.occurredAt,
         ),
       );
@@ -296,6 +309,18 @@ class SyncCubit extends Cubit<SyncStatus> {
       ),
       movements: [...unsent.reversed, ...?stored?.movements],
     );
+  }
+
+  /// An explicit logout (SEC-2): once a sync in course ends, the phone keeps
+  /// only the actions not sent yet. A session that expires keeps everything.
+  Future<void> clearForLogout() async {
+    _loggingOut = true;
+    try {
+      await _running;
+    } catch (_) {
+      // A sync that failed must not keep the data on the phone (SEC-12).
+    }
+    await _store.clearForLogout();
   }
 
   /// Lets a sync in course finish before closing (it writes to the store).

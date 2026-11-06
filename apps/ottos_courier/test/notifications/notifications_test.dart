@@ -6,41 +6,50 @@ import 'package:ottos_courier/notifications/notices.dart';
 
 class _MockRemittances extends Mock implements RemittanceRepository {}
 
-Remittance _remittance(String id, {String type = 'DELIVERY', String? courierId = 'c1'}) => Remittance.fromJson({
-  'id': id,
-  'code': 'OT-$id',
-  'type': type,
-  'status': 'DELIVERED',
-  'beneficiaryName': 'Rosa',
-  'municipalityName': 'Boyeros',
-  'courierId': courierId,
-  'courierName': 'Luis',
-});
+Remittance _remittance(String id, {String type = 'DELIVERY', String? courierId = 'c1', String? name = 'Rosa'}) =>
+    Remittance.fromJson({
+      'id': id,
+      'code': 'OT-$id',
+      'type': type,
+      'status': 'DELIVERED',
+      'beneficiaryName': name,
+      'municipalityName': 'Boyeros',
+      'courierId': courierId,
+      'courierName': 'Luis',
+    });
 
 void main() {
   group('notices', () {
     test('one per new remittance, saying what and where', () {
       final notices = newRemittanceNotices([_remittance('a'), _remittance('b', type: 'PICKUP')]);
       expect(notices.map((notice) => notice.title), ['Nueva entrega asignada', 'Nueva recogida asignada']);
-      expect(notices.first.body, 'OT-a · Rosa · Boyeros');
+      // REQ-019 AC-2.1: the name first, the code last.
+      expect(notices.first.body, 'Rosa · Boyeros · OT-a');
       expect(notices.first.remittanceId, 'a');
       expect(notices.first.id, isNot(notices.last.id));
     });
 
     test('many at once become one', () {
       final notices = completedNotices([
-        for (final id in ['a', 'b', 'c', 'd']) _remittance(id),
+        _remittance('a'),
+        _remittance('b', name: 'Juan'),
+        _remittance('c', name: ''),
+        _remittance('d'),
+        _remittance('e'),
       ]);
       expect(notices, hasLength(1));
-      expect(notices.single.title, '4 remesas completadas');
-      expect(notices.single.body, 'OT-a, OT-b, OT-c, OT-d');
+      expect(notices.single.title, '5 remesas completadas');
+      // At most three names, then «y N más»; one with no name by its code.
+      expect(notices.single.body, 'Rosa, Juan, OT-c y 2 más');
       expect(notices.single.remittanceId, isNull);
     });
 
     test('a completed one says who did it', () {
       final notice = completedNotices([_remittance('a')]).single;
       expect(notice.title, 'Remesa entregada');
-      expect(notice.body, 'OT-a · Rosa · Luis');
+      // REQ-019 AC-2.2.
+      expect(notice.body, 'Rosa · Luis · OT-a');
+      expect(completedNotices([_remittance('n', name: null)]).single.body, 'Luis · OT-n', reason: 'no name');
       expect(completedNotices([_remittance('b', type: 'PICKUP')]).single.title, 'Recogida completada');
     });
   });

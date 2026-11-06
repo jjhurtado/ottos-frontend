@@ -207,7 +207,13 @@ class _LoginFormState extends State<_LoginForm> {
                         style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(48)),
                         onPressed: state.isSubmitting ? null : context.read<LoginCubit>().submitWithBiometrics,
                         icon: const Icon(Icons.fingerprint),
-                        label: const Text(CoreTexts.biometricLogin),
+                        // Which account it opens, so nobody enters as someone else by mistake (SEC-1).
+                        label: Text(
+                          state.biometricEmail == null
+                              ? CoreTexts.biometricLogin
+                              : CoreTexts.biometricLoginAs(state.biometricEmail!),
+                          textAlign: TextAlign.center,
+                        ),
                       ),
                     ],
                   ],

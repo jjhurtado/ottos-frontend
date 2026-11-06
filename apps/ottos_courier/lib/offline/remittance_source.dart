@@ -1,5 +1,6 @@
 import 'package:ottos_core/ottos_core.dart';
 
+import 'offline_store.dart';
 import 'sync_cubit.dart';
 
 /// Where the app reads remittances from and sends the courier's actions to.
@@ -8,8 +9,12 @@ abstract interface class RemittanceSource {
   Future<List<Remittance>> list();
 
   /// Whether the list can also show the completed remittances: sales, who see
-  /// every remittance; the courier's list holds only open work.
+  /// every remittance, and the courier, who sees their latest ones (REQ-017).
   bool get canShowCompleted;
+
+  /// Whether the completed ones are only the latest few (the courier's 20),
+  /// which the list says in a heading; sales page through all of them.
+  bool get completedAreLatest;
 
   /// The delivered and collected remittances, latest first, a page at a time.
   /// Only where [canShowCompleted].
@@ -48,6 +53,9 @@ class OnlineSource implements RemittanceSource {
   @override
   bool get canShowCompleted => !onlyMine;
 
+  @override
+  bool get completedAreLatest => false;
+
   /// How many completed remittances each «Ver más» brings.
   static const completedPageSize = 50;
 
@@ -62,7 +70,10 @@ class OnlineSource implements RemittanceSource {
 
   @override
   Future<PageResult<Remittance>> completed({int page = 0}) async {
-    final finals = [for (final status in (await _remittances.workflow()).statuses) if (status.isFinal) status.code];
+    final finals = [
+      for (final status in (await _remittances.workflow()).statuses)
+        if (status.isFinal) status.code,
+    ];
     // With a single final status the backend pages exactly the completed ones.
     final result = await _remittances.search(
       RemittanceFilter(voided: false, status: finals.length == 1 ? finals.single : null),
@@ -70,7 +81,10 @@ class OnlineSource implements RemittanceSource {
       size: completedPageSize,
     );
     return PageResult(
-      items: [for (final remittance in result.items) if (finals.contains(remittance.status)) remittance],
+      items: [
+        for (final remittance in result.items)
+          if (finals.contains(remittance.status)) remittance,
+      ],
       page: result.page,
       size: result.size,
       totalItems: result.totalItems,
@@ -121,10 +135,54 @@ class OfflineSource implements RemittanceSource {
   final SyncCubit _sync;
 
   @override
-  bool get canShowCompleted => false;
+  bool get canShowCompleted => true;
 
   @override
-  Future<PageResult<Remittance>> completed({int page = 0}) => throw UnsupportedError('Only sales list completed ones');
+  bool get completedAreLatest => true;
+
+  /// The courier's latest completed ones, in one page, so there is never a
+  /// «Ver más» (REQ-017): first those completed on the phone and not sent yet,
+  /// then the stored ones, without repeats, at most [OfflineStore.maxCompleted].
+  @override
+  Future<PageResult<Remittance>> completed({int page = 0}) async {
+    final unsent = await _unsentCompleted();
+    final ids = {for (final remittance in unsent) remittance.id};
+    final items = [
+      ...unsent,
+      for (final json in await _sync.store.completed())
+        if (!ids.contains(json['id'])) Remittance.fromJson(json),
+    ].take(OfflineStore.maxCompleted).toList();
+    return PageResult(items: items, page: 0, size: OfflineStore.maxCompleted, totalItems: items.length);
+  }
+
+  /// Remittances completed on the phone whose action waits in the queue: the
+  /// stored open one as it will be once sent, completed when the courier did
+  /// it, newest first. One no longer on the phone (after a logout) is skipped
+  /// until a download brings it back.
+  Future<List<Remittance>> _unsentCompleted() async {
+    final unsent = <Remittance>[];
+    for (final action in (await _sync.store.pending()).reversed) {
+      final id = action.remittanceId;
+      if (!action.type.completes || id == null || unsent.any((remittance) => remittance.id == id)) continue;
+      final json = await _sync.store.remittance(id);
+      if (json == null) continue;
+      unsent.add(Remittance.fromJson(_completedCopy(json, action)));
+    }
+    return unsent;
+  }
+
+  static Map<String, dynamic> _completedCopy(Map<String, dynamic> json, SyncAction action) {
+    final type = RemittanceType.fromCode(json['type'] as String?);
+    return {
+      ...json,
+      'status': _completedStatus,
+      'statusName': CoreTexts.statusName(_completedStatus, type: type),
+      'completedAt': action.occurredAt.toUtc().toIso8601String(),
+    };
+  }
+
+  /// The final status of a delivery or a pickup.
+  static const _completedStatus = 'DELIVERED';
 
   @override
   Future<List<Remittance>> list() async {
@@ -140,9 +198,13 @@ class OfflineSource implements RemittanceSource {
     ];
   }
 
+  /// One completed on the phone and not sent yet opens as completed, read-only;
+  /// then an open one; then one of the latest completed (REQ-017 AC-1.2).
   @override
   Future<Remittance> get(String id) async {
-    final json = await _sync.store.remittance(id);
+    final unsent = (await _unsentCompleted()).where((remittance) => remittance.id == id).firstOrNull;
+    if (unsent != null) return unsent;
+    final json = await _sync.store.remittance(id) ?? await _sync.store.completedRemittance(id);
     if (json == null) throw const ApiException(CoreTexts.notFound, statusCode: 404);
     return Remittance.fromJson(json);
   }
@@ -177,7 +239,7 @@ class OfflineSource implements RemittanceSource {
           id: SyncRepository.newActionId(),
           type: type,
           remittanceId: remittance.id,
-          occurredAt: DateTime.now(),
+          occurredAt: BusinessTime.now(),
           payload: payload,
         ),
       );

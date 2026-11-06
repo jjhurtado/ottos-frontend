@@ -72,7 +72,9 @@ abstract final class CoreTexts {
     'EMAIL_TAKEN': 'Ya hay un usuario con ese correo.',
     'CANNOT_DEACTIVATE_SELF': 'No puedes desactivar tu propia cuenta.',
     'LAST_ADMIN': 'Debe quedar al menos un administrador activo.',
-    'PERMISSION_ESCALATION': 'No puedes dar permisos que tú no tienes.',
+    'INVALID_TIME_ZONE': 'La zona horaria no es válida. Usa un desfase fijo entre UTC−12 y UTC+14.',
+    'CANNOT_RESET_OWN_PASSWORD': 'Tu contraseña se cambia desde «Cambiar contraseña», en el menú de tu cuenta.',
+    'PERMISSION_ESCALATION': 'Esta acción necesita permisos que tú no tienes.',
     'UNKNOWN_ROLES': 'Alguno de los roles ya no existe. Recarga e inténtalo de nuevo.',
     'USER_NOT_FOUND': 'No se encontró el usuario.',
     'ROLE_NOT_FOUND': 'No se encontró el rol.',
@@ -215,6 +217,13 @@ abstract final class CoreTexts {
   static const biometricEnableReason = 'Confirma tu huella para entrar con ella la próxima vez';
   static const biometricLoginReason = 'Entra en Ottos con tu huella';
   static const biometricOutdated = 'Tu contraseña cambió. Escríbela una vez para volver a entrar con huella.';
+  static String biometricLoginAs(String email) => 'Entrar con huella como $email';
+  static const biometricPromptSubtitle = 'Confirma tu huella para usar el acceso guardado en este teléfono';
+  static const biometricReset =
+      'La huella guardada ya no sirve en este teléfono. Entra con tu contraseña y vuelve a activarla.';
+  static String forgetBiometricLogin(String email) => 'Olvidar la entrada con huella de $email';
+  static const forgetBiometricLoginHelp = 'Márcalo si otra persona va a usar este teléfono.';
+  static const logoutQuestion = '¿Cerrar sesión en este teléfono?';
 
   // Common
   static const retry = 'Reintentar';
@@ -226,6 +235,19 @@ abstract final class CoreTexts {
   // Remittances
   static const late = 'Atrasada';
   static const postpone = 'Aplazar';
+
+  // Delivered or collected by the business, without a courier (sales and admin)
+  static const deliveredByBusiness = 'Entregada por el negocio';
+  static const collectedByBusiness = 'Recogida por el negocio';
+  static String byBusinessTitle(String label, {required bool isPickup}) =>
+      isPickup ? 'Recogida por el negocio: $label' : 'Entregada por el negocio: $label';
+  static String byBusinessHelp(String amount, {required bool isPickup, required bool hasCourier}) => [
+    isPickup
+        ? 'Queda recogida sin repartidor y los $amount entran en la caja del negocio.'
+        : 'Queda entregada sin repartidor y los $amount salen de la caja del negocio, aunque se quede en negativo.',
+    if (hasCourier) 'Se le quita al repartidor: desaparece de su lista y de su teléfono.',
+    'No pide PIN.',
+  ].join(' ');
 
   // Incidents
   static const reportIncident = 'No se pudo entregar';

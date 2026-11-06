@@ -71,6 +71,41 @@ void main() {
   SyncResponse answer(List<SyncAction> actions, SyncResult Function(SyncAction action) result) =>
       SyncResponse(serverTime: 't2', results: [for (final action in actions) result(action)]);
 
+  group('business time (REQ-006)', () {
+    tearDown(BusinessTime.reset);
+
+    test('AC-2.4 AC-3.1: a sync keeps the zone and the clock difference on the phone', () async {
+      BusinessTime.setForTest(deviceClock: () => DateTime.utc(2026, 11, 5, 18));
+      when(() => server.state(since: any(named: 'since'))).thenAnswer(
+        (_) async => const SyncState(
+          serverTime: '2026-11-05T18:10:00Z',
+          full: false,
+          businessTime: BusinessTimeZone(timeZone: 'UTC-05:00', offsetMinutes: -300),
+        ),
+      );
+
+      await sync.sync();
+
+      expect(BusinessTime.zone.offsetMinutes, -300);
+      expect((await store.businessTime())?.offsetMinutes, -300);
+      expect(await store.clockOffset(), const Duration(minutes: 10));
+    });
+
+    test('AC-3.1: an action done offline takes the server time, not the phone time', () async {
+      var elapsed = Duration.zero;
+      BusinessTime.setForTest(deviceClock: () => DateTime.utc(2026, 11, 5, 18), elapsed: () => elapsed);
+      when(() => server.state(since: any(named: 'since')))
+          .thenAnswer((_) async => const SyncState(serverTime: '2026-11-05T18:10:00Z', full: false));
+      await sync.sync();
+      when(() => server.send(any())).thenThrow(_offline);
+      elapsed = const Duration(minutes: 2);
+
+      await source.deliver(_remittance('a'), pin: '123456');
+
+      expect((await store.pending()).single.occurredAt, DateTime.utc(2026, 11, 5, 18, 12));
+    });
+  });
+
   test('starts with the remittances downloaded', () async {
     expect((await source.list()).map((r) => r.id), unorderedEquals(['a', 'b']));
     expect(sync.state.lastSync, isNotNull);
@@ -283,6 +318,192 @@ void main() {
         'note': null,
       });
       expect(sync.state.pending, 0);
+    });
+  });
+
+  test('SEC-2: the actions kept at logout are sent when the same courier logs in again', () async {
+    when(() => server.send(any())).thenThrow(_offline);
+    final action = SyncAction(
+      id: SyncRepository.newActionId(),
+      type: SyncActionType.deliver,
+      remittanceId: 'a',
+      occurredAt: DateTime.now(),
+    );
+    expect(await sync.perform(action), isA<Queued>());
+
+    await sync.clearForLogout();
+    await sync.close();
+    expect(await store.remittances(), isEmpty);
+
+    // Logs in again, now with network.
+    late List<SyncAction> sent;
+    when(() => server.send(any())).thenAnswer((invocation) async {
+      sent = invocation.positionalArguments.single as List<SyncAction>;
+      return answer(sent, (action) => SyncResult(id: action.id, status: SyncResultStatus.applied));
+    });
+    sync = SyncCubit(store: store, sync: server);
+    await sync.start('u1');
+
+    expect(sent.map((sentAction) => sentAction.id), [action.id]);
+    expect(await store.pending(), isEmpty);
+    expect(sync.state.pending, 0);
+  });
+
+  test('SEC-12: logout completes when clearing fails in a running sync', () async {
+    when(() => server.state(since: any(named: 'since'))).thenThrow(const FormatException('bad answer'));
+    final running = sync.sync().catchError((Object _) {});
+
+    await sync.clearForLogout();
+    await running;
+
+    expect(await store.remittances(), isEmpty);
+    expect(await store.serverTime(), isNull);
+  });
+
+  group('REQ-017: the latest completed ones', () {
+    Map<String, dynamic> done(String id, int minutesAgo, {String type = 'DELIVERY'}) => _json(
+      id,
+      status: 'DELIVERED',
+      type: type,
+      completedAt: DateTime.utc(2026, 11, 5, 12).subtract(Duration(minutes: minutesAgo)).toIso8601String(),
+    );
+
+    Future<void> storeCompleted(List<Map<String, dynamic>> list) =>
+        store.applyState(SyncState(serverTime: 't1', full: false, completed: list));
+
+    test('a delivery sent with network leaves the open ones and goes to the completed ones', () async {
+      when(() => server.send(any())).thenAnswer(
+        (invocation) async => answer(
+          invocation.positionalArguments.first as List<SyncAction>,
+          (action) => SyncResult(
+            id: action.id,
+            status: SyncResultStatus.applied,
+            remittance: _json('a', status: 'DELIVERED', completedAt: '2026-10-10T10:00:00Z'),
+          ),
+        ),
+      );
+
+      await source.deliver(_remittance('a'));
+
+      expect((await source.list()).map((r) => r.id), ['b']);
+      expect((await store.completed()).map((r) => r['id']), ['a']);
+      expect((await source.completed()).items.single.id, 'a');
+    });
+
+    test('a voided one is not kept as completed', () async {
+      when(() => server.send(any())).thenAnswer(
+        (invocation) async => answer(
+          invocation.positionalArguments.first as List<SyncAction>,
+          (action) => SyncResult(
+            id: action.id,
+            status: SyncResultStatus.applied,
+            remittance: {
+              ..._json('a', status: 'DELIVERED', completedAt: '2026-10-10T10:00:00Z'),
+              'voided': {'reason': 'Error'},
+            },
+          ),
+        ),
+      );
+
+      await source.deliver(_remittance('a'));
+
+      expect(await store.completed(), isEmpty);
+    });
+
+    test('AC-2.2: a delivery made offline shows first, completed now, and never also as open', () async {
+      await storeCompleted([done('x', 5), done('y', 10)]);
+      when(() => server.send(any())).thenThrow(_offline);
+
+      await source.deliver(_remittance('a'));
+      final action = (await store.pending()).single;
+
+      expect((await source.list()).map((r) => r.id), ['b']);
+      final page = await source.completed();
+      expect(page.items.map((r) => r.id), ['a', 'x', 'y']);
+      final unsent = page.items.first;
+      expect(unsent.isCompleted, isTrue);
+      expect(unsent.status, 'DELIVERED');
+      expect(unsent.statusName, 'Entregada');
+      expect(unsent.completedAt, action.occurredAt);
+      expect(await source.pendingIds(), {'a'});
+    });
+
+    test('a pickup made offline is marked as collected', () async {
+      when(() => server.send(any())).thenThrow(_offline);
+
+      await source.deliver(Remittance.fromJson(_json('b', type: 'PICKUP')));
+
+      expect((await source.completed()).items.single.statusName, 'Recogida');
+    });
+
+    test('the same remittance in the queue and in the stored copy shows once, the unsent one', () async {
+      await storeCompleted([done('a', 60), done('x', 5)]);
+      when(() => server.send(any())).thenThrow(_offline);
+
+      await source.deliver(_remittance('a'));
+
+      final items = (await source.completed()).items;
+      expect(items.map((r) => r.id), ['a', 'x']);
+      expect(items.first.completedAt, isNot(done('a', 60)['completedAt']));
+    });
+
+    test('BR-1: at most 20, one page, so there is no «Ver más»', () async {
+      await storeCompleted([for (var i = 0; i < 25; i++) done('d$i', i + 1)]);
+      when(() => server.send(any())).thenThrow(_offline);
+      await source.deliver(_remittance('a'));
+
+      final page = await source.completed();
+
+      expect(page.items, hasLength(20));
+      expect(page.items.first.id, 'a');
+      expect(page.items.last.id, 'd18');
+      expect(page.totalPages, 1);
+    });
+
+    test('AC-1.6: the completed ones open from the phone; the unsent one opens completed, read-only', () async {
+      await storeCompleted([done('x', 5)]);
+      when(() => server.send(any())).thenThrow(_offline);
+      await source.deliver(_remittance('a'));
+
+      expect((await source.get('x')).isCompleted, isTrue);
+      expect((await source.get('a')).isCompleted, isTrue, reason: 'queued: completed for the courier');
+      expect((await source.get('b')).isCompleted, isFalse);
+      await expectLater(source.get('zzz'), throwsA(isA<ApiException>()));
+    });
+
+    test('a rejected completing action puts the card back in the open list', () async {
+      when(() => server.send(any())).thenThrow(_offline);
+      await source.deliver(_remittance('a'));
+      expect((await source.completed()).items.map((r) => r.id), ['a']);
+
+      when(() => server.send(any())).thenAnswer(
+        (invocation) async => answer(
+          invocation.positionalArguments.first as List<SyncAction>,
+          (action) =>
+              SyncResult(id: action.id, status: SyncResultStatus.rejected, code: 'REMITTANCE_ALREADY_COMPLETED'),
+        ),
+      );
+      await sync.sync();
+
+      expect((await source.list()).map((r) => r.id), contains('a'));
+      expect((await source.completed()).items, isEmpty);
+      expect(sync.state.rejected, hasLength(1));
+    });
+
+    test('a download with the whole list replaces the copy kept after a delivery', () async {
+      when(() => server.send(any())).thenAnswer(
+        (invocation) async => answer(
+          invocation.positionalArguments.first as List<SyncAction>,
+          (action) => SyncResult(id: action.id, status: SyncResultStatus.applied, remittance: done('a', 0)),
+        ),
+      );
+      await source.deliver(_remittance('a'));
+      when(() => server.state(since: any(named: 'since')))
+          .thenAnswer((_) async => SyncState(serverTime: 't3', full: false, completed: [done('x', 5)]));
+
+      await sync.sync();
+
+      expect((await store.completed()).map((r) => r['id']), ['x']);
     });
   });
 }

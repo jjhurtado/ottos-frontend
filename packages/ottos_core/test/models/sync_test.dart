@@ -71,10 +71,51 @@ void main() {
     expect(state.parsedCash, isNull);
   });
 
+  test('AC-2.3: the state brings the business time zone; an older server does not', () {
+    final state = SyncState.fromJson({
+      'serverTime': '2026-11-05T18:05:12.345Z',
+      'businessTime': {'timeZone': 'UTC-05:00', 'offsetMinutes': -300},
+    });
+
+    expect(state.businessTime, BusinessTimeZone.ofMinutes(-300));
+    expect(SyncState.fromJson({'serverTime': '2026-11-05T18:05:12.345Z'}).businessTime, isNull);
+  });
+
   test('review reasons and filter', () {
     expect(ReviewReason.fromCode('LATE_SYNC'), ReviewReason.lateSync);
     expect(ReviewReason.fromCode('SOMETHING_NEW'), ReviewReason.other);
     expect(CoreTexts.reviewReason(ReviewReason.duplicateDelivery), isNotEmpty);
     expect(const RemittanceFilter(review: true).toQuery()['review'], isTrue);
+  });
+
+  group('REQ-017: the courier\'s latest completed ones', () {
+    test('reads the completed list, whole, next to a delta', () {
+      final state = SyncState.fromJson({
+        'serverTime': 't1',
+        'full': false,
+        'remittances': [],
+        'completed': [
+          {
+            'id': 'c1',
+            'code': 'OT-1',
+            'type': 'DELIVERY',
+            'status': 'DELIVERED',
+            'completedAt': '2026-11-05T18:00:00Z',
+          },
+          {'id': 'c2', 'code': 'OT-2', 'type': 'PICKUP', 'status': 'DELIVERED', 'completedAt': '2026-11-05T17:00:00Z'},
+        ],
+      });
+
+      expect(state.full, isFalse);
+      expect(state.completed!.map((json) => json['id']), ['c1', 'c2']);
+    });
+
+    test('an empty list is not the same as none: it empties the copy', () {
+      expect(SyncState.fromJson({'serverTime': 't1', 'full': true, 'completed': []}).completed, isEmpty);
+    });
+
+    test('an older backend sends none: null, so the stored copy is left as it is', () {
+      expect(SyncState.fromJson({'serverTime': 't1', 'full': true, 'remittances': []}).completed, isNull);
+    });
   });
 }

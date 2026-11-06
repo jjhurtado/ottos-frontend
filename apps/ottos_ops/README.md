@@ -1,6 +1,6 @@
 # ottos_ops · operations panel
 
-Flutter Web panel for **admin and sales**. It is the "night" tool: the place to review the day, manage customers,
+Flutter Web panel for **admin and sales**. It is the place to review the work, manage customers,
 cash, configuration, users and reports with more control than the app ([decisions](../../docs/decisiones.md#producto)).
 Production: https://panel.remesadeotto.com · staging: panel-staging.
 

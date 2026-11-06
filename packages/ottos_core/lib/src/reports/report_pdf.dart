@@ -6,7 +6,7 @@ import 'package:pdf/widgets.dart' as pw;
 import '../l10n/core_texts.dart';
 import '../models/monthly_report.dart';
 import '../models/report_detail.dart';
-import '../utils/cuba_time.dart';
+import '../utils/business_time.dart';
 import '../utils/formatters.dart';
 import 'report_texts.dart';
 import 'report_totals.dart';
@@ -189,9 +189,9 @@ const _typeHeaders = ['Tipo', ReportTexts.reportRemittances, ReportTexts.collect
 Future<Uint8List> buildMonthlyReportPdf(MonthlyReport report, {required DateTime month, DateTime? now}) {
   final document = pw.Document(
     title: pdfSafe('${ReportTexts.monthlyReport} ${ReportTexts.monthTitle(month)}'),
-    author: "Otto's Bussines",
+    author: ReportTexts.brand,
   );
-  final generated = Formatters.dateTime(report.generatedAt ?? now ?? DateTime.now());
+  final generated = Formatters.dateTime(report.generatedAt ?? now ?? BusinessTime.now());
   final period = ReportTexts.reportPeriod(
     Formatters.date(report.from),
     Formatters.date(report.to),
@@ -341,7 +341,7 @@ Future<Uint8List> buildMonthlyReportPdf(MonthlyReport report, {required DateTime
                 child: pw.Column(
                   crossAxisAlignment: pw.CrossAxisAlignment.stretch,
                   children: [
-                    _heading('Estado al cierre'),
+                    _heading(ReportTexts.monthEndStatusShort),
                     pw.SizedBox(height: 6),
                     _table(
                       ['', ReportTexts.reportRemittances],
@@ -365,8 +365,8 @@ Future<Uint8List> buildMonthlyReportPdf(MonthlyReport report, {required DateTime
             child: pw.Row(
               mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
               children: [
-                pw.Text("Otto's Bussines · Panel de operaciones", style: const pw.TextStyle(fontSize: 9, color: _grey)),
-                pw.Text('Página 1 de 1', style: const pw.TextStyle(fontSize: 9, color: _grey)),
+                pw.Text(ReportTexts.summaryFooter, style: const pw.TextStyle(fontSize: 9, color: _grey)),
+                pw.Text(ReportTexts.pageNumber(1, 1), style: const pw.TextStyle(fontSize: 9, color: _grey)),
               ],
             ),
           ),
@@ -377,13 +377,19 @@ Future<Uint8List> buildMonthlyReportPdf(MonthlyReport report, {required DateTime
   return document.save();
 }
 
+/// The beneficiary over the code, or the code alone without a name.
+String _named(ReportRemittance row) => switch (row.beneficiaryName?.trim()) {
+  final name? when name.isNotEmpty => '$name\n${row.code}',
+  _ => row.code,
+};
+
 /// The status of a row as the report shows it.
 String reportStatusName(ReportRemittance row) =>
     row.isVoided ? ReportTexts.voided : CoreTexts.statusName(row.status, type: row.type, fallback: row.statusName);
 
 /// The month's summary and every remittance in it, A4 landscape: the summary,
 /// then the deliveries, the pickups and the voided ones, each from a new page.
-/// No personal data: each remittance by its code.
+/// Each remittance by its beneficiary, with the code under it (REQ-019 AC-3.1).
 Future<Uint8List> buildMonthlyDetailPdf(
   MonthlyReport report,
   MonthlyReportDetail detail, {
@@ -391,8 +397,8 @@ Future<Uint8List> buildMonthlyDetailPdf(
   DateTime? now,
 }) {
   final title = ReportTexts.monthTitle(month);
-  final document = pw.Document(title: pdfSafe('Resumen a detalle $title'), author: "Otto's Bussines");
-  final generated = CubaTime.dateTime(detail.generatedAt ?? report.generatedAt ?? now ?? DateTime.now());
+  final document = pw.Document(title: pdfSafe('Resumen a detalle $title'), author: ReportTexts.brand);
+  final generated = BusinessTime.dateTime(detail.generatedAt ?? report.generatedAt ?? now ?? BusinessTime.now());
   final rows = detail.remittances;
   final deliveries = [
     for (final row in rows)
@@ -409,8 +415,8 @@ Future<Uint8List> buildMonthlyDetailPdf(
   final deliveryTotals = ReportTotals.of(deliveries);
   final pickupTotals = ReportTotals.of(pickups);
   final currency = detail.businessCurrency;
-  String date(DateTime? instant) => instant == null ? '-' : CubaTime.shortDate(instant);
-  String courier(ReportRemittance row) => row.completedFromBusiness ? 'El negocio' : (row.courierName ?? '-');
+  String date(DateTime? instant) => instant == null ? '-' : BusinessTime.shortDate(instant);
+  String courier(ReportRemittance row) => row.completedFromBusiness ? ReportTexts.business : (row.courierName ?? '-');
 
   pw.Widget header(pw.Context context) => pw.Container(
     margin: const pw.EdgeInsets.only(bottom: 12),
@@ -442,12 +448,12 @@ Future<Uint8List> buildMonthlyDetailPdf(
             pw.Text(
               pdfSafe(
                 'Del ${Formatters.date(detail.from ?? report.from)} al ${Formatters.date(detail.to ?? report.to)} · '
-                'hora de Cuba · importes en $currency salvo que se indique',
+                'hora del negocio · importes en $currency salvo que se indique',
               ),
               style: const pw.TextStyle(fontSize: 8.5, color: _grey),
             ),
             pw.Text(
-              pdfSafe('${ReportTexts.generatedOn(generated)} · sin datos personales'),
+              pdfSafe(ReportTexts.generatedOn(generated)),
               style: const pw.TextStyle(fontSize: 8.5, color: _grey),
             ),
           ],
@@ -466,11 +472,11 @@ Future<Uint8List> buildMonthlyDetailPdf(
       mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
       children: [
         pw.Text(
-          pdfSafe("Otto's Bussines · Resumen a detalle de ${ReportTexts.monthLower(month)}"),
+          pdfSafe(ReportTexts.detailFooter(ReportTexts.monthLower(month))),
           style: const pw.TextStyle(fontSize: 8.5, color: _grey),
         ),
         pw.Text(
-          'Página ${context.pageNumber} de ${context.pagesCount}',
+          ReportTexts.pageNumber(context.pageNumber, context.pagesCount),
           style: const pw.TextStyle(fontSize: 8.5, color: _grey),
         ),
       ],
@@ -516,7 +522,7 @@ Future<Uint8List> buildMonthlyDetailPdf(
         ReportTexts.onTheHouseHelp(onTheHouse?.remittances ?? 0, _number(onTheHouse?.amount ?? 0)),
       ),
       _box(
-        'Estado al cierre',
+        ReportTexts.monthEndStatusShort,
         '${report.completed} / ${report.open}',
         'Completadas / abiertas · ${report.withIncident} con incidencia',
       ),
@@ -582,7 +588,7 @@ Future<Uint8List> buildMonthlyDetailPdf(
       pw.SizedBox(height: 6),
       _table(
         [
-          ReportTexts.code,
+          ReportTexts.beneficiary,
           ReportTexts.registered,
           ReportTexts.completed,
           ReportTexts.municipality,
@@ -598,7 +604,7 @@ Future<Uint8List> buildMonthlyDetailPdf(
         [
           for (final row in deliveries)
             [
-              row.code,
+              _named(row),
               date(row.createdAt),
               date(row.completedAt),
               row.municipalityName ?? '-',
@@ -630,7 +636,7 @@ Future<Uint8List> buildMonthlyDetailPdf(
         fontSize: 8.5,
         boldRows: {deliveries.length},
         widths: const {
-          0: pw.FixedColumnWidth(70),
+          0: pw.FixedColumnWidth(96),
           1: pw.FixedColumnWidth(52),
           2: pw.FixedColumnWidth(58),
           3: pw.FlexColumnWidth(1.6),
@@ -661,7 +667,7 @@ Future<Uint8List> buildMonthlyDetailPdf(
       pw.SizedBox(height: 6),
       _table(
         [
-          ReportTexts.code,
+          ReportTexts.beneficiary,
           ReportTexts.registered,
           ReportTexts.completed,
           ReportTexts.municipality,
@@ -674,7 +680,7 @@ Future<Uint8List> buildMonthlyDetailPdf(
         [
           for (final row in pickups)
             [
-              row.code,
+              _named(row),
               date(row.createdAt),
               date(row.completedAt),
               row.municipalityName ?? '-',
@@ -718,7 +724,7 @@ Future<Uint8List> buildMonthlyDetailPdf(
       pw.SizedBox(height: 6),
       _table(
         [
-          ReportTexts.code,
+          ReportTexts.beneficiary,
           ReportTexts.type,
           ReportTexts.registered,
           'Anulada el',
@@ -731,8 +737,8 @@ Future<Uint8List> buildMonthlyDetailPdf(
         [
           for (final row in voided)
             [
-              row.code,
-              row.isPickup ? 'Recogida' : 'Entrega',
+              _named(row),
+              row.isPickup ? ReportTexts.pickupType : ReportTexts.deliveryType,
               date(row.createdAt),
               date(row.voided!.at),
               row.municipalityName ?? '-',
@@ -747,7 +753,7 @@ Future<Uint8List> buildMonthlyDetailPdf(
         fontSize: 8.5,
         textColor: _grey,
         widths: const {
-          0: pw.FixedColumnWidth(70),
+          0: pw.FixedColumnWidth(96),
           1: pw.FixedColumnWidth(52),
           2: pw.FixedColumnWidth(52),
           3: pw.FixedColumnWidth(52),

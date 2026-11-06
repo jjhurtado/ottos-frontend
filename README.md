@@ -12,14 +12,43 @@ The UI is in Spanish; code is in English. State management uses Bloc and routing
 
 ## Documentation
 
+The team documents (vision, architecture, API contract, data model, standards, screen map, roadmap, decisions as
+ADRs) live in the backend repository [jjhurtado/ottos](https://github.com/jjhurtado/ottos) under `docs/`, as its
+`docs/team/SETTINGS.md` says.
+
 | Document | What it covers |
 | --- | --- |
-| [CLAUDE.md](CLAUDE.md) | Entry point: where everything is, working rules, other agents, environments, security |
-| [STANDARDS.md](STANDARDS.md) | Git Flow, commits, changelog, architecture, tests, documentation |
-| [roadmap.md](roadmap.md) | Status, pending work, current version, open questions |
+| [CLAUDE.md](CLAUDE.md) | Short index for agents |
+| [STANDARDS.md](STANDARDS.md) | Link to the shared standards in `ottos/docs/STANDARDS.md` |
 | [CHANGELOG.md](CHANGELOG.md) | Changes per version, for the people who use the apps |
-| [docs/decisiones.md](docs/decisiones.md) | Decisions and why they were taken |
+| [roadmap.md](roadmap.md) | Pending work of the frontend |
+| [docs/decisiones.md](docs/decisiones.md) | Decisions up to 2026-11-05, kept as history; new ones are ADRs in `ottos/docs/architecture/adr/` |
+| `ottos/docs/ui/README.md` | The two official design canvases and their rules |
+| `ottos/docs/team/tech/dart-flutter.md` | Commands, structure, tests and dependencies of this repository |
 | Each package's README | [ottos_core](packages/ottos_core/README.md), [ottos_ops](apps/ottos_ops/README.md), [ottos_courier](apps/ottos_courier/README.md) |
+
+## Environments
+
+| Environment | API | Panel |
+| --- | --- | --- |
+| Local | `http://localhost:8080` (`10.0.2.2:8080` from the Android emulator) | `http://localhost:5050` |
+| Staging | see `.env.staging.local` | panel-staging |
+| Production | `https://api.remesadeotto.com` | `https://panel.remesadeotto.com` |
+
+Staging deploys `develop` and production deploys `main`; Railway is configured by the infrastructure session, never
+from here. The backend reads the app versions (`app_releases`) only once at startup: after inserting a row, restart
+it.
+
+## Security
+
+- Never print secrets. The local admin password is read only with
+  `grep -E '^OTTOS_ADMIN_PASSWORD=' ../ottos/.env`.
+- Local test credentials live in `.env.local` and staging ones in `.env.staging.local`; both are git-ignored.
+- Never type staging or production passwords into a browser or emulator: remote environments are tested through the
+  API with scripts. Production has only the owner's admin and locks for 15 minutes after 5 failures, so no guessed
+  attempts. Do not change the admin password.
+- The Android signing key lives in `~/.ottos-release/`, outside the repository;
+  `apps/ottos_courier/android/key.properties` is git-ignored.
 
 ## Setup
 

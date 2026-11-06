@@ -173,14 +173,14 @@ void main() {
 
     void stubSales({required List<Remittance> recent, required List<List<Remittance>> completedPages}) {
       when(() => remittances.workflow()).thenAnswer((_) async => _workflow);
-      when(() => remittances.search(const RemittanceFilter(voided: false), size: 100)).thenAnswer(
-        (_) async => PageResult(items: recent, page: 0, size: 100, totalItems: recent.length),
-      );
+      when(() => remittances.search(const RemittanceFilter(voided: false), size: 100))
+          .thenAnswer((_) async => PageResult(items: recent, page: 0, size: 100, totalItems: recent.length));
       for (final (index, items) in completedPages.indexed) {
         when(
           () => remittances.search(const RemittanceFilter(voided: false, status: 'DELIVERED'), page: index, size: 50),
         ).thenAnswer(
-          (_) async => PageResult(items: items, page: index, size: 50, totalItems: 50 * (completedPages.length - 1) + 1),
+          (_) async =>
+              PageResult(items: items, page: index, size: 50, totalItems: 50 * (completedPages.length - 1) + 1),
         );
       }
     }
@@ -539,6 +539,63 @@ void main() {
       );
       await pump(tester, _courierPermissions, const RemittancePage(remittanceId: 'r1'));
       expect(find.byType(OnTheHouseBadge), findsOneWidget);
+    });
+
+    testWidgets('sales delivers from the business, taking it away from its courier', (tester) async {
+      when(() => remittances.get('r1')).thenAnswer((_) async => withCourier('k1'));
+      when(() => remittances.completeFromBusiness('r1', note: 'En la oficina')).thenAnswer(
+        (_) async => Remittance(
+          id: 'r1',
+          code: 'OT-1',
+          type: RemittanceType.delivery,
+          status: 'DELIVERED',
+          statusName: '',
+          completedAt: DateTime(2026, 10, 24),
+          completedFromBusiness: true,
+        ),
+      );
+      await pump(tester, {
+        ..._sales,
+        Permissions.remittancesCompleteFromBusiness,
+      }, const RemittancePage(remittanceId: 'r1'));
+
+      await tester.tap(find.text(CoreTexts.deliveredByBusiness));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Se le quita al repartidor'), findsOneWidget);
+      await tester.enterText(find.byType(TextField), 'En la oficina');
+      await tester.tap(find.widgetWithText(FilledButton, CoreTexts.confirm));
+      await tester.pumpAndSettle();
+
+      verify(() => remittances.completeFromBusiness('r1', note: 'En la oficina')).called(1);
+      expect(find.text(CourierTexts.deliveredBy), findsOneWidget);
+      expect(find.text(CourierTexts.theBusiness), findsOneWidget);
+      expect(find.widgetWithText(OutlinedButton, CoreTexts.deliveredByBusiness), findsNothing, reason: 'it is done');
+    });
+
+    testWidgets('a pickup is collected by the business, and cancelling does nothing', (tester) async {
+      when(() => remittances.get('r1')).thenAnswer(
+        (_) async =>
+            const Remittance(id: 'r1', code: 'OT-1', type: RemittanceType.pickup, status: 'PAID', statusName: ''),
+      );
+      await pump(tester, {
+        ..._sales,
+        Permissions.remittancesCompleteFromBusiness,
+      }, const RemittancePage(remittanceId: 'r1'));
+
+      await tester.tap(find.text(CoreTexts.collectedByBusiness));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('entran en la caja del negocio'), findsOneWidget);
+      expect(find.textContaining('Se le quita al repartidor'), findsNothing, reason: 'it had no courier');
+      await tester.tap(find.text(CoreTexts.cancel));
+      await tester.pumpAndSettle();
+
+      verifyNever(() => remittances.completeFromBusiness(any(), note: any(named: 'note')));
+    });
+
+    testWidgets('no delivering from the business without the permission', (tester) async {
+      when(() => remittances.get('r1')).thenAnswer((_) async => withCourier(null));
+      await pump(tester, _sales, const RemittancePage(remittanceId: 'r1'));
+      expect(find.text(CoreTexts.deliveredByBusiness), findsNothing);
     });
 
     testWidgets('a courier cannot assign', (tester) async {

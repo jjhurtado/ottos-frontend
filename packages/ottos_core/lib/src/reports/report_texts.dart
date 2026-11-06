@@ -1,5 +1,6 @@
 import 'package:intl/intl.dart';
 
+import '../l10n/core_texts.dart';
 import '../models/statistics.dart';
 import '../utils/formatters.dart';
 
@@ -40,7 +41,7 @@ abstract final class ReportTexts {
   static String onTheHouseHelp(int count, String amount) =>
       '${count == 1 ? '1 entrega' : '$count entregas'} sin comisión · $amount enviados';
   static String reportPeriod(String from, String to, String currency) =>
-      'Del $from al $to · hora de Cuba · importes en $currency';
+      'Del $from al $to · hora del negocio · importes en $currency';
   static String generatedOn(String when) => 'Generado el $when';
   static const deliveries = 'Entregas';
   static const pickups = 'Recogidas';
@@ -68,16 +69,52 @@ abstract final class ReportTexts {
   static String csvFileName(String month) => 'remesas-$month.csv';
   static const exportFailed = 'No se pudo preparar el archivo. Inténtalo de nuevo.';
 
+  // Inside the exported files
+  static const brand = "Otto's Bussines";
+  static const summaryFooter = '$brand · Panel de operaciones';
+  static String detailFooter(String month) => '$brand · Resumen a detalle de $month';
+  static String pageNumber(int page, int pages) => 'Página $page de $pages';
+  static const monthEndStatusShort = 'Estado al cierre';
+  static const yes = 'Sí';
+  static const no = 'No';
+  static const csvColumns = [
+    beneficiary,
+    'Código',
+    'Tipo',
+    'Estado',
+    'Registrada',
+    'Completada',
+    'Municipio',
+    'Repartidor',
+    'Moneda de cobro',
+    'Enviado',
+    'Comisión',
+    'Cobrado',
+    'Recogido',
+    'Moneda de entrega',
+    'A entregar',
+    'Tasa',
+    'Por la casa',
+    'Comisión no cobrada',
+    'Anulada',
+    'Anulada el',
+    'Motivo de la anulación',
+  ];
+
   // The month's remittances
   static const monthRemittances = 'Remesas del mes';
-  static String monthRemittancesHelp(String month) =>
-      'Registradas en $month · sin datos personales: cada remesa se identifica por su código';
-  static const searchCode = 'Buscar por código';
+  static String monthRemittancesHelp(String month) => 'Registradas en $month';
+  static const searchCode = 'Buscar por nombre o código';
   static const type = 'Tipo';
   static const status = 'Estado';
   static const courier = 'Repartidor';
   static const all = 'Todos';
   static const withoutCourier = 'Sin asignar';
+  static const business = 'El negocio';
+  static const deliveryType = CoreTexts.delivery;
+  static const pickupType = CoreTexts.pickup;
+  static const onTheHouseDelivery = 'Entrega por la casa';
+  static const onTheHouseDeliveryShort = 'Entrega · casa';
   static const onlyOnTheHouse = 'Solo por la casa';
   static const showVoided = 'Mostrar anuladas';
   static const filters = 'Filtros';
@@ -89,6 +126,7 @@ abstract final class ReportTexts {
   static const statusIncident = 'Con incidencia';
   static const voided = 'Anulada';
   static const code = 'Código';
+  static const beneficiary = 'Beneficiario';
   static const registered = 'Registrada';
   static const completed = 'Completada';
   static const municipality = 'Municipio';
@@ -113,12 +151,6 @@ abstract final class ReportTexts {
   static const previousPage = 'Página anterior';
   static const nextPage = 'Página siguiente';
 
-  /// A backend without the reports detail or the statistics (before the
-  /// version that brings them) answers 404.
-  static const notAvailableYet =
-      'Esta sección todavía no está disponible: llegará cuando se actualice el servidor. El resto de la aplicación '
-      'funciona como siempre.';
-
   // Statistics
   static const statistics = 'Estadísticas';
   static const periodCurrentMonth = 'Mes actual';
@@ -126,7 +158,7 @@ abstract final class ReportTexts {
   static const periodLastThreeMonths = 'Últimos 3 meses';
   static const periodCustom = 'Personalizado…';
   static String statisticsPeriod(String from, String to, String currency) =>
-      'Del $from al $to · por fecha de registro · hora de Cuba · importes en $currency · sin anuladas';
+      'Del $from al $to · por fecha de registro · hora del negocio · importes en $currency · sin anuladas';
   static const tooLongPeriod = 'Elige como mucho 366 días.';
   static String fewData(int count) =>
       'Este periodo lleva ${remittancesCount(count)}. Con tan pocos datos los gráficos dicen poco: las medias se marcan '

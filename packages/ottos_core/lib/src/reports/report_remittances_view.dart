@@ -4,9 +4,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../models/remittance.dart';
 import '../models/report_detail.dart';
 import '../theme/ottos_colors.dart';
-import '../utils/cuba_time.dart';
+import '../utils/business_time.dart';
 import '../utils/formatters.dart';
 import '../widgets/async_view.dart';
+import '../widgets/remittance_title.dart';
 import '../widgets/remittance_type_badge.dart';
 import 'report_pdf.dart';
 import 'report_remittances_cubit.dart';
@@ -32,7 +33,6 @@ class ReportRemittancesSection extends StatelessWidget {
         final cubit = context.read<ReportRemittancesCubit>();
         final Widget body = switch (state.status) {
           ReportDetailStatus.loading => const SizedBox(height: 160, child: LoadingView()),
-          ReportDetailStatus.unavailable => const ReportNotice.unavailable(),
           ReportDetailStatus.failure => SizedBox(
             height: 200,
             child: ErrorView(message: state.error ?? '', onRetry: cubit.load),
@@ -319,21 +319,23 @@ class _TotalsStrip extends StatelessWidget {
   }
 }
 
-/// How the status reads and its color: voided grey, incident red, completed
-/// green, assigned amber, paid teal.
-(String, Color) _status(ReportRemittance row) => switch (row) {
-  ReportRemittance(isVoided: true) => (ReportTexts.voided, const Color(0xFF44474E)),
+/// How the status reads, the colour of its tint and of its text: voided grey,
+/// incident red, completed green, assigned amber, paid teal. Green and amber
+/// text use their darker shades so they read at 4.5:1 on the tint.
+(String, Color, Color) _status(ReportRemittance row) => switch (row) {
+  ReportRemittance(isVoided: true) => (ReportTexts.voided, const Color(0xFF44474E), const Color(0xFF44474E)),
   ReportRemittance(withIncident: true) => (
     '${reportStatusName(row)} · ${ReportTexts.statusIncident.toLowerCase()}',
     OttosColors.danger,
+    OttosColors.danger,
   ),
-  ReportRemittance(isCompleted: true) => (reportStatusName(row), OttosColors.success),
-  ReportRemittance(status: 'ASSIGNED') => (reportStatusName(row), OttosColors.warning),
-  _ => (reportStatusName(row), OttosColors.tealDark),
+  ReportRemittance(isCompleted: true) => (reportStatusName(row), OttosColors.success, OttosColors.successText),
+  ReportRemittance(status: 'ASSIGNED') => (reportStatusName(row), OttosColors.warning, OttosColors.warningText),
+  _ => (reportStatusName(row), OttosColors.tealDark, OttosColors.tealDark),
 };
 
 String _courier(ReportRemittance row) =>
-    row.completedFromBusiness ? 'El negocio' : (row.courierName ?? ReportTexts.withoutCourier);
+    row.completedFromBusiness ? ReportTexts.business : (row.courierName ?? ReportTexts.withoutCourier);
 
 class _StatusChip extends StatelessWidget {
   const _StatusChip({required this.row});
@@ -342,14 +344,14 @@ class _StatusChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final (label, color) = _status(row);
+    final (label, color, textColor) = _status(row);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
       decoration: BoxDecoration(color: color.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(12)),
       child: Text(
         label,
         overflow: TextOverflow.ellipsis,
-        style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w500),
+        style: TextStyle(color: textColor, fontSize: 12, fontWeight: FontWeight.w500),
       ),
     );
   }
@@ -362,7 +364,7 @@ class _Table extends StatelessWidget {
   final bool newestFirst;
   final ValueChanged<ReportRemittance>? onOpen;
 
-  static const _widths = <double>[120, 96, 96, 170, 120, 150, 96, 88, 96, 136, 64];
+  static const _widths = <double>[180, 96, 96, 170, 120, 150, 96, 88, 96, 136, 64];
 
   @override
   Widget build(BuildContext context) {
@@ -384,7 +386,7 @@ class _Table extends StatelessWidget {
       color: const Color(0xFFF8F9FB),
       child: Row(
         children: [
-          cell(0, text(ReportTexts.code, style: headerStyle)),
+          cell(0, text(ReportTexts.beneficiary, style: headerStyle)),
           cell(1, text(ReportTexts.type, style: headerStyle)),
           cell(
             2,
@@ -454,17 +456,22 @@ class _Table extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            height: 44,
+            height: 52,
             child: Row(
               children: [
                 cell(
                   0,
                   open == null
-                      ? text(row.code, style: const TextStyle(fontWeight: FontWeight.w500))
+                      ? RemittanceTitle(
+                          name: row.beneficiaryName,
+                          code: row.code,
+                          style: const TextStyle(fontWeight: FontWeight.w500),
+                        )
                       : InkWell(
                           onTap: () => open(row),
-                          child: text(
-                            row.code,
+                          child: RemittanceTitle(
+                            name: row.beneficiaryName,
+                            code: row.code,
                             style: const TextStyle(
                               fontWeight: FontWeight.w500,
                               color: OttosColors.tealDark,
@@ -476,11 +483,13 @@ class _Table extends StatelessWidget {
                 cell(
                   1,
                   text(
-                    row.isPickup ? 'Recogida' : (row.onTheHouse ? 'Entrega · casa' : 'Entrega'),
+                    row.isPickup
+                        ? ReportTexts.pickupType
+                        : (row.onTheHouse ? ReportTexts.onTheHouseDeliveryShort : ReportTexts.deliveryType),
                     style: TextStyle(color: row.type.color),
                   ),
                 ),
-                cell(2, text(CubaTime.shortDate(row.createdAt), style: grey)),
+                cell(2, text(BusinessTime.shortDate(row.createdAt), style: grey)),
                 cell(3, text(row.municipalityName ?? '—', style: grey)),
                 cell(4, text(_courier(row), style: grey)),
                 cell(5, _StatusChip(row: row)),
@@ -498,9 +507,9 @@ class _Table extends StatelessWidget {
           ),
           if (row.voided case final voidedBy?)
             Padding(
-              padding: const EdgeInsets.only(left: 126, bottom: 10, right: 12),
+              padding: EdgeInsets.only(left: _widths[0] + 6, bottom: 10, right: 12),
               child: Text(
-                ReportTexts.voidedOn(CubaTime.shortDate(voidedBy.at), voidedBy.reason),
+                ReportTexts.voidedOn(BusinessTime.shortDate(voidedBy.at), voidedBy.reason),
                 style: Theme.of(context).textTheme.bodySmall,
               ),
             ),
@@ -521,9 +530,17 @@ class _RemittanceCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final voided = row.isVoided;
     final textTheme = Theme.of(context).textTheme;
-    final type = row.isPickup ? 'Recogida' : (row.onTheHouse ? 'Entrega por la casa' : 'Entrega');
-    final (status, _) = _status(row);
-    final details = [type, CubaTime.shortDate(row.createdAt), ?row.municipalityName, _courier(row), status].join(' · ');
+    final type = row.isPickup
+        ? ReportTexts.pickupType
+        : (row.onTheHouse ? ReportTexts.onTheHouseDelivery : ReportTexts.deliveryType);
+    final (status, _, _) = _status(row);
+    final details = [
+      type,
+      BusinessTime.shortDate(row.createdAt),
+      ?row.municipalityName,
+      _courier(row),
+      status,
+    ].join(' · ');
     final open = onOpen;
     return InkWell(
       onTap: open == null ? null : () => open(row),
@@ -535,8 +552,9 @@ class _RemittanceCard extends StatelessWidget {
             Row(
               children: [
                 Expanded(
-                  child: Text(
-                    row.code,
+                  child: RemittanceTitle(
+                    name: row.beneficiaryName,
+                    code: row.code,
                     style: textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w500,
                       decoration: voided ? TextDecoration.lineThrough : null,
@@ -559,7 +577,10 @@ class _RemittanceCard extends StatelessWidget {
             ),
             if (row.voided case final voidedBy?) ...[
               const SizedBox(height: 4),
-              Text(ReportTexts.voidedOn(CubaTime.shortDate(voidedBy.at), voidedBy.reason), style: textTheme.bodySmall),
+              Text(
+                ReportTexts.voidedOn(BusinessTime.shortDate(voidedBy.at), voidedBy.reason),
+                style: textTheme.bodySmall,
+              ),
             ],
           ],
         ),

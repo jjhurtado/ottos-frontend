@@ -25,6 +25,8 @@ class RemittancePage extends StatelessWidget {
         listener: (context, state) {
           final message = switch (state.actionResult) {
             RemittanceActionResult.completed => CourierTexts.completed,
+            RemittanceActionResult.completedByBusiness =>
+              state.remittance!.isPickup ? CoreTexts.collectedByBusiness : CoreTexts.deliveredByBusiness,
             RemittanceActionResult.postponed => CourierTexts.postponed,
             RemittanceActionResult.incidentReported => CoreTexts.incidentReported,
             RemittanceActionResult.assigned => CourierTexts.assigned,
@@ -41,7 +43,18 @@ class RemittancePage extends StatelessWidget {
           }
         },
         builder: (context, state) => Scaffold(
-          appBar: AppBar(title: Text(state.remittance?.code ?? '')),
+          appBar: AppBar(
+            title: switch (state.remittance) {
+              // On the navy bar: white name, light code.
+              final remittance? => RemittanceTitle(
+                name: remittance.beneficiaryName,
+                code: remittance.code,
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(color: Colors.white),
+                codeStyle: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.white70),
+              ),
+              null => const Text(''),
+            },
+          ),
           body: switch (state.status) {
             RemittanceLoadStatus.loading => const LoadingView(),
             RemittanceLoadStatus.failure => ErrorView(
@@ -72,6 +85,10 @@ class _RemittanceView extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       children: [
         if (remittance.voided case final voided?) ...[VoidedBanner(voided: voided), const SizedBox(height: 12)],
+        if (remittance.isCompleted && !remittance.isVoided) ...[
+          _CompletedBanner(remittance: remittance),
+          const SizedBox(height: 12),
+        ],
         if (remittance.review case final review? when !remittance.isVoided) ...[
           ReviewBanner(review: review),
           const SizedBox(height: 12),
@@ -107,7 +124,7 @@ class _RemittanceView extends StatelessWidget {
                   style: textTheme.headlineMedium?.copyWith(color: Colors.white, fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(height: 8),
-                RemittanceStatusChip(remittance: remittance, onDark: true),
+                RemittanceStatusChip(remittance: remittance, onDark: true, showCheck: true),
               ],
             ),
           ),
@@ -119,6 +136,12 @@ class _RemittanceView extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                if (remittance.completedFromBusiness)
+                  InfoRow(
+                    label: remittance.isPickup ? CourierTexts.collectedBy : CourierTexts.deliveredBy,
+                    value: CourierTexts.theBusiness,
+                    labelWidth: 110,
+                  ),
                 InfoRow(label: CourierTexts.beneficiary, value: remittance.beneficiaryName, labelWidth: 110),
                 _PhoneRow(label: CourierTexts.phone, phone: remittance.beneficiaryPhone),
                 _PhoneRow(label: CourierTexts.alternatePhone, phone: remittance.beneficiaryAlternatePhone),
@@ -202,6 +225,25 @@ class _Actions extends StatelessWidget {
               ),
               const SizedBox(height: 8),
             ],
+            // Sales and admin, with or without a courier: the business's cash pays it.
+            if (context.canDo(Permissions.remittancesCompleteFromBusiness)) ...[
+              OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size.fromHeight(48),
+                  foregroundColor: OttosColors.teal,
+                  side: const BorderSide(color: OttosColors.teal, width: 2),
+                ),
+                onPressed: submitting
+                    ? null
+                    : () async {
+                        final note = await askCompleteFromBusiness(context, remittance);
+                        if (note != null) await cubit.completeFromBusiness(note: note);
+                      },
+                icon: const Icon(Icons.storefront_outlined),
+                label: Text(remittance.isPickup ? CoreTexts.collectedByBusiness : CoreTexts.deliveredByBusiness),
+              ),
+              const SizedBox(height: 8),
+            ],
             Row(
               // Spacing only between buttons: alone, Aplazar takes the whole width.
               spacing: 12,
@@ -224,7 +266,10 @@ class _Actions extends StatelessWidget {
                   Expanded(
                     flex: 2,
                     child: FilledButton(
-                      style: FilledButton.styleFrom(backgroundColor: remittance.type.color),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: remittance.type.color,
+                        foregroundColor: Colors.white,
+                      ),
                       onPressed: submitting
                           ? null
                           : () async {
@@ -255,6 +300,37 @@ class _Actions extends StatelessWidget {
               ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// «✓ Recogida el 12 oct 2026, 16:40»: a completed remittance says so at the
+/// top of its detail, with a mark that does not rely on colour (REQ-020).
+class _CompletedBanner extends StatelessWidget {
+  const _CompletedBanner({required this.remittance});
+
+  final Remittance remittance;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: OttosColors.success.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.check, color: OttosColors.successText),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              CourierTexts.completedAt(remittance.isPickup, Formatters.dateTime(remittance.completedAt)),
+              style: const TextStyle(color: OttosColors.successText, fontWeight: FontWeight.w700, fontSize: 15),
+            ),
+          ),
+        ],
       ),
     );
   }

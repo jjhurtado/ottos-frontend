@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import '../l10n/core_texts.dart';
 import '../models/remittance.dart';
 import '../theme/ottos_colors.dart';
+import '../utils/business_time.dart';
 import '../utils/formatters.dart';
 
 typedef CompleteInput = ({String? pin, String? note});
@@ -89,7 +90,10 @@ class _CompleteDialogState extends State<_CompleteDialog> {
       actions: [
         TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text(CoreTexts.cancel)),
         FilledButton(
-          style: FilledButton.styleFrom(backgroundColor: widget.isPickup ? OttosColors.pickup : OttosColors.delivery),
+          style: FilledButton.styleFrom(
+            backgroundColor: widget.isPickup ? OttosColors.pickup : OttosColors.delivery,
+            foregroundColor: Colors.white,
+          ),
           onPressed: _confirm,
           child: const Text(CoreTexts.confirm),
         ),
@@ -105,7 +109,7 @@ typedef PostponeInput = ({DateTime newDate, String reason});
 /// The first date a remittance expected on [current] can be postponed to: the
 /// backend wants a later date than the expected one, and never today or before.
 DateTime earliestPostponeDate(DateTime? current, {DateTime? now}) {
-  final tomorrow = DateUtils.dateOnly(now ?? DateTime.now()).add(const Duration(days: 1));
+  final tomorrow = DateUtils.dateOnly(now ?? BusinessTime.today()).add(const Duration(days: 1));
   if (current == null) return tomorrow;
   final dayAfter = DateUtils.dateOnly(current).add(const Duration(days: 1));
   return dayAfter.isAfter(tomorrow) ? dayAfter : tomorrow;
@@ -141,7 +145,7 @@ class _PostponeDialogState extends State<_PostponeDialog> {
   }
 
   Future<void> _pickDate() async {
-    final today = DateUtils.dateOnly(DateTime.now());
+    final today = BusinessTime.today();
     final picked = await showDatePicker(
       context: context,
       initialDate: _date,
@@ -273,7 +277,7 @@ class _IncidentDialogState extends State<_IncidentDialog> {
       actions: [
         TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text(CoreTexts.cancel)),
         FilledButton(
-          style: FilledButton.styleFrom(backgroundColor: OttosColors.danger),
+          style: FilledButton.styleFrom(backgroundColor: OttosColors.danger, foregroundColor: Colors.white),
           onPressed: _reason == null
               ? null
               : () {

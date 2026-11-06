@@ -134,7 +134,7 @@ class HistoricalRemittance extends Equatable {
   final String customerId;
   final String beneficiaryId;
 
-  /// Cuba's wall-clock time, sent without a zone.
+  /// The business's wall-clock time, sent without a zone.
   final DateTime occurredAt;
   final double amount;
   final double fee;

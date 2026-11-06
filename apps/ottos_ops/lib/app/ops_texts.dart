@@ -86,7 +86,7 @@ abstract final class OpsTexts {
   static const pickupQuoteHint = 'Escribe el monto para ver la comisión.';
   static const notesOptional = 'Notas (opcional)';
   static const register = 'Registrar remesa';
-  static String remittanceRegistered(String code) => 'Remesa $code registrada';
+  static String remittanceRegistered(String label) => 'Remesa registrada: $label';
 
   // Remittance actions
   static const assignCourier = CoreTexts.assignCourier;
@@ -115,7 +115,7 @@ abstract final class OpsTexts {
   static const historicalDate = 'Fecha';
   static const historicalPickDate = 'Elegir fecha';
   static const historicalTime = 'Hora';
-  static const historicalCubaTime = 'Fecha y hora de Cuba, como en el ticket.';
+  static const historicalBusinessTime = 'Fecha y hora del negocio, como en el ticket.';
   static const historicalFutureDate = 'La fecha no puede ser futura.';
   static const historicalDeliveredInUsd = 'Se entregó en USD';
   static const historicalDeliveredInCup = 'Se entregó en CUP';
@@ -127,27 +127,14 @@ abstract final class OpsTexts {
   static const historicalToDeliver = 'CUP entregados';
   static const historicalCupHelp = 'La tasa y los CUP del ticket, tal cual: no se recalculan.';
   static const historicalInvalidNumber = 'Escribe un número válido.';
-  static String historicalRegistered(String code) => 'Remesa antigua $code registrada';
+  static String historicalRegistered(String label) => 'Remesa antigua registrada: $label';
 
-  // Delivered or collected by the business, without a courier (sales and admin)
-  static const deliveredByBusiness = 'Entregada por el negocio';
-  static const collectedByBusiness = 'Recogida por el negocio';
-  static String byBusinessTitle(String code, {required bool isPickup}) =>
-      isPickup ? 'Recogida por el negocio: $code' : 'Entregada por el negocio: $code';
-  static String byBusinessHelp(String amount, {required bool isPickup, required bool hasCourier}) => [
-    isPickup
-        ? 'Queda recogida sin repartidor y los $amount entran en la caja del negocio.'
-        : 'Queda entregada sin repartidor y los $amount salen de la caja del negocio, aunque se quede en negativo.',
-    if (hasCourier) 'Se le quita al repartidor: desaparece de su lista y de su teléfono.',
-    'No pide PIN.',
-  ].join(' ');
-  static const byBusinessNote = 'Nota (opcional)';
-  static const byBusinessConfirm = 'Confirmar';
+  // Delivered or collected by the business (the dialog and its texts are in core)
   static const byBusiness = 'El negocio';
 
   // Voiding a remittance (admin)
   static const voidAction = 'Anular';
-  static String voidTitle(String code) => 'Anular la remesa $code';
+  static String voidTitle(String label) => 'Anular la remesa: $label';
   static const voidHelp =
       'La remesa queda guardada pero deja de contar en reportes, estadísticas y listas de trabajo, y ya no se podrá '
       'cambiar. Si movió efectivo, se devuelve solo a la caja de donde salió. No se puede deshacer.';
@@ -244,8 +231,6 @@ abstract final class OpsTexts {
     CashMovementType.deliveryPayout => 'Entrega de remesa',
     CashMovementType.pickupCollection => 'Recogida de remesa',
     CashMovementType.courierReturn => 'Devolución de repartidor',
-    CashMovementType.courierSurplus => 'Sobrante de repartidor',
-    CashMovementType.remittanceRefund => 'Reembolso de remesa',
     CashMovementType.businessDeposit => 'Depósito',
     CashMovementType.businessWithdrawal => 'Retiro',
     CashMovementType.courierExchangeOut => 'Cambio de moneda: entregado',
@@ -265,6 +250,17 @@ abstract final class OpsTexts {
   static const deliveryDaysHint = 'Fecha prevista de las remesas nuevas: entre 1 y 60 días';
   static const deliveryDaysRange = 'Entre 1 y 60';
   static const settingsSaved = 'Ajustes guardados';
+  static const businessTimeZone = 'Zona horaria del negocio';
+  static String businessTimeZoneValue(String label, String clock) => '$label · ahora son las $clock';
+  static const businessTimeZoneCurrent = 'actual';
+  static const businessTimeZoneHint = 'Hora fija: no cambia sola en verano.';
+  static String businessTimeZonePreview(String label, String clock) => 'Con $label ahora serían las $clock.';
+  static String businessTimeZoneConfirmTitle(String label) => '¿Cambiar la zona horaria a $label?';
+  static String businessTimeZoneConfirmBody(String label) =>
+      'Desde este momento, «hoy», las remesas atrasadas y los informes de todos los meses, también los pasados, se '
+      'calculan con $label. Con una hora de diferencia solo cambian de día las remesas registradas cerca de '
+      'medianoche. Las fechas ya guardadas no cambian. Queda en Auditoría.';
+  static const businessTimeZoneConfirm = 'Cambiar zona horaria';
 
   // Rates
   static const calculator = 'Calculadora';
@@ -436,6 +432,8 @@ abstract final class OpsTexts {
     'CUSTOMERS' => 'Clientes',
     'BENEFICIARIES' => 'Beneficiarios',
     'REMITTANCE' => 'Remesas',
+    'SETTINGS' => 'Configuración',
+    'REMITTANCES' => 'Remesas antiguas',
     _ => type,
   };
 
@@ -443,7 +441,7 @@ abstract final class OpsTexts {
   /// target: the backend labels them "import"/"export", so the list says the
   /// kind of records instead.
   static String auditTargetLabel(AuditEntry entry) => switch (entry.targetType) {
-    'CUSTOMERS' || 'BENEFICIARIES' => auditTarget(entry.targetType),
+    'CUSTOMERS' || 'BENEFICIARIES' || 'SETTINGS' || 'REMITTANCES' => auditTarget(entry.targetType),
     _ => entry.targetLabel ?? '',
   };
 
@@ -467,6 +465,8 @@ abstract final class OpsTexts {
       'HISTORICAL_REMITTANCE_CREATED',
       'REMITTANCE_COMPLETED_FROM_BUSINESS',
     ],
+    'SETTINGS': ['BUSINESS_TIME_ZONE_CHANGED'],
+    'REMITTANCES': ['HISTORICAL_REMITTANCES_IMPORTED'],
   };
 
   static String auditAction(String code) => switch (code) {
@@ -486,8 +486,10 @@ abstract final class OpsTexts {
     'BENEFICIARIES_IMPORTED' => 'Beneficiarios importados (CSV)',
     'REMITTANCE_VOIDED' => 'Remesa anulada',
     'HISTORICAL_REMITTANCE_CREATED' => 'Remesa antigua registrada',
+    'HISTORICAL_REMITTANCES_IMPORTED' => 'Remesas antiguas importadas',
     'REMITTANCE_COMPLETED_FROM_BUSINESS' => 'Completada desde el negocio',
     'REMITTANCE_ON_THE_HOUSE' => 'Remesa por la casa (sin comisión)',
+    'BUSINESS_TIME_ZONE_CHANGED' => 'Zona horaria cambiada',
     _ => code,
   };
 
@@ -538,6 +540,10 @@ abstract final class OpsTexts {
       ],
       'CUSTOMERS_EXPORTED' => ['${details['customers'] ?? 0} clientes'],
       'REMITTANCE_VOIDED' => ['Motivo: ${text(details['reason'])}'],
+      'BUSINESS_TIME_ZONE_CHANGED' => [
+        'De ${BusinessTimeZone.parse(details['from'])?.label ?? text(details['from'])} '
+            'a ${BusinessTimeZone.parse(details['to'])?.label ?? text(details['to'])}',
+      ],
       'HISTORICAL_REMITTANCE_CREATED' => [
         [
           RemittanceType.fromCode(details['type'] as String?) == RemittanceType.pickup

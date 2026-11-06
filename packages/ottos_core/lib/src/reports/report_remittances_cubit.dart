@@ -6,8 +6,7 @@ import '../models/report_detail.dart';
 import 'report_repository.dart';
 import 'report_totals.dart';
 
-/// [unavailable]: the backend does not have the detail yet (404).
-enum ReportDetailStatus { loading, success, failure, unavailable }
+enum ReportDetailStatus { loading, success, failure }
 
 final class ReportRemittancesState extends Equatable {
   const ReportRemittancesState({
@@ -81,12 +80,7 @@ class ReportRemittancesCubit extends Cubit<ReportRemittancesState> {
     } on ApiException catch (error) {
       if (isClosed || state.month != shown) return;
       emit(
-        ReportRemittancesState(
-          month: shown,
-          status: error.statusCode == 404 ? ReportDetailStatus.unavailable : ReportDetailStatus.failure,
-          error: error.message,
-          filter: filter,
-        ),
+        ReportRemittancesState(month: shown, status: ReportDetailStatus.failure, error: error.message, filter: filter),
       );
     }
   }

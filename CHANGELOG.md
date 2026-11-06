@@ -2,9 +2,45 @@
 
 Cambios notables del frontend de Ottos (panel de operaciones y app de repartidores) por versión. Formato basado en
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y versionado según
-[roadmap.md › Versionado](roadmap.md#versionado). Cómo y cuándo se escribe: [STANDARDS.md](STANDARDS.md#changelog).
+`ottos/docs/STANDARDS.md` › Versioning and releases. Cómo y cuándo se escribe: el mismo documento › Changelog.
 
 ## [Unreleased]
+
+## [1.0.0-rc.9] - 2026-11-06
+
+### Añadido
+
+- App › ventas: botón **«Entregada por el negocio»** («Recogida por el negocio» en una recogida) en el detalle de una remesa abierta y no anulada, con o sin repartidor, igual que en el panel. Solo para quien tiene el permiso «Completar desde el negocio»; los repartidores no lo ven. Pide confirmación, explica qué pasa con la caja del negocio y, si la remesa tenía repartidor, que se le quita; admite una nota opcional y no pide PIN. Necesita conexión. Después, el detalle muestra «Entregada por: El negocio». Las versiones anteriores de la app siguen funcionando, sin el botón.
+- Panel › Auditoría: el filtro «Sobre» tiene la opción **«Remesas antiguas»** y su acción **«Remesas antiguas importadas»**, para encontrar las importaciones de remesas antiguas; en la lista esas entradas ya salen en español.
+
+- Panel › Configuración: **zona horaria del negocio**, una hora fija de UTC−12 a UTC+14 (hoy UTC−4). Los ajustes generales la muestran con la hora actual del negocio; quien puede cambiar la configuración la elige en «Editar», que dice qué hora sería con cada una, y antes de guardar confirma que «hoy», las remesas atrasadas y los informes de todos los meses pasan a calcularse con ella. El cambio queda en Auditoría («Zona horaria cambiada», de una zona a otra). Necesita el backend con la REQ-006; con uno anterior todo sigue con UTC−4.
+
+### Cambiado
+
+- Panel › Usuarios: en tu propia fila ya no aparece «Restablecer contraseña»; tu contraseña se cambia desde «Cambiar contraseña», en el menú de tu cuenta. Si no tienes todos los permisos de otro usuario, no puedes restablecer su contraseña, desactivarlo ni activarlo, y el panel lo explica con «Esta acción necesita permisos que tú no tienes.».
+- App › repartidor: en **«Mis remesas»** aparece la opción **«Completadas»** (apagada al abrir, como en ventas). Encendida, después de las abiertas se ven con el título «Completadas (últimas 20)» las últimas 20 remesas que el repartidor entregó o recogió, la más reciente primero; solo se pueden consultar, sin entregar ni reportar incidencias. Funciona sin conexión con lo último que el teléfono descargó, y una que acabas de completar sin conexión sale arriba como «Sin enviar». «Más atrasadas primero» ordena solo las abiertas. Al cerrar sesión, esa copia se borra del teléfono. Necesita el backend de REQ-017; con un backend anterior la lista de completadas se queda vacía y todo lo demás funciona igual.
+- Panel y app: las remesas se nombran por el beneficiario y no por el código. En las listas, las tarjetas y el detalle, el nombre va como título y el código, más pequeño, debajo; en una recogida, el nombre es el de la persona a quien se le recoge. Lo mismo en los avisos de remesa registrada, en los títulos de «Anular» y de «Entregada por el negocio» y en la nota de la caja del repartidor para lo que aún no se ha enviado. Si una remesa no tiene nombre, se muestra solo el código. La auditoría sigue mostrando el código.
+- App › notificaciones: dicen primero de quién es la remesa y al final el código («Rosa Pérez · Boyeros · OT-…»). Cuando llegan muchas a la vez, nombran hasta tres y añaden «y N más». El nombre se ve también con el teléfono bloqueado.
+- Reportes › «Remesas del mes»: cada remesa aparece por su beneficiario con el código debajo, en la tabla, en el PDF detallado y en el CSV, que tiene una columna nueva «Beneficiario» antes de «Código». El buscador encuentra también por nombre. Quien comparta el CSV o el PDF es responsable de ellos, porque ahora llevan nombres. Quién puede ver los reportes no cambia, y las estadísticas tampoco. Necesita el backend de REQ-019; con uno anterior, las filas se ven solo con el código.
+- App: las remesas completadas se distinguen a primera vista de las abiertas: tarjeta gris con borde, texto más suave y la etiqueta «✓ Entregada» o «✓ Recogida» con una marca, no solo con el color. Se sigue viendo si es entrega o recogida. El detalle de una completada empieza por «Entregada el …» o «Recogida el …». El panel no cambia.
+- Panel y app: el texto de los botones principales turquesa (por ejemplo «Entrar» o «Guardar») pasa de blanco a azul marino, para que se lea mejor (de 3.5:1 a 5.5:1 de contraste). El turquesa no cambia. Los botones de otros colores (rojo de anular, morado de recogida, magenta de por la casa) siguen con el texto blanco.
+- Panel y app › Reportes y Estadísticas: ya no muestran el aviso «Esta sección todavía no está disponible». Si el servidor no responde bien, sale el mensaje de error con el botón «Reintentar», como en el resto de la aplicación. Necesita el backend 1.0.0-rc.4 o posterior.
+- Panel y app: las etiquetas de estado «Pagada», «Asignada» y «Entregada» o «Recogida» se leen mejor (texto más oscuro, del mismo color, con al menos 4.5:1 de contraste). El fondo de la etiqueta no cambia. También el aviso y la etiqueta «Para revisar», la etiqueta «Sin enviar» de la app y las etiquetas de estado de «Remesas del mes» en Reportes. Las etiquetas rojas (con retraso, anulada) siguen igual.
+
+### Corregido
+
+- Panel y app: todas las fechas y horas se muestran en la zona horaria del negocio, tenga el ordenador o el teléfono la zona que tenga. Desde el 1 de noviembre los informes y las estadísticas usaban la regla antigua del horario de verano y daban una hora menos, y el resto de pantallas seguía la zona del dispositivo.
+- App: lo que el repartidor hace sin conexión se guarda con la hora del servidor aunque el reloj del teléfono esté mal o se cambie, y el teléfono recuerda la zona del negocio y la diferencia de hora para cuando abre sin conexión.
+
+### Seguridad
+
+- App › entrar con huella: la contraseña guardada queda protegida por la huella del propio teléfono. En Android solo se lee con una huella fuerte (no vale el PIN); en iPhone solo con las huellas o la cara registradas ahora, no sale del teléfono y no va en las copias de seguridad. Si se añade o quita una huella, la entrada con huella deja de valer y hay que entrar una vez con la contraseña. Quien la tenía activada antes de esta versión tiene que volver a activarla. En Android 8 o anterior, o en teléfonos sin una huella fuerte, la entrada con huella ya no se puede activar.
+- App › entrar con huella: el botón dice qué cuenta abre («Entrar con huella como …»). Si otra persona entra en el teléfono con su contraseña, la huella guardada de la anterior se olvida.
+- App › cerrar sesión: si hay una entrada con huella guardada, se puede marcar «Olvidar la entrada con huella de …» antes de salir (por ejemplo, si otra persona va a usar el teléfono).
+- App › cerrar sesión: el teléfono borra las remesas, la caja y los ajustes guardados para trabajar sin conexión. Solo se quedan las acciones sin enviar, que se envían al volver a entrar con la misma cuenta; si entra otra persona, se pierden. El aviso al cerrar sesión con acciones sin enviar lo explica así. Cuando la sesión caduca sola no se borra nada, para no perder el trabajo sin conexión.
+- App: los datos de la app ya no van en las copias de seguridad de Google ni de iCloud ni pasan a un teléfono nuevo al cambiar de teléfono.
+- Panel: el navegador recibe ahora reglas de seguridad que impiden que otra página muestre el panel dentro de la suya y que solo dejan cargar código del propio panel. Nada cambia al usarlo, salvo que los emojis u otros alfabetos que la fuente del panel no tiene se ven como cuadros, en vez de descargarse de Google.
+- Panel y app › CSV de clientes y de remesas del mes: un valor que empieza por `=`, `+`, `-` o `@` se exporta con un apóstrofo delante (`'+5355551234`): Excel lo muestra como texto, con el apóstrofo visible, y nunca lo ejecuta como fórmula. Los importes negativos siguen siendo números. Al importar el CSV de clientes, el apóstrofo se quita y los teléfonos vuelven a quedar como `+53…`.
 
 ## [1.0.0-rc.8] - 2026-10-24
 
