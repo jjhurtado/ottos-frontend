@@ -85,10 +85,7 @@ class _RemittanceView extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       children: [
         if (remittance.voided case final voided?) ...[VoidedBanner(voided: voided), const SizedBox(height: 12)],
-        if (remittance.isDone) ...[
-          _CompletedBanner(remittance: remittance),
-          const SizedBox(height: 12),
-        ],
+        if (remittance.isDone) ...[_CompletedBanner(remittance: remittance), const SizedBox(height: 12)],
         if (remittance.review case final review? when !remittance.isVoided) ...[
           ReviewBanner(review: review),
           const SizedBox(height: 12),
@@ -315,7 +312,7 @@ class _CompletedBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: OttosColors.success.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(12),
@@ -327,7 +324,8 @@ class _CompletedBanner extends StatelessWidget {
           Expanded(
             child: Text(
               CourierTexts.completedAt(remittance.isPickup, Formatters.dateTime(remittance.completedAt)),
-              style: const TextStyle(color: OttosColors.successText, fontWeight: FontWeight.w700, fontSize: 15),
+              style: Theme.of(context).textTheme.bodyLarge
+                  ?.copyWith(color: OttosColors.successText, fontWeight: FontWeight.w700),
             ),
           ),
         ],
