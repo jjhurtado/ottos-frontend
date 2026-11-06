@@ -162,6 +162,10 @@ abstract final class CourierTexts {
 
   // Cash
   static const balances = 'Saldo en mano';
+
+  /// The courier's own money pending in «Mi caja» (REQ-021).
+  static const ownToDeliver = 'Por entregar';
+  static const ownToCollect = 'Por recoger';
   static const owesBusiness = 'Debes efectivo al negocio en alguna moneda.';
   static const movements = 'Movimientos';
   static const noMovements = 'Todavía no tienes movimientos.';

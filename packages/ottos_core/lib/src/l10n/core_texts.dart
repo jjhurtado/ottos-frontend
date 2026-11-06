@@ -125,6 +125,12 @@ abstract final class CoreTexts {
   static const assign = 'Asignar';
   static const noCouriers = 'No hay repartidores disponibles.';
   static String openRemittances(int count) => count == 1 ? '1 remesa abierta' : '$count remesas abiertas';
+
+  // Money pending (REQ-021).
+  static const pendingToDeliver = 'Pendiente por entregar';
+  static const pendingToCollect = 'Pendiente por recoger';
+  static const nothingPending = 'Nada pendiente';
+  static String remittanceCount(int count) => count == 1 ? '1 remesa' : '$count remesas';
   static const currency = 'Moneda';
   static const noteOptional = 'Nota (opcional)';
   static const amountRequired = 'Escribe un monto mayor que 0';

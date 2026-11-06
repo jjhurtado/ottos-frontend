@@ -136,6 +136,9 @@ class _FilterBar extends StatelessWidget {
               decoration: const InputDecoration(labelText: OpsTexts.status, isDense: true),
               items: [
                 const DropdownMenuItem(value: null, child: Text(OpsTexts.allStatuses)),
+                // Several statuses at once, as the Home's pending tiles open it (REQ-021).
+                if (filter.status?.contains(',') ?? false)
+                  DropdownMenuItem(value: filter.status, child: const Text(OpsTexts.pendingStatuses)),
                 for (final status in state.statuses)
                   DropdownMenuItem(
                     value: status.code,
