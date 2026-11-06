@@ -138,7 +138,6 @@ abstract final class ReportTexts {
   static const toDeliver = 'A entregar';
   static const rate = 'Tasa';
   static const picked = 'Recogido';
-  static const onTheHouseShort = 'casa';
   static const sortNewest = 'Ordenar de la más antigua a la más reciente';
   static const sortOldest = 'Ordenar de la más reciente a la más antigua';
   static const noRemittancesFound = 'Ninguna remesa coincide con los filtros.';

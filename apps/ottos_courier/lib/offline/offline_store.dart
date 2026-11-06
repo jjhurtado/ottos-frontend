@@ -152,14 +152,6 @@ class OfflineStore {
     return rows.isEmpty ? null : jsonDecode(rows.single['json']! as String) as Map<String, dynamic>;
   });
 
-  /// One just completed, as the server returned it, until the next download
-  /// brings the whole list; the oldest beyond [maxCompleted] leave (BR-1).
-  Future<void> putCompleted(Map<String, dynamic> json) => _db.transaction((txn) async {
-    await _putCompleted(txn, json);
-    await _trimCompleted(txn);
-    await _expireCompleted(txn);
-  });
-
   /// A remittance that was just completed leaves the open ones and, unless it is
   /// [voided], joins the completed ones, in one transaction: if the app dies in
   /// between, it is still in one of the two tables (REQ-017 CR-1).

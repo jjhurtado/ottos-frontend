@@ -51,6 +51,7 @@ class CustomerDetailCubit extends Cubit<CustomerDetailState> {
 
   Future<void> load() async {
     emit(const CustomerDetailState());
+    final stats = loadStats ? _stats() : Future<CustomerStats?>.value();
     try {
       final results = await Future.wait<Object>([_customers.get(_id), _customers.beneficiaries(_id)], eagerError: true);
       emit(
@@ -58,7 +59,7 @@ class CustomerDetailCubit extends Cubit<CustomerDetailState> {
           status: CustomerDetailStatus.success,
           customer: results[0] as Customer,
           beneficiaries: _sorted(results[1] as List<Beneficiary>),
-          stats: loadStats ? await _stats() : null,
+          stats: await stats,
         ),
       );
     } on ApiException catch (error) {

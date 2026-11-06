@@ -8,6 +8,10 @@ abstract interface class RemittanceSource {
   /// The open remittances of the list.
   Future<List<Remittance>> list();
 
+  /// The money pending of the whole business that came with the last [list]
+  /// (sales, REQ-021 US-2); null for the courier or when the server sent none.
+  PendingTotals? get totals;
+
   /// Whether the list can also show the completed remittances: sales, who see
   /// every remittance, and the courier, who sees their latest ones (REQ-017).
   bool get canShowCompleted;
@@ -54,7 +58,7 @@ class OnlineSource implements RemittanceSource {
   /// The ones assigned to the user; false lists every open remittance.
   final bool onlyMine;
 
-  /// How many of the latest remittances sales sees; the panel has the rest.
+  /// How many open remittances sales sees; the panel has the rest.
   static const openPageSize = 100;
 
   @override
@@ -67,12 +71,16 @@ class OnlineSource implements RemittanceSource {
   static const completedPageSize = 50;
 
   @override
+  PendingTotals? get totals => _totals;
+  PendingTotals? _totals;
+
+  /// Sales: only the open ones, not voided, with the business's money pending in the same call (REQ-022 OPT-F3).
+  @override
   Future<List<Remittance>> list() async {
     if (onlyMine) return _remittances.assignedToMe();
-    final workflow = await _remittances.workflow();
-    // Voided ones are not work: the backend keeps them out only of the courier's lists.
-    final page = await _remittances.search(const RemittanceFilter(voided: false), size: openPageSize);
-    return page.items.where((remittance) => !workflow.isFinal(remittance.status)).toList();
+    final (:page, :totals) = await _remittances.pending(size: openPageSize);
+    _totals = totals;
+    return page.items;
   }
 
   @override
@@ -81,20 +89,10 @@ class OnlineSource implements RemittanceSource {
       for (final status in (await _remittances.workflow()).statuses)
         if (status.isFinal) status.code,
     ];
-    // With a single final status the backend pages exactly the completed ones.
-    final result = await _remittances.search(
-      RemittanceFilter(voided: false, status: finals.length == 1 ? finals.single : null),
+    return _remittances.search(
+      RemittanceFilter(voided: false, status: finals.join(',')),
       page: page,
       size: completedPageSize,
-    );
-    return PageResult(
-      items: [
-        for (final remittance in result.items)
-          if (finals.contains(remittance.status)) remittance,
-      ],
-      page: result.page,
-      size: result.size,
-      totalItems: result.totalItems,
     );
   }
 
@@ -159,6 +157,10 @@ class OfflineSource implements RemittanceSource {
 
   @override
   bool get completedAreLatest => true;
+
+  /// The courier sees their own money pending in «Mi caja».
+  @override
+  PendingTotals? get totals => null;
 
   /// The courier works from the phone: no search there (REQ-018 is for sales).
   @override

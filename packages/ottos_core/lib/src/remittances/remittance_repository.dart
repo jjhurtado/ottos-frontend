@@ -274,18 +274,30 @@ class RemittanceRepository {
     return PageResult.fromJson(json, Remittance.fromJson);
   }
 
-  /// Money pending to deliver and to collect over every open remittance, by
-  /// currency, summed by the server (BR-5; `remittances:read`).
-  Future<PendingTotals> pendingTotals() async {
+  /// The open remittances (BR-1), a page of [size], with the money pending to
+  /// deliver and to collect over all of them, by currency, summed by the server
+  /// (BR-5; `remittances:read`). Totals are null from a backend without them.
+  Future<({PageResult<Remittance> page, PendingTotals? totals})> pending({int size = 1}) async {
     final json = await _api.get<Map<String, dynamic>>(
       '/remittances',
-      query: {...RemittanceFilter.pending((await workflow()).statuses).toQuery(), 'page': 0, 'size': 1, 'totals': true},
+      query: {
+        ...RemittanceFilter.pending((await workflow()).statuses).toQuery(),
+        'page': 0,
+        'size': size,
+        'totals': true,
+      },
     );
     final totals = json['totals'] as Map<String, dynamic>?;
-    // No totals: a backend without them. Saying «Nada pendiente» would be a false figure (CR-4).
-    if (totals == null) throw const ApiException(CoreTexts.unexpectedError);
-    return PendingTotals.fromJson(totals);
+    return (
+      page: PageResult.fromJson(json, Remittance.fromJson),
+      totals: totals == null ? null : PendingTotals.fromJson(totals),
+    );
   }
+
+  /// Only the money pending of [pending].
+  Future<PendingTotals> pendingTotals() async =>
+      // No totals: a backend without them. Saying «Nada pendiente» would be a false figure (CR-4).
+      (await pending()).totals ?? (throw const ApiException(CoreTexts.unexpectedError));
 
   /// Registers a remittance. Sending the same [idempotencyKey] again (a retry
   /// or a double click) returns the first remittance instead of a second one.
@@ -311,9 +323,6 @@ class RemittanceRepository {
 
   Future<Remittance> get(String id) async =>
       Remittance.fromJson(await _api.get<Map<String, dynamic>>('/remittances/$id'));
-
-  Future<Remittance> getByCode(String code) async =>
-      Remittance.fromJson(await _api.get<Map<String, dynamic>>('/remittances/code/${Uri.encodeComponent(code)}'));
 
   Future<List<RemittanceEvent>> events(String id) async {
     final json = await _api.get<List<dynamic>>('/remittances/$id/events');

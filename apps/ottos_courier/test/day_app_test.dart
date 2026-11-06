@@ -78,7 +78,6 @@ void main() {
     customers = _MockCustomers();
     rates = _MockRates();
     cash = _MockCash();
-    when(() => remittances.pendingTotals()).thenAnswer((_) async => const PendingTotals());
     when(() => remittances.assignedToMe()).thenAnswer((_) async => const []);
   });
 
@@ -135,23 +134,22 @@ void main() {
 
   group('list', () {
     testWidgets('sales see the open remittances and can register one', (tester) async {
-      when(() => remittances.workflow()).thenAnswer((_) async => _workflow);
-      when(() => remittances.search(any(), size: any(named: 'size'))).thenAnswer(
-        (_) async => PageResult(
-          items: [_remittance('OT-OPEN', 'PAID'), _remittance('OT-DONE', 'DELIVERED')],
-          page: 0,
-          size: 100,
-          totalItems: 2,
+      when(() => remittances.pending(size: 100)).thenAnswer(
+        (_) async => (
+          page: PageResult(items: [_remittance('OT-OPEN', 'PAID')], page: 0, size: 100, totalItems: 1),
+          totals: const PendingTotals(),
         ),
       );
 
       await pump(tester, _sales, const AssignedPage());
 
       expect(find.text('OT-OPEN'), findsOneWidget);
-      expect(find.text('OT-DONE'), findsNothing);
       expect(find.text(CourierTexts.newRemittance), findsOneWidget);
       verifyNever(() => remittances.assignedToMe());
-      verify(() => remittances.search(const RemittanceFilter(voided: false), size: 100)).called(1);
+      // REQ-022 OPT-F3: only the open ones, with the totals, in one call.
+      verify(() => remittances.pending(size: 100)).called(1);
+      verifyNever(() => remittances.search(any(), size: any(named: 'size')));
+      verifyNever(() => remittances.pendingTotals());
     });
 
     testWidgets('logging out with the list open does not fail', (tester) async {
@@ -173,10 +171,12 @@ void main() {
       expect(find.text(CourierTexts.newRemittance), findsNothing);
     });
 
-    void stubSales({required List<Remittance> recent, required List<List<Remittance>> completedPages}) {
+    void stubSales({required List<Remittance> open, required List<List<Remittance>> completedPages}) {
       when(() => remittances.workflow()).thenAnswer((_) async => _workflow);
-      when(() => remittances.search(const RemittanceFilter(voided: false), size: 100))
-          .thenAnswer((_) async => PageResult(items: recent, page: 0, size: 100, totalItems: recent.length));
+      when(() => remittances.pending(size: 100)).thenAnswer(
+        (_) async =>
+            (page: PageResult(items: open, page: 0, size: 100, totalItems: open.length), totals: const PendingTotals()),
+      );
       for (final (index, items) in completedPages.indexed) {
         when(
           () => remittances.search(const RemittanceFilter(voided: false, status: 'DELIVERED'), page: index, size: 50),
@@ -191,7 +191,7 @@ void main() {
       final done = _remittance('OT-DONE', 'DELIVERED');
       final old = _remittance('OT-OLD', 'DELIVERED', completedAt: DateTime(2026, 10, 1));
       stubSales(
-        recent: [old, done, _remittance('OT-OPEN', 'PAID')],
+        open: [_remittance('OT-OPEN', 'PAID')],
         completedPages: [
           [old, done],
         ],
@@ -218,7 +218,7 @@ void main() {
 
     testWidgets('«Ver más» brings the next page of completed ones', (tester) async {
       stubSales(
-        recent: const [],
+        open: const [],
         completedPages: [
           [_remittance('OT-P1', 'DELIVERED', completedAt: DateTime(2026, 10, 10))],
           [_remittance('OT-P2', 'DELIVERED', completedAt: DateTime(2026, 9, 10))],
@@ -241,7 +241,7 @@ void main() {
     testWidgets('with everything completed, sales can still turn on «Completadas»', (tester) async {
       final done = _remittance('OT-DONE', 'DELIVERED');
       stubSales(
-        recent: [done],
+        open: const [],
         completedPages: [
           [done],
         ],

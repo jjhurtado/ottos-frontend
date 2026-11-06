@@ -69,7 +69,7 @@ void main() {
     when(() => source.list()).thenAnswer((_) async => [Remittance.fromJson(_json('a'))]);
     when(() => source.pendingIds()).thenAnswer((_) async => {});
     when(() => source.changes).thenAnswer((_) => const Stream.empty());
-    when(() => repository.pendingTotals()).thenAnswer((_) async => _business);
+    when(() => source.totals).thenReturn(_business);
     when(() => cash.myStatement()).thenAnswer((_) async => _statement);
   });
 
@@ -118,7 +118,6 @@ void main() {
       expect(find.byType(PendingTotalsTiles), findsOneWidget);
 
       when(() => source.list()).thenThrow(_offline);
-      when(() => repository.pendingTotals()).thenThrow(_offline);
       await BlocProvider.of<AssignedCubit>(tester.element(find.text('OT-a'))).load();
       await tester.pumpAndSettle();
 
@@ -129,13 +128,13 @@ void main() {
       );
     });
 
-    test('AC-2.2 (only the totals fail on a reload): no figure older than the panel is kept', () async {
-      final cubit = AssignedCubit(source: source, pendingTotals: repository.pendingTotals);
+    test('AC-2.2 (a reload without totals): no figure older than the panel is kept', () async {
+      final cubit = AssignedCubit(source: source);
       addTearDown(cubit.close);
       await cubit.load();
       expect(cubit.state.totals, _business);
 
-      when(() => repository.pendingTotals()).thenThrow(const ApiException('Error'));
+      when(() => source.totals).thenReturn(null);
       await cubit.load();
 
       expect(cubit.state.status, AssignedStatus.success);

@@ -234,9 +234,9 @@ void main() {
         );
       addTearDown(authBloc.close);
       await OttosLocalization.initialize();
-      // Sales also see the business's money pending above the list (REQ-021).
+      // Sales also see the business's money pending above the list (REQ-021), from the source.
+      when(() => source.totals).thenReturn(const PendingTotals());
       final repository = _MockRemittances();
-      when(repository.pendingTotals).thenAnswer((_) async => const PendingTotals());
       await tester.pumpWidget(
         MultiRepositoryProvider(
           providers: [

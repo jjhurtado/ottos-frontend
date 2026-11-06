@@ -16,15 +16,10 @@ class AssignedPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final canCreate = context.canDo(Permissions.remittancesCreate);
-    // Sales see the business's money pending above the list (REQ-021 US-2); the
-    // courier sees their own in «Mi caja».
-    final businessTotals =
-        context.canDo(Permissions.remittancesRead) && !context.canDo(Permissions.remittancesReadAssigned);
+    // Sales see the business's money pending above the list (REQ-021 US-2), from
+    // the source; the courier sees their own in «Mi caja».
     return BlocProvider(
-      create: (context) => AssignedCubit(
-        source: context.read<RemittanceSource>(),
-        pendingTotals: businessTotals ? context.read<RemittanceRepository>().pendingTotals : null,
-      )..load(),
+      create: (context) => AssignedCubit(source: context.read<RemittanceSource>())..load(),
       child: Scaffold(
         body: const _AssignedView(),
         floatingActionButton: canCreate ? const _NewRemittanceButton() : null,

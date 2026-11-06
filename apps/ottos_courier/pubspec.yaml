@@ -1,7 +1,7 @@
 name: ottos_courier
 description: Ottos courier app for deliveries and pickups.
 publish_to: none
-version: 1.0.0-rc.11+13
+version: 1.0.0-rc.12+14
 resolution: workspace
 
 environment:
@@ -19,7 +19,6 @@ dependencies:
   flutter_native_contact_picker: ^0.0.13
   flutter_secure_storage: ^11.2.0
   go_router: ^18.0.2
-  intl: ^0.20.3
   local_auth: ^3.0.2
   ottos_core:
     path: ../../packages/ottos_core

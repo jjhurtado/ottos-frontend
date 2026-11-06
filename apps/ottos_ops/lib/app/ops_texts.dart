@@ -24,7 +24,6 @@ abstract final class OpsTexts {
   static const lateRemittances = 'Atrasadas';
   static const incidentRemittances = 'Con incidencia';
   static const reviewRemittances = CoreTexts.toReview;
-  static const viewAll = 'Ver remesas';
 
   // Remittance list
   static const searchByBeneficiary = 'Beneficiario (nombre o teléfono)';
