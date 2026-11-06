@@ -6,6 +6,17 @@ Cambios notables del frontend de Ottos (panel de operaciones y app de repartidor
 
 ## [Unreleased]
 
+### Cambiado
+
+- Panel y app: solo se incluyen los textos del sistema en español (calendario, menús de texto); el panel descarga unos 480 KB menos (−6 % comprimido) y la app pesa unos 450 KB menos.
+- Panel: el Inicio, la ficha de un cliente y «Nueva remesa» desde un cliente piden a la vez los datos que no dependen unos de otros, así cargan antes.
+- App › ventas: la lista pide solo las remesas abiertas y no anuladas, junto con los mosaicos «Pendiente por entregar/recoger», en una sola petición (antes eran dos). Las completadas con «Completadas» activado las filtra el servidor.
+
+### Corregido
+
+- App › ventas: ya no faltan remesas abiertas cuando había más de 100 remesas recientes de cualquier estado; ahora salen hasta 100 abiertas.
+- Panel › Inicio: los mosaicos por estado (Pagada, Asignada…) ya no cuentan las remesas anuladas, y al tocarlos la lista tampoco las muestra.
+
 ## [1.0.0-rc.11] - 2026-11-06
 
 ### Añadido
