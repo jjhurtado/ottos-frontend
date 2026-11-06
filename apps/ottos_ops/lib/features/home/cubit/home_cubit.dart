@@ -23,6 +23,8 @@ final class HomeState extends Equatable {
     this.incidents = 0,
     this.toReview = 0,
     this.exchangesToReview = 0,
+    this.pending,
+    this.pendingError,
     this.error,
   });
 
@@ -34,10 +36,37 @@ final class HomeState extends Equatable {
 
   /// Couriers' currency exchanges marked for review; 0 without cash:read.
   final int exchangesToReview;
+
+  /// Money pending to deliver and to collect (REQ-021); null while it loads or
+  /// when it failed, with [pendingError]. It fails on its own: the counters stay.
+  final PendingTotals? pending;
+  final String? pendingError;
   final String? error;
 
+  HomeState withPending({PendingTotals? pending, String? pendingError}) => HomeState(
+    status: status,
+    openByStatus: openByStatus,
+    late: late,
+    incidents: incidents,
+    toReview: toReview,
+    exchangesToReview: exchangesToReview,
+    pending: pending,
+    pendingError: pendingError,
+    error: error,
+  );
+
   @override
-  List<Object?> get props => [status, openByStatus, late, incidents, toReview, exchangesToReview, error];
+  List<Object?> get props => [
+    status,
+    openByStatus,
+    late,
+    incidents,
+    toReview,
+    exchangesToReview,
+    pending,
+    pendingError,
+    error,
+  ];
 }
 
 class HomeCubit extends Cubit<HomeState> {
@@ -71,6 +100,19 @@ class HomeCubit extends Cubit<HomeState> {
       );
     } on ApiException catch (error) {
       emit(HomeState(status: HomeStatus.failure, error: error.message));
+      return;
+    }
+    await loadPending();
+  }
+
+  /// Loads (or retries) the money pending alone (REQ-021 AC-1.8).
+  Future<void> loadPending() async {
+    emit(state.withPending());
+    try {
+      final pending = await _remittances.pendingTotals();
+      if (!isClosed) emit(state.withPending(pending: pending));
+    } on ApiException catch (error) {
+      if (!isClosed) emit(state.withPending(pendingError: error.message));
     }
   }
 

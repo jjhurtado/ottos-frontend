@@ -3,9 +3,12 @@ import 'package:equatable/equatable.dart';
 import 'dart:math';
 
 import '../api/api_client.dart';
+import '../api/api_exception.dart';
+import '../l10n/core_texts.dart';
 import '../models/courier.dart';
 import '../models/event.dart';
 import '../models/page_result.dart';
+import '../models/pending_totals.dart';
 import '../models/remittance.dart';
 import '../models/workflow.dart';
 import '../utils/formatters.dart';
@@ -29,6 +32,7 @@ class RemittanceFilter extends Equatable {
     this.onTheHouse,
   });
 
+  /// One status code, or several separated by commas (`PAID,ASSIGNED`).
   final String? status;
   final RemittanceType? type;
   final bool? late;
@@ -53,6 +57,17 @@ class RemittanceFilter extends Equatable {
 
   /// true: only deliveries on the house; false: without them; null: all.
   final bool? onTheHouse;
+
+  /// The open remittances: not voided, in any of [statuses] the workflow does
+  /// not mark final (REQ-021 BR-1). The pending totals and the list they open
+  /// both use it (BR-8).
+  factory RemittanceFilter.pending(Iterable<RemittanceStatus> statuses) => RemittanceFilter(
+    status: [
+      for (final status in statuses)
+        if (!status.isFinal) status.code,
+    ].join(','),
+    voided: false,
+  );
 
   static const _keep = Object();
 
@@ -257,6 +272,19 @@ class RemittanceRepository {
       query: {...filter.toQuery(), 'page': page, 'size': size},
     );
     return PageResult.fromJson(json, Remittance.fromJson);
+  }
+
+  /// Money pending to deliver and to collect over every open remittance, by
+  /// currency, summed by the server (BR-5; `remittances:read`).
+  Future<PendingTotals> pendingTotals() async {
+    final json = await _api.get<Map<String, dynamic>>(
+      '/remittances',
+      query: {...RemittanceFilter.pending((await workflow()).statuses).toQuery(), 'page': 0, 'size': 1, 'totals': true},
+    );
+    final totals = json['totals'] as Map<String, dynamic>?;
+    // No totals: a backend without them. Saying «Nada pendiente» would be a false figure (CR-4).
+    if (totals == null) throw const ApiException(CoreTexts.unexpectedError);
+    return PendingTotals.fromJson(totals);
   }
 
   /// Registers a remittance. Sending the same [idempotencyKey] again (a retry

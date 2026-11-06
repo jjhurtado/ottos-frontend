@@ -16,8 +16,15 @@ class AssignedPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final canCreate = context.canDo(Permissions.remittancesCreate);
+    // Sales see the business's money pending above the list (REQ-021 US-2); the
+    // courier sees their own in «Mi caja».
+    final businessTotals =
+        context.canDo(Permissions.remittancesRead) && !context.canDo(Permissions.remittancesReadAssigned);
     return BlocProvider(
-      create: (context) => AssignedCubit(source: context.read<RemittanceSource>())..load(),
+      create: (context) => AssignedCubit(
+        source: context.read<RemittanceSource>(),
+        pendingTotals: businessTotals ? context.read<RemittanceRepository>().pendingTotals : null,
+      )..load(),
       child: Scaffold(
         body: const _AssignedView(),
         floatingActionButton: canCreate ? const _NewRemittanceButton() : null,
@@ -97,6 +104,18 @@ class _AssignedView extends StatelessWidget {
       showCompleted: cubit.canShowCompleted ? state.showCompleted : null,
       onShowCompleted: cubit.showCompleted,
     );
+    final totals = state.totals;
+    // Scrolls with the list, above the order selector (variant B).
+    final header = totals == null
+        ? selector
+        : Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              PendingTotalsTiles(totals: totals),
+              const SizedBox(height: 8),
+              selector,
+            ],
+          );
     if (state.items.isEmpty) {
       return switch (state.status) {
         AssignedStatus.loading => const LoadingView(),
@@ -107,7 +126,7 @@ class _AssignedView extends StatelessWidget {
             padding: cubit.canShowCompleted ? const EdgeInsets.all(12) : null,
             children: [
               // Sales can still turn on the completed ones when nothing is open.
-              if (cubit.canShowCompleted) selector,
+              if (cubit.canShowCompleted) header,
               SizedBox(
                 height: 200,
                 child: EmptyView(message: state.showCompleted ? CourierTexts.noRemittances : CourierTexts.noAssigned),
@@ -125,7 +144,7 @@ class _AssignedView extends StatelessWidget {
         itemCount: state.items.length + (state.moreCompleted ? 2 : 1),
         separatorBuilder: (_, _) => const SizedBox(height: 8),
         itemBuilder: (context, index) {
-          if (index == 0) return selector;
+          if (index == 0) return header;
           if (index > state.items.length) {
             return Center(
               child: TextButton(
