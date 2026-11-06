@@ -6,6 +6,10 @@ Cambios notables del frontend de Ottos (panel de operaciones y app de repartidor
 
 ## [Unreleased]
 
+### Cambiado
+
+- App en iPhone: al abrirla, en vez de una pantalla en blanco sale el **logo de Ottos sobre el azul del icono**.
+
 ## [1.0.0-rc.10] - 2026-11-06
 
 ### Añadido
