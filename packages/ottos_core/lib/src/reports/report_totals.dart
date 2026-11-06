@@ -165,8 +165,13 @@ class ReportFilter extends Equatable {
 
   bool matches(ReportRemittance row) {
     if (row.isVoided && !showVoided) return false;
+    // The search box matches the code or the beneficiary's name (REQ-019).
     final query = code.trim().toUpperCase();
-    if (query.isNotEmpty && !row.code.toUpperCase().contains(query)) return false;
+    if (query.isNotEmpty &&
+        !row.code.toUpperCase().contains(query) &&
+        !(row.beneficiaryName?.toUpperCase().contains(query) ?? false)) {
+      return false;
+    }
     if (type != null && row.type.code != type) return false;
     if (onlyOnTheHouse && !row.onTheHouse) return false;
     if (courier != null && (row.courierName ?? withoutCourier) != courier) return false;

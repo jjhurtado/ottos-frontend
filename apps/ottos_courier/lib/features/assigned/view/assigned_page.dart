@@ -291,7 +291,13 @@ class _AssignedCard extends StatelessWidget {
                     children: [
                       Row(
                         children: [
-                          Expanded(child: Text(remittance.code, style: textTheme.titleMedium)),
+                          Expanded(
+                            child: RemittanceTitle(
+                              name: remittance.beneficiaryName,
+                              code: remittance.code,
+                              style: textTheme.titleMedium?.copyWith(color: muted),
+                            ),
+                          ),
                           RemittanceStatusChip(remittance: remittance, showCheck: true),
                         ],
                       ),
@@ -308,7 +314,6 @@ class _AssignedCard extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: 8),
-                      Text(remittance.beneficiaryName ?? '', style: textTheme.titleSmall?.copyWith(color: muted)),
                       // The address already ends with the municipality and province.
                       Text(
                         remittance.beneficiaryAddress ?? remittance.municipalityName ?? '',
