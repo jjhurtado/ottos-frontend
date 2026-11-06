@@ -100,7 +100,10 @@ class RemittanceListBloc extends Bloc<RemittanceListEvent, RemittanceListState> 
         ),
       );
     } on ApiException catch (error) {
-      emit(state.copyWith(status: RemittanceListStatus.failure, error: error.message));
+      // A 400 means the server refused the text: sending it again cannot work.
+      emit(
+        state.copyWith(status: RemittanceListStatus.failure, error: error.message, canRetry: error.statusCode != 400),
+      );
     }
   }
 }

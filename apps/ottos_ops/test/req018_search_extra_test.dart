@@ -172,12 +172,9 @@ void main() {
     expect(find.text(OpsTexts.noRemittances), findsOneWidget);
   });
 
-  testWidgets('a 400 from the server is shown with its message and «Reintentar» repeats the same search', (
-    tester,
-  ) async {
-    var fail = true;
+  testWidgets('CR-3: a 400 shows the server message, offers no «Reintentar» and keeps the field', (tester) async {
     answer = (filter, page) {
-      if (filter.beneficiaryQuery != null && fail) {
+      if (filter.beneficiaryQuery != null) {
         throw const ApiException('El texto de búsqueda no es válido.', statusCode: 400, code: 'VALIDATION_FAILED');
       }
       return PageResult(items: [_remittance('r1', 'OT-1')], page: page, size: 20, totalItems: 1);
@@ -187,8 +184,20 @@ void main() {
     await typeAndWait(tester, 'jose');
 
     expect(find.text('El texto de búsqueda no es válido.'), findsOneWidget);
-    expect(find.byType(TextField), findsOneWidget, reason: 'the field stays so the text can be fixed');
+    expect(find.text('Reintentar'), findsNothing, reason: 'the same text would be refused again');
     expect(tester.widget<TextField>(find.byType(TextField)).controller!.text, 'jose');
+    expect(searches.length, 1);
+  });
+
+  testWidgets('CR-3: after a network failure «Reintentar» repeats the same search', (tester) async {
+    var fail = true;
+    answer = (filter, page) {
+      if (filter.beneficiaryQuery != null && fail) throw const ApiException(CoreTexts.networkError);
+      return PageResult(items: [_remittance('r1', 'OT-1')], page: page, size: 20, totalItems: 1);
+    };
+    await pump(tester);
+    await typeAndWait(tester, 'jose');
+    expect(find.text(CoreTexts.networkError), findsOneWidget);
 
     fail = false;
     searches.clear();
