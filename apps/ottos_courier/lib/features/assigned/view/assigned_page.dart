@@ -33,9 +33,61 @@ class _AssignedView extends StatelessWidget {
   Widget build(BuildContext context) {
     final cubit = context.read<AssignedCubit>();
     return BlocConsumer<AssignedCubit, AssignedState>(
-      listenWhen: (_, current) => current.status == AssignedStatus.failure && current.items.isNotEmpty,
+      listenWhen: (_, current) =>
+          current.status == AssignedStatus.failure && current.items.isNotEmpty && !current.searching,
       listener: (context, state) => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(state.error!))),
       builder: (context, state) {
+        if (!cubit.canSearch) return _list(context, cubit, state);
+        return Column(
+          children: [
+            _SearchField(onChanged: cubit.searchTyped, onClear: cubit.clearSearch, tooShort: state.searchTooShort),
+            Expanded(child: state.searching ? _results(context, cubit, state) : _list(context, cubit, state)),
+          ],
+        );
+      },
+    );
+  }
+
+  /// The server's results of the beneficiary search, all statuses (REQ-018);
+  /// the toggles are hidden while searching.
+  Widget _results(BuildContext context, AssignedCubit cubit, AssignedState state) {
+    if (state.status == AssignedStatus.failure) {
+      return ErrorView(message: state.error!, onRetry: cubit.load);
+    }
+    if (state.results.isEmpty) {
+      return state.status == AssignedStatus.loading
+          ? const LoadingView()
+          : const EmptyView(message: CourierTexts.noRemittancesSearch);
+    }
+    return ListView.separated(
+      padding: EdgeInsets.fromLTRB(12, 4, 12, context.canDo(Permissions.remittancesCreate) ? 88 : 12),
+      itemCount: state.results.length + (state.moreResults ? 1 : 0),
+      separatorBuilder: (_, _) => const SizedBox(height: 8),
+      itemBuilder: (context, index) {
+        if (index == state.results.length) {
+          return Center(
+            child: TextButton(
+              onPressed: state.status == AssignedStatus.loading ? null : cubit.moreSearch,
+              child: const Text(CourierTexts.showMore),
+            ),
+          );
+        }
+        final remittance = state.results[index];
+        return _AssignedCard(
+          remittance: remittance,
+          unsent: false,
+          onTap: () async {
+            await context.push(Routes.remittance(remittance.id));
+            await cubit.load();
+          },
+        );
+      },
+    );
+  }
+
+  Widget _list(BuildContext context, AssignedCubit cubit, AssignedState state) {
+    {
+      {
         final selector = _SortSelector(
           sort: state.sort,
           onChanged: cubit.sortBy,
@@ -116,7 +168,59 @@ class _AssignedView extends StatelessWidget {
             },
           ),
         );
-      },
+      }
+    }
+  }
+}
+
+class _SearchField extends StatefulWidget {
+  const _SearchField({required this.onChanged, required this.onClear, required this.tooShort});
+
+  final ValueChanged<String> onChanged;
+  final VoidCallback onClear;
+  final bool tooShort;
+
+  @override
+  State<_SearchField> createState() => _SearchFieldState();
+}
+
+class _SearchFieldState extends State<_SearchField> {
+  final _controller = TextEditingController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 12, 12, 4),
+      child: TextField(
+        controller: _controller,
+        textInputAction: TextInputAction.search,
+        onChanged: (text) {
+          setState(() {});
+          widget.onChanged(text);
+        },
+        decoration: InputDecoration(
+          hintText: CourierTexts.searchBeneficiary,
+          helperText: widget.tooShort ? CourierTexts.searchTooShort : null,
+          prefixIcon: const Icon(Icons.search),
+          suffixIcon: _controller.text.isEmpty
+              ? null
+              : IconButton(
+                  tooltip: CourierTexts.clearSearch,
+                  icon: const Icon(Icons.close),
+                  onPressed: () {
+                    _controller.clear();
+                    setState(() {});
+                    widget.onClear();
+                  },
+                ),
+        ),
+      ),
     );
   }
 }

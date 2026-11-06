@@ -4,6 +4,7 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:ottos_core/ottos_core.dart';
 
+import '../../../app/courier_texts.dart';
 import '../../../offline/remittance_source.dart';
 import '../../../offline/sync_cubit.dart';
 
@@ -27,6 +28,12 @@ final class AssignedState extends Equatable {
     this.completedPages = 1,
     this.moreCompleted = false,
     this.pendingIds = const {},
+    this.typed = '',
+    this.query,
+    this.results = const [],
+    this.searchPages = 1,
+    this.moreResults = false,
+    this.searchOffline = false,
     this.error,
   });
 
@@ -46,7 +53,25 @@ final class AssignedState extends Equatable {
 
   /// Remittances with an action not sent yet (no network).
   final Set<String> pendingIds;
+
+  /// What is typed in the search field, and the text being searched (null when
+  /// not searching: empty or too short to send; REQ-018).
+  final String typed;
+  final String? query;
+
+  /// The server's results of [query], in its order (most recent first).
+  final List<Remittance> results;
+  final int searchPages;
+  final bool moreResults;
+
+  /// The last search failed for lack of connection.
+  final bool searchOffline;
   final String? error;
+
+  bool get searching => query != null;
+
+  /// Something is typed but too short to search.
+  bool get searchTooShort => typed.trim().isNotEmpty && !isBeneficiarySearchable(typed);
 
   AssignedState copyWith({
     AssignedStatus? status,
@@ -56,6 +81,13 @@ final class AssignedState extends Equatable {
     int? completedPages,
     bool? moreCompleted,
     Set<String>? pendingIds,
+    String? typed,
+    String? query,
+    bool clearQuery = false,
+    List<Remittance>? results,
+    int? searchPages,
+    bool? moreResults,
+    bool? searchOffline,
     String? error,
   }) => AssignedState(
     status: status ?? this.status,
@@ -65,6 +97,12 @@ final class AssignedState extends Equatable {
     completedPages: completedPages ?? this.completedPages,
     moreCompleted: moreCompleted ?? this.moreCompleted,
     pendingIds: pendingIds ?? this.pendingIds,
+    typed: typed ?? this.typed,
+    query: clearQuery ? null : query ?? this.query,
+    results: results ?? this.results,
+    searchPages: searchPages ?? this.searchPages,
+    moreResults: moreResults ?? this.moreResults,
+    searchOffline: searchOffline ?? this.searchOffline,
     error: error,
   );
 
@@ -98,24 +136,52 @@ final class AssignedState extends Equatable {
   }
 
   @override
-  List<Object?> get props => [status, items, sort, showCompleted, completedPages, moreCompleted, pendingIds, error];
+  List<Object?> get props => [
+    status,
+    items,
+    sort,
+    showCompleted,
+    completedPages,
+    moreCompleted,
+    pendingIds,
+    typed,
+    query,
+    results,
+    searchPages,
+    moreResults,
+    searchOffline,
+    error,
+  ];
 }
 
 /// The open remittances of the courier, or all of them for who sees every
 /// remittance (sales), and the actions on them from the list.
 class AssignedCubit extends Cubit<AssignedState> {
-  AssignedCubit({required this._source}) : super(const AssignedState()) {
+  AssignedCubit({required this._source, this.searchDelay = const Duration(milliseconds: 400)})
+    : super(const AssignedState()) {
     // A sync may bring new remittances or take some away.
     _changes = _source.changes.listen((_) => load());
   }
 
   final RemittanceSource _source;
+
+  /// Wait after the last keystroke before searching.
+  final Duration searchDelay;
+  Timer? _timer;
   late final StreamSubscription<void> _changes;
 
   /// Loads the list; keeps the current items visible while refreshing.
   Future<void> load() async {
+    if (state.searching) return _loadSearch();
     if (state.items.isEmpty) {
-      emit(AssignedState(sort: state.sort, showCompleted: state.showCompleted, completedPages: state.completedPages));
+      emit(
+        AssignedState(
+          sort: state.sort,
+          showCompleted: state.showCompleted,
+          completedPages: state.completedPages,
+          typed: state.typed,
+        ),
+      );
     }
     try {
       final items = [...await _source.list()];
@@ -148,6 +214,78 @@ class AssignedCubit extends Cubit<AssignedState> {
   Future<void> refresh() async {
     await _source.refresh();
     await load();
+  }
+
+  /// Whether the source can search by beneficiary (sales).
+  bool get canSearch => _source.canSearch;
+
+  /// The search field changed: after [searchDelay] without typing, searches
+  /// from 2 letters or 4 digits, and empty goes back to the list.
+  void searchTyped(String text) {
+    emit(state.copyWith(typed: text));
+    _timer?.cancel();
+    _timer = Timer(searchDelay, _applySearch);
+  }
+
+  /// Empties the search and goes back to the list.
+  void clearSearch() {
+    _timer?.cancel();
+    emit(state.copyWith(typed: '', clearQuery: true, results: const [], searchOffline: false));
+    unawaited(load());
+  }
+
+  Future<void> _applySearch() async {
+    final trimmed = state.typed.trim();
+    if (trimmed.isEmpty) return clearSearch();
+    // Too short to send: nothing changes, the hint stays.
+    if (!isBeneficiarySearchable(trimmed) || trimmed == state.query) return;
+    emit(state.copyWith(query: trimmed, results: const [], searchPages: 1, moreResults: false, searchOffline: false));
+    await _loadSearch();
+  }
+
+  /// The next page of results («Ver más»).
+  Future<void> moreSearch() async {
+    if (_loadingMore) return;
+    _loadingMore = true;
+    emit(state.copyWith(searchPages: state.searchPages + 1));
+    try {
+      await _loadSearch();
+    } finally {
+      _loadingMore = false;
+    }
+  }
+
+  int _searchToken = 0;
+
+  Future<void> _loadSearch() async {
+    final query = state.query!;
+    final token = ++_searchToken;
+    emit(state.copyWith(status: AssignedStatus.loading, searchOffline: false));
+    try {
+      final results = <Remittance>[];
+      var more = false;
+      for (var page = 0; page < state.searchPages; page++) {
+        final result = await _source.search(query, page: page);
+        // Pages are by number, so a row can move to the next one: drop repeats.
+        final seen = {for (final remittance in results) remittance.id};
+        results.addAll(result.items.where((remittance) => !seen.contains(remittance.id)));
+        more = page + 1 < result.totalPages;
+        if (!more) break;
+      }
+      if (isClosed || token != _searchToken) return;
+      emit(state.copyWith(status: AssignedStatus.success, results: results, moreResults: more));
+    } on ApiException catch (error) {
+      if (isClosed || token != _searchToken) return;
+      // No status code and no error code: the request never reached the server.
+      final offline = error.statusCode == null && error.code == null;
+      emit(
+        state.copyWith(
+          status: AssignedStatus.failure,
+          searchOffline: offline,
+          error: offline ? CourierTexts.searchNeedsConnection : error.message,
+        ),
+      );
+    }
   }
 
   void sortBy(AssignedSort sort) => emit(state.copyWith(sort: sort));
@@ -194,6 +332,7 @@ class AssignedCubit extends Cubit<AssignedState> {
 
   @override
   Future<void> close() async {
+    _timer?.cancel();
     await _changes.cancel();
     return super.close();
   }
