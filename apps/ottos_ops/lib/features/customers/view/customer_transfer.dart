@@ -13,7 +13,7 @@ Future<void> exportCustomers(BuildContext context) async {
   final messenger = ScaffoldMessenger.of(context);
   try {
     final customers = await context.read<CustomerRepository>().exportAll();
-    final today = Formatters.apiDate(DateTime.now());
+    final today = Formatters.apiDate(BusinessTime.today());
     await FilePicker.saveFile(
       fileName: OpsTexts.customersFileName(today),
       bytes: utf8.encode(CustomerCsv.export(customers)),

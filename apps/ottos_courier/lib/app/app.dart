@@ -111,11 +111,13 @@ class _CourierRouterAppState extends State<_CourierRouterApp> {
       supportedLocales: OttosLocalization.supportedLocales,
       localizationsDelegates: OttosLocalization.delegates,
       routerConfig: _router,
-      builder: (context, child) => SessionScope(
-        store: widget.store,
-        notifier: widget.notifier,
-        // Inside the session: before asking to update, what waits is sent.
-        child: widget.checksUpdates ? UpdateGate(child: child!) : child!,
+      builder: (context, child) => BusinessTimeScope(
+        child: SessionScope(
+          store: widget.store,
+          notifier: widget.notifier,
+          // Inside the session: before asking to update, what waits is sent.
+          child: widget.checksUpdates ? UpdateGate(child: child!) : child!,
+        ),
       ),
     );
   }

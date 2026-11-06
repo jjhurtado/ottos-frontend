@@ -117,7 +117,7 @@ void main() {
       expect(rows.first.any((column) => column.toLowerCase().contains('nombre')), isFalse, reason: 'no personal data');
     });
 
-    test('dates in Cuba time, decimal commas and the void reason as typed', () {
+    test('dates in business time, decimal commas and the void reason as typed', () {
       final first = rows[1];
       expect(first[0], 'OT-K7Q2MA');
       // 16:30 UTC in October is 12:30 in Havana (UTC−4).

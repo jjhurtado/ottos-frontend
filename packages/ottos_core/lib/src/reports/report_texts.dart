@@ -40,7 +40,7 @@ abstract final class ReportTexts {
   static String onTheHouseHelp(int count, String amount) =>
       '${count == 1 ? '1 entrega' : '$count entregas'} sin comisión · $amount enviados';
   static String reportPeriod(String from, String to, String currency) =>
-      'Del $from al $to · hora de Cuba · importes en $currency';
+      'Del $from al $to · hora del negocio · importes en $currency';
   static String generatedOn(String when) => 'Generado el $when';
   static const deliveries = 'Entregas';
   static const pickups = 'Recogidas';
@@ -126,7 +126,7 @@ abstract final class ReportTexts {
   static const periodLastThreeMonths = 'Últimos 3 meses';
   static const periodCustom = 'Personalizado…';
   static String statisticsPeriod(String from, String to, String currency) =>
-      'Del $from al $to · por fecha de registro · hora de Cuba · importes en $currency · sin anuladas';
+      'Del $from al $to · por fecha de registro · hora del negocio · importes en $currency · sin anuladas';
   static const tooLongPeriod = 'Elige como mucho 366 días.';
   static String fewData(int count) =>
       'Este periodo lleva ${remittancesCount(count)}. Con tan pocos datos los gráficos dicen poco: las medias se marcan '

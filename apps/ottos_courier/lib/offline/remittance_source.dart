@@ -183,7 +183,7 @@ class OfflineSource implements RemittanceSource {
           id: SyncRepository.newActionId(),
           type: type,
           remittanceId: remittance.id,
-          occurredAt: DateTime.now(),
+          occurredAt: BusinessTime.now(),
           payload: payload,
         ),
       );

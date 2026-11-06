@@ -90,7 +90,7 @@ class ReportRemittance extends Equatable {
   final String status;
   final String statusName;
 
-  /// Instants in UTC; shown in Cuba time.
+  /// Instants in UTC; shown in business time.
   final DateTime? createdAt;
   final DateTime? expectedDate;
   final DateTime? completedAt;

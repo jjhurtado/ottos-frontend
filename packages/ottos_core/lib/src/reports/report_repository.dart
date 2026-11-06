@@ -12,7 +12,7 @@ class ReportRepository {
 
   static String _month(int year, int month) => '$year-${month.toString().padLeft(2, '0')}';
 
-  /// The sales of [year]-[month], in Cuba time.
+  /// The sales of [year]-[month], in business time.
   Future<MonthlyReport> monthly(int year, int month) async => MonthlyReport.fromJson(
     await _api.get<Map<String, dynamic>>('/reports/monthly', query: {'month': _month(year, month)}),
   );
@@ -23,7 +23,7 @@ class ReportRepository {
     await _api.get<Map<String, dynamic>>('/reports/monthly/remittances', query: {'month': _month(year, month)}),
   );
 
-  /// The sales from [from] to [to], both days included, Cuba time; at most 366
+  /// The sales from [from] to [to], both days included, business time; at most 366
   /// days. A backend from before it answers 404.
   Future<Statistics> statistics(DateTime from, DateTime to) async => Statistics.fromJson(
     await _api.get<Map<String, dynamic>>(

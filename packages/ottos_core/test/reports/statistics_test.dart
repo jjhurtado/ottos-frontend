@@ -189,20 +189,19 @@ void main() {
     });
   });
 
-  group('Cuba time', () {
-    test('UTC−4 in summer, UTC−5 in winter, whatever the device zone', () {
-      expect(CubaTime.of(DateTime.utc(2026, 10, 1, 16, 30)), DateTime.utc(2026, 10, 1, 12, 30));
-      expect(CubaTime.of(DateTime.utc(2026, 12, 1, 16, 30)), DateTime.utc(2026, 12, 1, 11, 30));
-      // 2026: from Sunday 8 March to Sunday 1 November, both at 05:00 UTC.
-      expect(CubaTime.isDaylightSaving(DateTime.utc(2026, 3, 8, 4, 59)), isFalse);
-      expect(CubaTime.isDaylightSaving(DateTime.utc(2026, 3, 8, 5)), isTrue);
-      expect(CubaTime.isDaylightSaving(DateTime.utc(2026, 11, 1, 4, 59)), isTrue);
-      expect(CubaTime.isDaylightSaving(DateTime.utc(2026, 11, 1, 5)), isFalse);
+  group('business time', () {
+    tearDown(BusinessTime.reset);
+
+    test('AC-2.2: a fixed offset all year, with no summer time', () {
+      expect(BusinessTime.of(DateTime.utc(2026, 10, 1, 16, 30)), DateTime.utc(2026, 10, 1, 12, 30));
+      expect(BusinessTime.of(DateTime.utc(2026, 12, 1, 16, 30)), DateTime.utc(2026, 12, 1, 12, 30));
     });
 
-    test('today is Cuba\'s date', () {
-      // 02:00 UTC on the 1st is still the 31st in Havana.
-      expect(CubaTime.today(DateTime.utc(2026, 11, 1, 2)), DateTime(2026, 10, 31));
+    test('AC-2.2: today is the business date', () {
+      // 02:00 UTC on the 1st is still the 31st at UTC−4.
+      expect(BusinessTime.today(DateTime.utc(2026, 11, 1, 2)), DateTime(2026, 10, 31));
+      BusinessTime.setForTest(zone: BusinessTimeZone.ofMinutes(-60));
+      expect(BusinessTime.today(DateTime.utc(2026, 11, 1, 2)), DateTime(2026, 11, 1));
     });
   });
 }

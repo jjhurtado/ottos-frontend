@@ -118,7 +118,7 @@ class StatisticsGroup extends Equatable {
   /// The municipality's name; null in the other groups.
   final String? name;
 
-  /// The days of a week or month inside the period (dates, Cuba time).
+  /// The days of a week or month inside the period (dates, business time).
   final DateTime? from;
   final DateTime? to;
 
@@ -131,7 +131,7 @@ class StatisticsGroup extends Equatable {
 }
 
 /// Sales statistics of a period (`GET /reports/statistics`): registered
-/// remittances, voided ones aside, both days included, Cuba time.
+/// remittances, voided ones aside, both days included, business time.
 class Statistics extends Equatable {
   const Statistics({
     required this.from,

@@ -115,7 +115,7 @@ abstract final class OpsTexts {
   static const historicalDate = 'Fecha';
   static const historicalPickDate = 'Elegir fecha';
   static const historicalTime = 'Hora';
-  static const historicalCubaTime = 'Fecha y hora de Cuba, como en el ticket.';
+  static const historicalBusinessTime = 'Fecha y hora del negocio, como en el ticket.';
   static const historicalFutureDate = 'La fecha no puede ser futura.';
   static const historicalDeliveredInUsd = 'Se entregó en USD';
   static const historicalDeliveredInCup = 'Se entregó en CUP';
@@ -252,6 +252,17 @@ abstract final class OpsTexts {
   static const deliveryDaysHint = 'Fecha prevista de las remesas nuevas: entre 1 y 60 días';
   static const deliveryDaysRange = 'Entre 1 y 60';
   static const settingsSaved = 'Ajustes guardados';
+  static const businessTimeZone = 'Zona horaria del negocio';
+  static String businessTimeZoneValue(String label, String clock) => '$label · ahora son las $clock';
+  static const businessTimeZoneCurrent = 'actual';
+  static const businessTimeZoneHint = 'Hora fija: no cambia sola en verano.';
+  static String businessTimeZonePreview(String label, String clock) => 'Con $label ahora serían las $clock.';
+  static String businessTimeZoneConfirmTitle(String label) => '¿Cambiar la zona horaria a $label?';
+  static String businessTimeZoneConfirmBody(String label) =>
+      'Desde este momento, «hoy», las remesas atrasadas y los informes de todos los meses, también los pasados, se '
+      'calculan con $label. Con una hora de diferencia solo cambian de día las remesas registradas cerca de '
+      'medianoche. Las fechas ya guardadas no cambian. Queda en Auditoría.';
+  static const businessTimeZoneConfirm = 'Cambiar zona horaria';
 
   // Rates
   static const calculator = 'Calculadora';
@@ -423,6 +434,7 @@ abstract final class OpsTexts {
     'CUSTOMERS' => 'Clientes',
     'BENEFICIARIES' => 'Beneficiarios',
     'REMITTANCE' => 'Remesas',
+    'SETTINGS' => 'Configuración',
     _ => type,
   };
 
@@ -430,7 +442,7 @@ abstract final class OpsTexts {
   /// target: the backend labels them "import"/"export", so the list says the
   /// kind of records instead.
   static String auditTargetLabel(AuditEntry entry) => switch (entry.targetType) {
-    'CUSTOMERS' || 'BENEFICIARIES' => auditTarget(entry.targetType),
+    'CUSTOMERS' || 'BENEFICIARIES' || 'SETTINGS' => auditTarget(entry.targetType),
     _ => entry.targetLabel ?? '',
   };
 
@@ -454,6 +466,7 @@ abstract final class OpsTexts {
       'HISTORICAL_REMITTANCE_CREATED',
       'REMITTANCE_COMPLETED_FROM_BUSINESS',
     ],
+    'SETTINGS': ['BUSINESS_TIME_ZONE_CHANGED'],
   };
 
   static String auditAction(String code) => switch (code) {
@@ -475,6 +488,7 @@ abstract final class OpsTexts {
     'HISTORICAL_REMITTANCE_CREATED' => 'Remesa antigua registrada',
     'REMITTANCE_COMPLETED_FROM_BUSINESS' => 'Completada desde el negocio',
     'REMITTANCE_ON_THE_HOUSE' => 'Remesa por la casa (sin comisión)',
+    'BUSINESS_TIME_ZONE_CHANGED' => 'Zona horaria cambiada',
     _ => code,
   };
 
@@ -525,6 +539,10 @@ abstract final class OpsTexts {
       ],
       'CUSTOMERS_EXPORTED' => ['${details['customers'] ?? 0} clientes'],
       'REMITTANCE_VOIDED' => ['Motivo: ${text(details['reason'])}'],
+      'BUSINESS_TIME_ZONE_CHANGED' => [
+        'De ${BusinessTimeZone.parse(details['from'])?.label ?? text(details['from'])} '
+            'a ${BusinessTimeZone.parse(details['to'])?.label ?? text(details['to'])}',
+      ],
       'HISTORICAL_REMITTANCE_CREATED' => [
         [
           RemittanceType.fromCode(details['type'] as String?) == RemittanceType.pickup

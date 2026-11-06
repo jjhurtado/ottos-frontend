@@ -1,6 +1,7 @@
 import '../api/api_client.dart';
 import '../models/rates.dart';
 import '../models/remittance.dart';
+import '../utils/business_time.dart';
 
 /// Corridors, rates, fee rules and settings (`configuration:read`, changes need
 /// `configuration:write`), and quotes (`rates:read`).
@@ -58,24 +59,44 @@ class RateRepository {
     ),
   );
 
+  /// The settings; their business time zone goes to [BusinessTime].
   Future<Settings> settings() async =>
-      Settings.fromJson(await _api.get<Map<String, dynamic>>('/configuration/settings'));
+      _useZone(Settings.fromJson(await _api.get<Map<String, dynamic>>('/configuration/settings')));
 
-  /// Changes the settings given; the others keep their value.
+  /// Changes the settings given; the others keep their value. A new
+  /// [businessTimeZone] (`UTC-05:00`) applies here at once (AC-2.3).
   Future<Settings> updateSettings({
     double? minimumAmount,
     int? defaultDeliveryDays,
     double? exchangeRateTolerancePercent,
-  }) async => Settings.fromJson(
-    await _api.put<Map<String, dynamic>>(
-      '/configuration/settings',
-      body: {
-        'minimumAmount': ?minimumAmount,
-        'defaultDeliveryDays': ?defaultDeliveryDays,
-        'exchangeRateTolerancePercent': ?exchangeRateTolerancePercent,
-      },
+    String? businessTimeZone,
+  }) async => _useZone(
+    Settings.fromJson(
+      await _api.put<Map<String, dynamic>>(
+        '/configuration/settings',
+        body: {
+          'minimumAmount': ?minimumAmount,
+          'defaultDeliveryDays': ?defaultDeliveryDays,
+          'exchangeRateTolerancePercent': ?exchangeRateTolerancePercent,
+          'businessTimeZone': ?businessTimeZone,
+        },
+      ),
     ),
   );
+
+  /// The business time zone (`GET /configuration/business-time`, any session),
+  /// applied to [BusinessTime]. Null from a server older than REQ-006, which
+  /// keeps the zone in use.
+  Future<BusinessTimeZone?> businessTime() async {
+    final zone = BusinessTimeZone.fromJson(await _api.get<Map<String, dynamic>>('/configuration/business-time'));
+    BusinessTime.setZone(zone);
+    return zone;
+  }
+
+  static Settings _useZone(Settings settings) {
+    BusinessTime.setZone(settings.businessTime);
+    return settings;
+  }
 
   /// Deliveries and pickups have their own rate and fee. [onTheHouse] quotes
   /// a delivery without a fee, telling the fee left uncharged.

@@ -5,6 +5,7 @@ import 'package:mocktail/mocktail.dart';
 import 'package:ottos_core/ottos_core.dart';
 import 'package:ottos_ops/app/destinations.dart';
 import 'package:ottos_ops/app/ops_texts.dart';
+import 'package:ottos_ops/features/business_time/business_time_cubit.dart';
 import 'package:ottos_ops/features/reports/view/statistics_page.dart';
 import 'package:ottos_ops/shell/ops_shell.dart';
 
@@ -48,6 +49,11 @@ final _statistics = {
     {'municipalityCode': '2302', 'municipalityName': 'Plaza de la Revolución', ..._figures(12)},
   ],
 };
+
+class _MockRatesForShell extends Mock implements RateRepository {
+  @override
+  Future<BusinessTimeZone?> businessTime() async => null;
+}
 
 void main() {
   late _MockReports reports;
@@ -97,7 +103,7 @@ void main() {
     await tester.tap(find.text(ReportTexts.periodLastThreeMonths));
     await tester.pumpAndSettle();
 
-    final today = CubaTime.today();
+    final today = BusinessTime.today();
     verify(() => reports.statistics(DateTime(today.year, today.month - 2), today)).called(1);
   });
 
@@ -136,8 +142,11 @@ void main() {
           value: const AppConfig(apiUrl: ''),
           child: BlocProvider.value(
             value: authBloc,
-            child: const MaterialApp(
-              home: OpsShell(location: '/', child: SizedBox()),
+            child: BlocProvider(
+              create: (_) => BusinessTimeCubit(rates: _MockRatesForShell()),
+              child: const MaterialApp(
+                home: OpsShell(location: '/', child: SizedBox()),
+              ),
             ),
           ),
         ),

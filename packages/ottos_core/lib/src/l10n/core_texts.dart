@@ -72,6 +72,7 @@ abstract final class CoreTexts {
     'EMAIL_TAKEN': 'Ya hay un usuario con ese correo.',
     'CANNOT_DEACTIVATE_SELF': 'No puedes desactivar tu propia cuenta.',
     'LAST_ADMIN': 'Debe quedar al menos un administrador activo.',
+    'INVALID_TIME_ZONE': 'La zona horaria no es válida. Usa un desfase fijo entre UTC−12 y UTC+14.',
     'PERMISSION_ESCALATION': 'No puedes dar permisos que tú no tienes.',
     'UNKNOWN_ROLES': 'Alguno de los roles ya no existe. Recarga e inténtalo de nuevo.',
     'USER_NOT_FOUND': 'No se encontró el usuario.',

@@ -71,6 +71,16 @@ void main() {
     expect(state.parsedCash, isNull);
   });
 
+  test('AC-2.3: the state brings the business time zone; an older server does not', () {
+    final state = SyncState.fromJson({
+      'serverTime': '2026-11-05T18:05:12.345Z',
+      'businessTime': {'timeZone': 'UTC-05:00', 'offsetMinutes': -300},
+    });
+
+    expect(state.businessTime, BusinessTimeZone.ofMinutes(-300));
+    expect(SyncState.fromJson({'serverTime': '2026-11-05T18:05:12.345Z'}).businessTime, isNull);
+  });
+
   test('review reasons and filter', () {
     expect(ReviewReason.fromCode('LATE_SYNC'), ReviewReason.lateSync);
     expect(ReviewReason.fromCode('SOMETHING_NEW'), ReviewReason.other);

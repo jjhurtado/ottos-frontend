@@ -4,7 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../models/remittance.dart';
 import '../models/report_detail.dart';
 import '../theme/ottos_colors.dart';
-import '../utils/cuba_time.dart';
+import '../utils/business_time.dart';
 import '../utils/formatters.dart';
 import '../widgets/async_view.dart';
 import '../widgets/remittance_type_badge.dart';
@@ -480,7 +480,7 @@ class _Table extends StatelessWidget {
                     style: TextStyle(color: row.type.color),
                   ),
                 ),
-                cell(2, text(CubaTime.shortDate(row.createdAt), style: grey)),
+                cell(2, text(BusinessTime.shortDate(row.createdAt), style: grey)),
                 cell(3, text(row.municipalityName ?? '—', style: grey)),
                 cell(4, text(_courier(row), style: grey)),
                 cell(5, _StatusChip(row: row)),
@@ -500,7 +500,7 @@ class _Table extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.only(left: 126, bottom: 10, right: 12),
               child: Text(
-                ReportTexts.voidedOn(CubaTime.shortDate(voidedBy.at), voidedBy.reason),
+                ReportTexts.voidedOn(BusinessTime.shortDate(voidedBy.at), voidedBy.reason),
                 style: Theme.of(context).textTheme.bodySmall,
               ),
             ),
@@ -523,7 +523,13 @@ class _RemittanceCard extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
     final type = row.isPickup ? 'Recogida' : (row.onTheHouse ? 'Entrega por la casa' : 'Entrega');
     final (status, _) = _status(row);
-    final details = [type, CubaTime.shortDate(row.createdAt), ?row.municipalityName, _courier(row), status].join(' · ');
+    final details = [
+      type,
+      BusinessTime.shortDate(row.createdAt),
+      ?row.municipalityName,
+      _courier(row),
+      status,
+    ].join(' · ');
     final open = onOpen;
     return InkWell(
       onTap: open == null ? null : () => open(row),
@@ -559,7 +565,10 @@ class _RemittanceCard extends StatelessWidget {
             ),
             if (row.voided case final voidedBy?) ...[
               const SizedBox(height: 4),
-              Text(ReportTexts.voidedOn(CubaTime.shortDate(voidedBy.at), voidedBy.reason), style: textTheme.bodySmall),
+              Text(
+                ReportTexts.voidedOn(BusinessTime.shortDate(voidedBy.at), voidedBy.reason),
+                style: textTheme.bodySmall,
+              ),
             ],
           ],
         ),

@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ottos_core/ottos_core.dart';
 
+import '../features/business_time/business_time_cubit.dart';
 import 'destinations.dart';
 import 'ops_texts.dart';
 import 'router.dart';
@@ -14,7 +15,14 @@ class OpsApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return OttosScope(config: config, accessPolicy: Destinations.canUsePanel, child: const _OpsRouterApp());
+    return OttosScope(
+      config: config,
+      accessPolicy: Destinations.canUsePanel,
+      child: BlocProvider(
+        create: (context) => BusinessTimeCubit(rates: context.read<RateRepository>()),
+        child: const _OpsRouterApp(),
+      ),
+    );
   }
 }
 
@@ -44,6 +52,7 @@ class _OpsRouterAppState extends State<_OpsRouterApp> {
       supportedLocales: OttosLocalization.supportedLocales,
       localizationsDelegates: OttosLocalization.delegates,
       routerConfig: _router,
+      builder: (context, child) => BusinessTimeScope(child: child ?? const SizedBox.shrink()),
     );
   }
 }

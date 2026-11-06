@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 
+import '../utils/business_time.dart';
 import 'json.dart';
 import 'remittance.dart';
 
@@ -233,6 +234,7 @@ class Settings extends Equatable {
     this.minimumAmountCurrency = 'USD',
     this.defaultDeliveryDays = 2,
     this.exchangeRateTolerancePercent = 20,
+    this.businessTime,
   });
 
   factory Settings.fromJson(Map<String, dynamic> json) => Settings(
@@ -240,6 +242,7 @@ class Settings extends Equatable {
     minimumAmountCurrency: json['minimumAmountCurrency'] as String? ?? 'USD',
     defaultDeliveryDays: json['defaultDeliveryDays'] as int? ?? 2,
     exchangeRateTolerancePercent: parseDecimal(json['exchangeRateTolerancePercent']) ?? 20,
+    businessTime: BusinessTimeZone.fromJson(json['businessTime']),
   );
 
   /// Smallest amount a remittance can send; 0 means no minimum.
@@ -252,6 +255,15 @@ class Settings extends Equatable {
   /// A courier's exchange farther than this from the delivery rate is marked for review.
   final double exchangeRateTolerancePercent;
 
+  /// The business time zone; null from a server older than REQ-006.
+  final BusinessTimeZone? businessTime;
+
   @override
-  List<Object?> get props => [minimumAmount, minimumAmountCurrency, defaultDeliveryDays, exchangeRateTolerancePercent];
+  List<Object?> get props => [
+    minimumAmount,
+    minimumAmountCurrency,
+    defaultDeliveryDays,
+    exchangeRateTolerancePercent,
+    businessTime,
+  ];
 }

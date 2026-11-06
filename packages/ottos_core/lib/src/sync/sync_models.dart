@@ -3,6 +3,7 @@ import 'package:equatable/equatable.dart';
 import '../models/cash.dart';
 import '../models/remittance.dart';
 import '../models/workflow.dart';
+import '../utils/business_time.dart';
 
 /// What the mobile app keeps to work offline (`GET /sync/state`). The
 /// remittances stay as JSON so they can be stored as they arrived.
@@ -14,6 +15,7 @@ class SyncState {
     this.removedIds = const [],
     this.cash,
     this.workflow,
+    this.businessTime,
   });
 
   factory SyncState.fromJson(Map<String, dynamic> json) => SyncState(
@@ -23,6 +25,7 @@ class SyncState {
     removedIds: [for (final id in json['removedIds'] as List? ?? const []) id as String],
     cash: json['cash'] as Map<String, dynamic>?,
     workflow: json['workflow'] as Map<String, dynamic>?,
+    businessTime: BusinessTimeZone.fromJson(json['businessTime']),
   );
 
   /// The server's clock, as it came: the `since` of the next download.
@@ -36,6 +39,9 @@ class SyncState {
   /// `CourierStatement` JSON; null for who carries no cash.
   final Map<String, dynamic>? cash;
   final Map<String, dynamic>? workflow;
+
+  /// The business time zone; null from a server older than REQ-006.
+  final BusinessTimeZone? businessTime;
 
   List<Remittance> get parsedRemittances => remittances.map(Remittance.fromJson).toList();
 
