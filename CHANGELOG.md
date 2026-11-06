@@ -12,6 +12,7 @@ Cambios notables del frontend de Ottos (panel de operaciones y app de repartidor
 
 ### Cambiado
 
+- App: las remesas completadas se distinguen a primera vista de las abiertas: tarjeta gris con borde, texto más suave y la etiqueta «✓ Entregada» o «✓ Recogida» con una marca, no solo con el color. Se sigue viendo si es entrega o recogida. El detalle de una completada empieza por «Entregada el …» o «Recogida el …». El panel no cambia.
 - Panel y app: el texto de los botones principales turquesa (por ejemplo «Entrar» o «Guardar») pasa de blanco a azul marino, para que se lea mejor (de 3.5:1 a 5.5:1 de contraste). El turquesa no cambia. Los botones de otros colores (rojo de anular, morado de recogida, magenta de por la casa) siguen con el texto blanco.
 - Panel y app: las etiquetas de estado «Pagada», «Asignada» y «Entregada» o «Recogida» se leen mejor (texto más oscuro, del mismo color, con al menos 4.5:1 de contraste). El fondo de la etiqueta no cambia. También el aviso y la etiqueta «Para revisar», la etiqueta «Sin enviar» de la app y las etiquetas de estado de «Remesas del mes» en Reportes. Las etiquetas rojas (con retraso, anulada) siguen igual.
 
