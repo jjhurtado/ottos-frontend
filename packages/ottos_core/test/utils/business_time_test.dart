@@ -162,6 +162,26 @@ void main() {
       expect(BusinessTime.now(), DateTime.utc(2026, 11, 5, 10, 1));
     });
 
+    test('REQ-006 CR-8: a truncated header that arrives later does not step the clock back', () {
+      // A precise answer (the sync serverTime), then 100 ms later a Date header cut to the second.
+      BusinessTime.serverTimeReceived(DateTime.utc(2026, 11, 5, 10, 0, 0, 700));
+      monotonic.value = const Duration(milliseconds: 100);
+      BusinessTime.serverTimeReceived(DateTime.utc(2026, 11, 5, 10));
+
+      expect(BusinessTime.now(), DateTime.utc(2026, 11, 5, 10, 0, 0, 800));
+      monotonic.value = const Duration(milliseconds: 600);
+      expect(BusinessTime.now(), DateTime.utc(2026, 11, 5, 10, 0, 1, 300), reason: 'it keeps moving forward');
+    });
+
+    test('REQ-006 CR-8: a real correction (more than the header can explain) is taken', () {
+      BusinessTime.serverTimeReceived(DateTime.utc(2026, 11, 5, 10, 5));
+      monotonic.value = const Duration(seconds: 10);
+
+      BusinessTime.serverTimeReceived(DateTime.utc(2026, 11, 5, 10, 5, 3));
+
+      expect(BusinessTime.now(), DateTime.utc(2026, 11, 5, 10, 5, 3));
+    });
+
     test('wallClock and today follow the corrected clock', () {
       BusinessTime.serverTimeReceived(DateTime.utc(2026, 11, 6, 3, 30));
 
