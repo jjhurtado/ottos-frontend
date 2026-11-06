@@ -3,7 +3,7 @@ name: tester
 description: Writes and runs acceptance, backend and frontend tests for a request and writes its test report. Use when a request's pull requests are ready for testing, and again after fixes.
 tools: Read, Grep, Glob, Edit, Write, Bash
 disallowedTools: Agent
-model: sonnet
+model: opus
 isolation: worktree
 skills:
   - a-team-conventions
