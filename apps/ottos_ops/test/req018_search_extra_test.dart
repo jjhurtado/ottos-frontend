@@ -360,4 +360,31 @@ void main() {
     expect(searches.every((search) => search.$1.beneficiaryQuery == null), isTrue);
     expect(searches.last.$1.isEmpty, isTrue);
   });
+
+  testWidgets('CR-4: Enter searches at once, without the pause', (tester) async {
+    await pump(tester);
+    await tester.tap(find.byType(TextField));
+    await type(tester, 'jose');
+
+    await tester.testTextInput.receiveAction(TextInputAction.search);
+    await tester.pump();
+    await tester.pump();
+
+    expect(searches.single.$1.beneficiaryQuery, 'jose');
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pumpAndSettle();
+    expect(searches.length, 1, reason: 'the pause that was running sends nothing more');
+  });
+
+  testWidgets('CR-4: Enter with a text that is too short sends nothing', (tester) async {
+    await pump(tester);
+    await tester.tap(find.byType(TextField));
+    await type(tester, 'j');
+
+    await tester.testTextInput.receiveAction(TextInputAction.search);
+    await tester.pumpAndSettle();
+
+    expect(searches, isEmpty);
+    expect(find.text(OpsTexts.searchTooShort), findsOneWidget);
+  });
 }

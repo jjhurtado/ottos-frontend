@@ -29,6 +29,7 @@ class RemittanceListBloc extends Bloc<RemittanceListEvent, RemittanceListState> 
     );
     // Typing must not cancel a load in flight, so it has its own handler.
     on<RemittanceListSearchTyped>(_onTyped);
+    on<RemittanceListSearchSubmitted>(_onSubmitted);
   }
 
   static const pageSize = 20;
@@ -57,6 +58,12 @@ class RemittanceListBloc extends Bloc<RemittanceListEvent, RemittanceListState> 
     emit(state.copyWith(typed: event.text));
     _timer?.cancel();
     _timer = Timer(searchDelay, () => add(const RemittanceListSearchApplied()));
+  }
+
+  void _onSubmitted(RemittanceListSearchSubmitted event, Emitter<RemittanceListState> emit) {
+    _timer?.cancel();
+    // The same rule as after the pause: a text that is too short sends nothing.
+    add(const RemittanceListSearchApplied());
   }
 
   Future<void> _onSearchApplied(Emitter<RemittanceListState> emit) async {

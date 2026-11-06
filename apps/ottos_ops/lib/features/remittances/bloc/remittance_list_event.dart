@@ -53,3 +53,8 @@ final class RemittanceListSearchApplied extends RemittanceListLoadEvent {
 final class RemittanceListFiltersCleared extends RemittanceListLoadEvent {
   const RemittanceListFiltersCleared();
 }
+
+/// Enter in the beneficiary field: search now, without waiting for the pause.
+final class RemittanceListSearchSubmitted extends RemittanceListEvent {
+  const RemittanceListSearchSubmitted();
+}

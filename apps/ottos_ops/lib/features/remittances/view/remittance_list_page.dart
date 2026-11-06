@@ -261,6 +261,7 @@ class _BeneficiarySearchFieldState extends State<_BeneficiarySearchField> {
         maxLength: 100,
         buildCounter: (_, {required currentLength, required isFocused, maxLength}) => null,
         textInputAction: TextInputAction.search,
+        onSubmitted: (_) => context.read<RemittanceListBloc>().add(const RemittanceListSearchSubmitted()),
         onChanged: (text) => context.read<RemittanceListBloc>().add(RemittanceListSearchTyped(text)),
         decoration: InputDecoration(
           labelText: OpsTexts.searchByBeneficiary,
