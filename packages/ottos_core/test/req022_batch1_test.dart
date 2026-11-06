@@ -151,5 +151,34 @@ void main() {
       await load;
       expect(cubit.state.customer?.id, 'c1');
     });
+
+    test('CR-1: the corridors fail, the customer arrives later: the error stays', () async {
+      final customers = _MockCustomers();
+      final rates = _MockRates();
+      final customer = Completer<Customer>();
+      when(() => customers.get('c1')).thenAnswer((_) => customer.future);
+      when(() => customers.beneficiaries('c1')).thenAnswer((_) async => const []);
+      when(() => rates.corridors()).thenThrow(const ApiException('Sin tasas'));
+      final cubit = NewRemittanceCubit(remittances: _MockRemittances(), customers: customers, rates: rates);
+      addTearDown(cubit.close);
+
+      final load = cubit.load(customerId: 'c1');
+      await Future<void>.delayed(Duration.zero);
+      verify(() => rates.corridors()).called(1);
+      customer.complete(const Customer(id: 'c1', fullName: 'Ana', phone: '+1305'));
+      await load;
+      await Future<void>.delayed(Duration.zero);
+
+      expect(cubit.state.corridorsStatus, LoadStatus.failure);
+      expect(cubit.state.error, 'Sin tasas');
+      expect(cubit.state.customer, isNull);
+
+      // «Reintentar» calls load() without the customer: it still starts with it.
+      when(() => rates.corridors()).thenAnswer((_) async => const []);
+      await cubit.load();
+      await Future<void>.delayed(Duration.zero);
+      expect(cubit.state.corridorsStatus, LoadStatus.success);
+      expect(cubit.state.customer?.id, 'c1');
+    });
   });
 }
