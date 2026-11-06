@@ -6,6 +6,8 @@ Cambios notables del frontend de Ottos (panel de operaciones y app de repartidor
 
 ## [Unreleased]
 
+## [1.0.0-rc.11] - 2026-11-06
+
 ### Añadido
 
 - Panel › Inicio: mosaicos **«Pendiente por entregar»** y **«Pendiente por recoger»** con el dinero de las remesas abiertas y no anuladas, una línea por moneda con su número de remesas («Nada pendiente» si no hay). Tocar uno abre la lista de remesas filtrada por los estados pendientes y ese tipo. Si no cargan, muestran el error con «Reintentar» y el resto del Inicio sigue funcionando. Necesita el backend con REQ-021.
