@@ -78,6 +78,7 @@ export 'src/widgets/complete_from_business_dialog.dart';
 export 'src/widgets/exchange_dialog.dart';
 export 'src/widgets/incident_banner.dart';
 export 'src/widgets/info_row.dart';
+export 'src/widgets/logout_dialog.dart';
 export 'src/widgets/on_the_house.dart';
 export 'src/widgets/ottos_logo.dart';
 export 'src/widgets/pickup_rate_field.dart';

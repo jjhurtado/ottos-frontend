@@ -22,8 +22,15 @@ final class AuthLoggedIn extends AuthEvent {
   List<Object?> get props => [user];
 }
 
+/// The user logs out; with [forgetBiometricLogin] the fingerprint login saved
+/// on this device is forgotten too.
 final class AuthLogoutRequested extends AuthEvent {
-  const AuthLogoutRequested();
+  const AuthLogoutRequested({this.forgetBiometricLogin = false});
+
+  final bool forgetBiometricLogin;
+
+  @override
+  List<Object?> get props => [forgetBiometricLogin];
 }
 
 /// The user changed their password: the backend signed them out everywhere,

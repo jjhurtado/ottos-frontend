@@ -17,6 +17,7 @@ final class LoginState extends Equatable {
     this.rememberedEmail,
     this.rememberEmail = true,
     this.biometricsReady = false,
+    this.biometricEmail,
     this.offerBiometrics = false,
   });
 
@@ -30,6 +31,9 @@ final class LoginState extends Equatable {
   /// "Entrar con huella" is offered: the device can and has saved credentials.
   final bool biometricsReady;
 
+  /// The account "Entrar con huella" opens.
+  final String? biometricEmail;
+
   /// Logged in with the password: ask whether to use the fingerprint next time.
   final bool offerBiometrics;
 
@@ -41,6 +45,7 @@ final class LoginState extends Equatable {
     String? rememberedEmail,
     bool? rememberEmail,
     bool? biometricsReady,
+    String? biometricEmail,
     bool? offerBiometrics,
   }) => LoginState(
     status: status ?? this.status,
@@ -48,11 +53,20 @@ final class LoginState extends Equatable {
     rememberedEmail: rememberedEmail ?? this.rememberedEmail,
     rememberEmail: rememberEmail ?? this.rememberEmail,
     biometricsReady: biometricsReady ?? this.biometricsReady,
+    biometricEmail: biometricEmail ?? this.biometricEmail,
     offerBiometrics: offerBiometrics ?? false,
   );
 
   @override
-  List<Object?> get props => [status, error, rememberedEmail, rememberEmail, biometricsReady, offerBiometrics];
+  List<Object?> get props => [
+    status,
+    error,
+    rememberedEmail,
+    rememberEmail,
+    biometricsReady,
+    biometricEmail,
+    offerBiometrics,
+  ];
 }
 
 class LoginCubit extends Cubit<LoginState> {
@@ -81,9 +95,10 @@ class LoginCubit extends Cubit<LoginState> {
     final memory = _memory;
     if (memory == null) return;
     final email = await memory.rememberedEmail();
-    final ready = await _biometricsAvailable() && await memory.biometricCredentials() != null;
+    final account = await memory.biometricEmail();
+    final ready = account != null && await _biometricsAvailable();
     if (isClosed) return;
-    emit(state.copyWith(rememberedEmail: email, rememberEmail: true, biometricsReady: ready));
+    emit(state.copyWith(rememberedEmail: email, rememberEmail: true, biometricsReady: ready, biometricEmail: account));
   }
 
   void rememberChanged(bool remember) => emit(state.copyWith(rememberEmail: remember));
@@ -94,8 +109,14 @@ class LoginCubit extends Cubit<LoginState> {
     final user = await _login(email.trim(), password);
     if (user == null) return;
     await _memory?.rememberEmail(state.rememberEmail ? email.trim() : null);
+    // Another account logged in with its password: the previous one's fingerprint login is forgotten (SEC-1).
+    final saved = await _memory?.biometricEmail();
+    if (saved != null && !_sameAccount(saved, email) && !_sameAccount(saved, user.email)) {
+      await _memory!.clearBiometricCredentials();
+      emit(state.copyWith(biometricsReady: false));
+    }
     // Offer the fingerprint once there is none saved for this device.
-    if (_memory != null && await _biometricsAvailable() && await _memory.biometricCredentials() == null) {
+    if (_memory != null && await _biometricsAvailable() && await _memory.biometricEmail() == null) {
       _pending = (user: user, email: email.trim(), password: password);
       emit(state.copyWith(offerBiometrics: true));
       return;
@@ -108,8 +129,10 @@ class LoginCubit extends Cubit<LoginState> {
     final pending = _pending;
     if (pending == null) return;
     _pending = null;
-    if (use && await _biometrics!.authenticate(CoreTexts.biometricEnableReason)) {
-      await _memory!.saveBiometricCredentials(pending.email, pending.password);
+    final memory = _memory!;
+    // Where saving asks for the fingerprint itself, a second prompt is not needed.
+    if (use && (memory.promptsOnSave || await _biometrics!.authenticate(CoreTexts.biometricEnableReason))) {
+      await memory.saveBiometricCredentials(pending.email, pending.password);
     }
     _enter(pending.user);
   }
@@ -119,9 +142,17 @@ class LoginCubit extends Cubit<LoginState> {
     final memory = _memory;
     final biometrics = _biometrics;
     if (state.isSubmitting || memory == null || biometrics == null) return;
+    if (await memory.biometricEmail() == null) return;
+    // Where the system asks for it when reading the password, that is the check.
+    if (!memory.promptsOnRead && !await biometrics.authenticate(CoreTexts.biometricLoginReason)) return;
     final saved = await memory.biometricCredentials();
-    if (saved == null) return;
-    if (!await biometrics.authenticate(CoreTexts.biometricLoginReason)) return;
+    if (saved == null) {
+      // Refused, or the key went away with a change of fingerprints.
+      if (await memory.biometricEmail() == null && !isClosed) {
+        emit(state.copyWith(status: LoginStatus.failure, error: CoreTexts.biometricReset, biometricsReady: false));
+      }
+      return;
+    }
     emit(state.copyWith(status: LoginStatus.submitting));
     final user = await _login(saved.email, saved.password);
     if (user == null) {
@@ -151,6 +182,8 @@ class LoginCubit extends Cubit<LoginState> {
       return null;
     }
   }
+
+  static bool _sameAccount(String a, String b) => a.trim().toLowerCase() == b.trim().toLowerCase();
 
   Future<bool> _biometricsAvailable() async => _biometrics != null && await _biometrics.isAvailable();
 

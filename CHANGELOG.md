@@ -14,6 +14,14 @@ Cambios notables del frontend de Ottos (panel de operaciones y app de repartidor
 
 - Panel y app: el texto de los botones principales turquesa (por ejemplo «Entrar» o «Guardar») pasa de blanco a azul marino, para que se lea mejor (de 3.5:1 a 5.5:1 de contraste). El turquesa no cambia. Los botones de otros colores (rojo de anular, morado de recogida, magenta de por la casa) siguen con el texto blanco.
 
+### Seguridad
+
+- App › entrar con huella: la contraseña guardada queda protegida por la huella del propio teléfono. En Android solo se lee con una huella fuerte (no vale el PIN); en iPhone solo con las huellas o la cara registradas ahora, no sale del teléfono y no va en las copias de seguridad. Si se añade o quita una huella, la entrada con huella deja de valer y hay que entrar una vez con la contraseña. Quien la tenía activada antes de esta versión tiene que volver a activarla. En Android 8 o anterior, o en teléfonos sin una huella fuerte, la entrada con huella ya no se puede activar.
+- App › entrar con huella: el botón dice qué cuenta abre («Entrar con huella como …»). Si otra persona entra en el teléfono con su contraseña, la huella guardada de la anterior se olvida.
+- App › cerrar sesión: si hay una entrada con huella guardada, se puede marcar «Olvidar la entrada con huella de …» antes de salir (por ejemplo, si otra persona va a usar el teléfono).
+- App › cerrar sesión: el teléfono borra las remesas, la caja y los ajustes guardados para trabajar sin conexión. Solo se quedan las acciones sin enviar, que se envían al volver a entrar con la misma cuenta; si entra otra persona, se pierden. El aviso al cerrar sesión con acciones sin enviar lo explica así. Cuando la sesión caduca sola no se borra nada, para no perder el trabajo sin conexión.
+- App: los datos de la app ya no van en las copias de seguridad de Google ni de iCloud ni pasan a un teléfono nuevo al cambiar de teléfono.
+
 ## [1.0.0-rc.8] - 2026-10-24
 
 Necesita el backend 1.0.0-rc.8 (por la casa, remesas del mes a detalle y estadísticas). Con un backend anterior las
