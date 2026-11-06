@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ottos_core/ottos_core.dart';
 import 'package:ottos_courier/offline/offline_store.dart';
@@ -9,6 +11,16 @@ Map<String, dynamic> _remittance(String id, {String status = 'ASSIGNED'}) => {
   'type': 'DELIVERY',
   'status': status,
 };
+
+Map<String, dynamic> _done(String id, DateTime completedAt) => {
+  ..._remittance(id, status: 'DELIVERED'),
+  'completedAt': completedAt.toUtc().toIso8601String(),
+};
+
+/// [count] completed ones, `d0` the newest.
+List<Map<String, dynamic>> _doneList(int count) => [
+  for (var i = 0; i < count; i++) _done('d$i', DateTime.utc(2026, 11, 5, 12).subtract(Duration(minutes: i))),
+];
 
 SyncAction _action(String remittanceId, {SyncActionType type = SyncActionType.deliver}) =>
     SyncAction(id: SyncRepository.newActionId(), type: type, remittanceId: remittanceId, occurredAt: DateTime.now());
@@ -129,5 +141,99 @@ void main() {
     expect(await store.pending(), hasLength(1));
     await store.useFor('u2');
     expect(await store.pending(), isEmpty);
+  });
+
+  group('REQ-017: the latest completed ones', () {
+    test('AC-2.1: a download brings them, newest first, and a full one replaces them whole', () async {
+      await store.applyState(SyncState(serverTime: 't1', full: true, completed: _doneList(3)));
+      expect((await store.completed()).map((r) => r['id']), ['d0', 'd1', 'd2']);
+
+      // A delta still carries the whole list: the copy is replaced, not added to.
+      await store.applyState(
+        SyncState(serverTime: 't2', full: false, completed: [_done('n', DateTime.utc(2026, 11, 6)), _doneList(2).last]),
+      );
+      expect((await store.completed()).map((r) => r['id']), ['n', 'd1']);
+
+      await store.applyState(const SyncState(serverTime: 't3', full: false, completed: []));
+      expect(await store.completed(), isEmpty);
+    });
+
+    test('an older backend sends none: the stored copy is left as it is', () async {
+      await store.applyState(SyncState(serverTime: 't1', full: true, completed: _doneList(2)));
+
+      await store.applyState(SyncState(serverTime: 't2', full: true, remittances: [_remittance('a')]));
+
+      expect((await store.completed()).map((r) => r['id']), ['d0', 'd1']);
+    });
+
+    test('BR-1: at most 20 are kept, the newest, whatever order they come in', () async {
+      await store.applyState(SyncState(serverTime: 't1', full: true, completed: _doneList(25).reversed.toList()));
+
+      final kept = (await store.completed()).map((r) => r['id']).toList();
+      expect(kept, [for (var i = 0; i < 20; i++) 'd$i']);
+    });
+
+    test('BR-1: one more just completed pushes the oldest out', () async {
+      await store.applyState(SyncState(serverTime: 't1', full: true, completed: _doneList(20)));
+
+      await store.putCompleted(_done('new', DateTime.utc(2026, 11, 5, 13)));
+
+      final kept = (await store.completed()).map((r) => r['id']).toList();
+      expect(kept, hasLength(20));
+      expect(kept.first, 'new');
+      expect(kept, isNot(contains('d19')));
+      expect((await store.completedRemittance('d0'))!['code'], 'OT-d0');
+      expect(await store.completedRemittance('d19'), isNull);
+    });
+
+    test('BR-4: logging out deletes them', () async {
+      await store.applyState(SyncState(serverTime: 't1', full: true, completed: _doneList(2)));
+
+      await store.clearForLogout();
+
+      expect(await store.completed(), isEmpty);
+    });
+
+    test('AC-2.3: another courier on the phone does not find them; the same one does', () async {
+      await store.applyState(SyncState(serverTime: 't1', full: true, completed: _doneList(2)));
+
+      await store.useFor('u1');
+      expect(await store.completed(), hasLength(2));
+
+      await store.useFor('u2');
+      expect(await store.completed(), isEmpty);
+    });
+
+    test('a phone with the first schema upgrades keeping its data, with no completed ones yet', () async {
+      final dir = Directory.systemTemp.createTempSync('ottos_store_v1');
+      addTearDown(() => dir.deleteSync(recursive: true));
+      final path = '${dir.path}/offline.db';
+      final old = await databaseFactoryFfiNoIsolate.openDatabase(
+        path,
+        options: OpenDatabaseOptions(
+          version: 1,
+          onCreate: (db, _) async {
+            await db.execute('CREATE TABLE remittances (id TEXT PRIMARY KEY, json TEXT NOT NULL)');
+            await db.execute('CREATE TABLE settings (key TEXT PRIMARY KEY, value TEXT NOT NULL)');
+            await db.execute(
+              'CREATE TABLE actions (seq INTEGER PRIMARY KEY AUTOINCREMENT, id TEXT NOT NULL UNIQUE, '
+              'remittance_id TEXT NOT NULL, json TEXT NOT NULL, rejected INTEGER NOT NULL DEFAULT 0, '
+              'code TEXT, message TEXT)',
+            );
+            await db.insert('remittances', {'id': 'a', 'json': '{"id":"a","code":"OT-a","type":"DELIVERY"}'});
+            await db.insert('settings', {'key': 'userId', 'value': 'u1'});
+          },
+        ),
+      );
+      await old.close();
+
+      final upgraded = await OfflineStore.open(path: path, factory: databaseFactoryFfiNoIsolate);
+      addTearDown(upgraded.close);
+
+      expect((await upgraded.remittances()).single['id'], 'a');
+      expect(await upgraded.completed(), isEmpty);
+      await upgraded.applyState(SyncState(serverTime: 't1', full: false, completed: _doneList(2)));
+      expect(await upgraded.completed(), hasLength(2));
+    });
   });
 }
