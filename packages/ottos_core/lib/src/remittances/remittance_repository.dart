@@ -21,6 +21,7 @@ class RemittanceFilter extends Equatable {
     this.courierId,
     this.customerId,
     this.beneficiaryId,
+    this.beneficiaryQuery,
     this.municipality,
     this.from,
     this.to,
@@ -40,6 +41,9 @@ class RemittanceFilter extends Equatable {
   final String? courierId;
   final String? customerId;
   final String? beneficiaryId;
+
+  /// Beneficiary's name or phone typed by the user, sent as typed (trimmed).
+  final String? beneficiaryQuery;
   final String? municipality;
   final DateTime? from;
   final DateTime? to;
@@ -59,6 +63,7 @@ class RemittanceFilter extends Equatable {
     Object? late = _keep,
     Object? incident = _keep,
     Object? review = _keep,
+    Object? beneficiaryQuery = _keep,
     Object? voided = _keep,
     Object? onTheHouse = _keep,
   }) => RemittanceFilter(
@@ -70,6 +75,7 @@ class RemittanceFilter extends Equatable {
     courierId: courierId,
     customerId: customerId,
     beneficiaryId: beneficiaryId,
+    beneficiaryQuery: beneficiaryQuery == _keep ? this.beneficiaryQuery : beneficiaryQuery as String?,
     municipality: municipality,
     from: from,
     to: to,
@@ -88,6 +94,7 @@ class RemittanceFilter extends Equatable {
     courierId,
     customerId,
     beneficiaryId,
+    beneficiaryQuery,
     municipality,
     from,
     to,
@@ -104,6 +111,7 @@ class RemittanceFilter extends Equatable {
     'courierId': courierId,
     'customerId': customerId,
     'beneficiaryId': beneficiaryId,
+    'beneficiary': beneficiaryQuery,
     'municipality': municipality,
     'from': from == null ? null : Formatters.apiDate(from!),
     'to': to == null ? null : Formatters.apiDate(to!),

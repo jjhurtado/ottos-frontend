@@ -76,9 +76,11 @@ class _RemittanceListView extends StatelessWidget {
                   final result = state.result;
                   if (state.status == RemittanceListStatus.failure) {
                     return ErrorView(
-                      message: state.error!,
-                      onRetry: () =>
-                          context.read<RemittanceListBloc>().add(RemittanceListPageRequested(result?.page ?? 0)),
+                      message: state.error ?? CoreTexts.networkError,
+                      // A text the server refused is not sent again: wait for a new one.
+                      onRetry: state.canRetry
+                          ? () => context.read<RemittanceListBloc>().add(RemittanceListPageRequested(result?.page ?? 0))
+                          : null,
                     );
                   }
                   if (result == null) return const LoadingView();
@@ -87,7 +89,11 @@ class _RemittanceListView extends StatelessWidget {
                       if (state.status == RemittanceListStatus.loading) const LinearProgressIndicator(minHeight: 2),
                       Expanded(
                         child: result.items.isEmpty
-                            ? const EmptyView(message: OpsTexts.noRemittances)
+                            ? EmptyView(
+                                message: state.filter.beneficiaryQuery != null
+                                    ? OpsTexts.noRemittancesSearch
+                                    : OpsTexts.noRemittances,
+                              )
                             : _RemittanceTable(items: result.items),
                       ),
                       const Divider(height: 1),
@@ -182,7 +188,7 @@ class _FilterBar extends StatelessWidget {
           ),
           if (!filter.isEmpty)
             TextButton.icon(
-              onPressed: () => change(const RemittanceFilter()),
+              onPressed: () => bloc.add(const RemittanceListFiltersCleared()),
               icon: const Icon(Icons.filter_alt_off_outlined),
               label: const Text(OpsTexts.clearFilters),
             ),
@@ -193,7 +199,7 @@ class _FilterBar extends StatelessWidget {
             runSpacing: 12,
             crossAxisAlignment: WrapCrossAlignment.center,
             children: [
-              const SizedBox(width: 260, child: _CodeSearchField()),
+              const SizedBox(width: 320, child: _BeneficiarySearchField()),
               ...filters,
             ],
           );
@@ -202,7 +208,7 @@ class _FilterBar extends StatelessWidget {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const _CodeSearchField(),
+            const _BeneficiarySearchField(),
             ExpansionTile(
               key: ValueKey('filters-${filter.isEmpty}'),
               title: Text(filter.isEmpty ? OpsTexts.filters : OpsTexts.filtersOn),
@@ -223,17 +229,17 @@ class _FilterBar extends StatelessWidget {
   }
 }
 
-/// Opens a remittance by its tracking code.
-class _CodeSearchField extends StatefulWidget {
-  const _CodeSearchField();
+/// Searches the list by the beneficiary's name or phone. The text lives in the
+/// bloc and the API call only, never in the panel's URL.
+class _BeneficiarySearchField extends StatefulWidget {
+  const _BeneficiarySearchField();
 
   @override
-  State<_CodeSearchField> createState() => _CodeSearchFieldState();
+  State<_BeneficiarySearchField> createState() => _BeneficiarySearchFieldState();
 }
 
-class _CodeSearchFieldState extends State<_CodeSearchField> {
-  final _controller = TextEditingController();
-  bool _searching = false;
+class _BeneficiarySearchFieldState extends State<_BeneficiarySearchField> {
+  late final _controller = TextEditingController(text: context.read<RemittanceListBloc>().state.typed);
 
   @override
   void dispose() {
@@ -241,35 +247,42 @@ class _CodeSearchFieldState extends State<_CodeSearchField> {
     super.dispose();
   }
 
-  Future<void> _search() async {
-    final code = _controller.text.trim();
-    if (code.isEmpty || _searching) return;
-    setState(() => _searching = true);
-    try {
-      final remittance = await context.read<RemittanceRepository>().getByCode(code);
-      if (mounted) context.go(Routes.remittance(remittance.id));
-    } on ApiException catch (error) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error.message)));
-    } finally {
-      if (mounted) setState(() => _searching = false);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    return TextField(
-      controller: _controller,
-      textInputAction: TextInputAction.search,
-      onSubmitted: (_) => _search(),
-      decoration: InputDecoration(
-        labelText: OpsTexts.searchByCode,
-        isDense: true,
-        suffixIcon: _searching
-            ? const Padding(
-                padding: EdgeInsets.all(12),
-                child: SizedBox.square(dimension: 16, child: CircularProgressIndicator(strokeWidth: 2)),
-              )
-            : IconButton(icon: const Icon(Icons.search), onPressed: _search),
+    return BlocConsumer<RemittanceListBloc, RemittanceListState>(
+      // The bloc empties the text when the filters are removed.
+      listenWhen: (previous, current) => previous.typed != current.typed,
+      listener: (context, state) {
+        if (_controller.text != state.typed) _controller.text = state.typed;
+      },
+      buildWhen: (previous, current) =>
+          previous.searchTooShort != current.searchTooShort || previous.typed.isEmpty != current.typed.isEmpty,
+      builder: (context, state) => TextField(
+        controller: _controller,
+        maxLength: 100,
+        buildCounter: (_, {required currentLength, required isFocused, maxLength}) => null,
+        textInputAction: TextInputAction.search,
+        onSubmitted: (_) => context.read<RemittanceListBloc>().add(const RemittanceListSearchSubmitted()),
+        onChanged: (text) => context.read<RemittanceListBloc>().add(RemittanceListSearchTyped(text)),
+        decoration: InputDecoration(
+          labelText: OpsTexts.searchByBeneficiary,
+          // A live region: a screen reader announces the hint when it appears.
+          helper: state.searchTooShort ? Semantics(liveRegion: true, child: const Text(OpsTexts.searchTooShort)) : null,
+          isDense: true,
+          prefixIcon: const Icon(Icons.search),
+          suffixIcon: state.typed.isEmpty
+              ? null
+              : IconButton(
+                  tooltip: OpsTexts.clearSearch,
+                  icon: const Icon(Icons.close),
+                  onPressed: () {
+                    _controller.clear();
+                    context.read<RemittanceListBloc>()
+                      ..add(const RemittanceListSearchTyped(''))
+                      ..add(const RemittanceListSearchSubmitted());
+                  },
+                ),
+        ),
       ),
     );
   }

@@ -20,6 +20,13 @@ abstract interface class RemittanceSource {
   /// Only where [canShowCompleted].
   Future<PageResult<Remittance>> completed({int page = 0});
 
+  /// Whether the list can search by beneficiary (sales, online; REQ-018).
+  bool get canSearch;
+
+  /// Remittances of any status whose beneficiary matches [query] (name or last
+  /// phone digits), most recent first, a page at a time. Only where [canSearch].
+  Future<PageResult<Remittance>> search(String query, {int page = 0});
+
   Future<Remittance> get(String id);
 
   /// Remittances with an action not sent yet.
@@ -92,6 +99,19 @@ class OnlineSource implements RemittanceSource {
   }
 
   @override
+  bool get canSearch => !onlyMine;
+
+  /// How many results each page of a search brings.
+  static const searchPageSize = 50;
+
+  @override
+  Future<PageResult<Remittance>> search(String query, {int page = 0}) => _remittances.search(
+    RemittanceFilter(beneficiaryQuery: query),
+    page: page,
+    size: searchPageSize,
+  );
+
+  @override
   Future<Remittance> get(String id) => _remittances.get(id);
 
   @override
@@ -139,6 +159,14 @@ class OfflineSource implements RemittanceSource {
 
   @override
   bool get completedAreLatest => true;
+
+  /// The courier works from the phone: no search there (REQ-018 is for sales).
+  @override
+  bool get canSearch => false;
+
+  @override
+  Future<PageResult<Remittance>> search(String query, {int page = 0}) =>
+      throw UnsupportedError('The offline source cannot search');
 
   /// The courier's latest completed ones, in one page, so there is never a
   /// «Ver más» (REQ-017): first those completed on the phone and not sent yet,

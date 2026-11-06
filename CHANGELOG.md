@@ -6,6 +6,14 @@ Cambios notables del frontend de Ottos (panel de operaciones y app de repartidor
 
 ## [Unreleased]
 
+### Añadido
+
+- App › ventas: la lista de remesas tiene un **buscador por beneficiario**, por nombre o por teléfono (sin importar tildes ni mayúsculas), desde 2 letras o 4 cifras. Muestra las remesas de cualquier estado, de 50 en 50 con «Ver más», y oculta los interruptores mientras se busca. Sin conexión avisa de que la búsqueda necesita conexión. Los repartidores no lo ven. Las demás búsquedas de la app (remitente y beneficiario en «Nueva remesa») ya ignoraban las tildes porque las hace el servidor.
+
+### Cambiado
+
+- Panel › Remesas: se puede **buscar por beneficiario**, por nombre o por teléfono (sin importar tildes ni mayúsculas), y se combina con los demás filtros; la búsqueda por código desaparece de la lista.
+
 ## [1.0.0-rc.9] - 2026-11-06
 
 ### Añadido

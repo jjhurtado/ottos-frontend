@@ -56,6 +56,12 @@ class _FakeSource implements RemittanceSource {
   bool get completedAreLatest => true;
 
   @override
+  bool get canSearch => false;
+
+  @override
+  Future<PageResult<Remittance>> search(String query, {int page = 0}) => throw UnimplementedError();
+
+  @override
   Future<List<Remittance>> list() async => [...open];
 
   @override
