@@ -94,6 +94,7 @@ final class AssignedState extends Equatable {
     bool? moreResults,
     bool? searchOffline,
     PendingTotals? totals,
+    bool clearTotals = false,
     String? error,
   }) {
     final next = status ?? this.status;
@@ -111,7 +112,7 @@ final class AssignedState extends Equatable {
       searchPages: searchPages ?? this.searchPages,
       moreResults: moreResults ?? this.moreResults,
       searchOffline: searchOffline ?? this.searchOffline,
-      totals: totals ?? this.totals,
+      totals: clearTotals ? null : totals ?? this.totals,
       // Error and status go together: kept while the status stays failure
       // (typing does not hide it) and dropped with any other status.
       error: next == AssignedStatus.failure ? (error ?? this.error) : null,
@@ -199,6 +200,8 @@ class AssignedCubit extends Cubit<AssignedState> {
         ),
       );
     }
+    // Asked alongside the list, not after it.
+    final totals = _totals();
     try {
       final items = [...await _source.list()];
       var moreCompleted = false;
@@ -212,7 +215,7 @@ class AssignedCubit extends Cubit<AssignedState> {
         }
       }
       final pendingIds = await _source.pendingIds();
-      final totals = await _totals();
+      final pending = await totals;
       if (isClosed) return;
       emit(
         state.copyWith(
@@ -220,15 +223,18 @@ class AssignedCubit extends Cubit<AssignedState> {
           items: items,
           moreCompleted: moreCompleted,
           pendingIds: pendingIds,
-          totals: totals,
+          totals: pending,
+          // A failed reload shows no figure of before (DEF-1).
+          clearTotals: pending == null,
         ),
       );
     } on ApiException catch (error) {
-      if (!isClosed) emit(state.copyWith(status: AssignedStatus.failure, error: error.message));
+      // Sales do not work offline: no business figures from before (AC-2.3, DEF-1).
+      if (!isClosed) emit(state.copyWith(status: AssignedStatus.failure, error: error.message, clearTotals: true));
     }
   }
 
-  /// The totals fail on their own: the list still shows, with the last ones.
+  /// The totals fail on their own: the list still shows, without them.
   Future<PendingTotals?> _totals() async {
     try {
       return await _pendingTotals?.call();

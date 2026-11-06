@@ -127,8 +127,7 @@ void main() {
         findsNothing,
         reason: 'Sales does not work offline: no figures from before (AC-2.3)',
       );
-      // Skipped while DEF-1 is open (REQ-021 05-test-report.md): the app keeps the business totals of before.
-    }, skip: true);
+    });
 
     test('AC-2.2 (only the totals fail on a reload): no figure older than the panel is kept', () async {
       final cubit = AssignedCubit(source: source, pendingTotals: repository.pendingTotals);
@@ -141,7 +140,7 @@ void main() {
 
       expect(cubit.state.status, AssignedStatus.success);
       expect(cubit.state.totals, isNull, reason: 'a failed reload must not show the figures of before (AC-2.2)');
-    }, skip: 'DEF-1 open (REQ-021 05-test-report.md): the app keeps the business totals of before');
+    });
 
     testWidgets('AC-2.1 (390 wide, large amounts, text at 200%): the tiles render without overflow', (tester) async {
       await pump(tester, _sales, const AssignedPage(), textScale: 2);
