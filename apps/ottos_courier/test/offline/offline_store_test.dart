@@ -326,6 +326,81 @@ void main() {
       expect(await store.completed(), isEmpty);
     });
 
+    group('when the app opens', () {
+      late String path;
+
+      setUp(() {
+        final dir = Directory.systemTemp.createTempSync('ottos_store_open');
+        addTearDown(() => dir.deleteSync(recursive: true));
+        path = '${dir.path}/offline.db';
+      });
+
+      Future<OfflineStore> reopen(DateTime at) =>
+          OfflineStore.open(path: path, factory: databaseFactoryFfiNoIsolate, now: () => at);
+
+      test('deletes the ones older than 7 days, keeps the rest, touches nothing else', () async {
+        final first = await reopen(now);
+        await first.saveSetting('lang', 'es');
+        await first.applyState(
+          SyncState(
+            serverTime: 't1',
+            full: true,
+            remittances: [_remittance('open')],
+            completed: [
+              _done('old', cutoff.subtract(const Duration(seconds: 1))),
+              _done('edge', cutoff),
+              _done('new', now),
+            ],
+          ),
+        );
+        await first.enqueue(_action('open'));
+        await first.close();
+
+        // Nobody signs in: opening alone prunes.
+        final reopened = await reopen(now);
+        addTearDown(reopened.close);
+
+        expect((await reopened.completed()).map((r) => r['id']), ['new', 'edge']);
+        expect((await reopened.remittances()).single['id'], 'open');
+        expect(await reopened.pending(), hasLength(1));
+        expect(await reopened.setting('lang'), 'es');
+      });
+
+      test('a stored one that is 8 days old is gone right after opening', () async {
+        final first = await reopen(now);
+        await first.applyState(SyncState(serverTime: 't1', full: true, completed: [_done('x', now)]));
+        await first.close();
+
+        // No read, no sync: opening alone must have deleted the row.
+        final reopened = await reopen(now.add(const Duration(days: 8)));
+        await reopened.close();
+
+        final raw = await databaseFactoryFfiNoIsolate.openDatabase(path);
+        addTearDown(raw.close);
+        expect(await raw.query('completed'), isEmpty);
+      });
+
+      test('a failing prune does not stop the app from opening', () async {
+        final broken = await databaseFactoryFfiNoIsolate.openDatabase(
+          path,
+          options: OpenDatabaseOptions(
+            version: 2,
+            onCreate: (db, _) async {
+              await db.execute('CREATE TABLE remittances (id TEXT PRIMARY KEY, json TEXT NOT NULL)');
+              await db.execute('CREATE TABLE settings (key TEXT PRIMARY KEY, value TEXT NOT NULL)');
+              await db.insert('remittances', {'id': 'a', 'json': '{"id":"a"}'});
+            },
+          ),
+        );
+        await broken.close();
+
+        final reopened = await reopen(now);
+        addTearDown(reopened.close);
+
+        expect((await reopened.remittances()).single['id'], 'a');
+      });
+    });
+
     test('the cap of 20 still applies inside the 7 days', () async {
       await store.applyState(SyncState(serverTime: 't1', full: true, completed: _doneList(25)));
 

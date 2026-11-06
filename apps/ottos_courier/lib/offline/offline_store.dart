@@ -31,7 +31,8 @@ class OfflineStore {
   static const maxCompleted = 20;
 
   /// How old a completed remittance may get on the phone: older ones are
-  /// deleted when the list is read and when the phone syncs (REQ-017 BR-1).
+  /// deleted when the app opens, when the list is read and when the phone syncs
+  /// (REQ-017 BR-1).
   static const maxCompletedAge = Duration(days: 7);
   static const _fileName = 'ottos_offline.db';
 
@@ -50,7 +51,16 @@ class OfflineStore {
         },
       ),
     );
-    return OfflineStore._(db, now ?? DateTime.now);
+    final store = OfflineStore._(db, now ?? DateTime.now);
+    // Before and independent of any sign-in: a phone whose session expired must
+    // not keep completed ones past 7 days (REQ-017 SEC-33). Only `completed`
+    // is touched. A failure here must never stop the app from opening.
+    try {
+      await db.transaction(store._expireCompleted);
+    } on Object {
+      // Reads and syncs prune again.
+    }
+    return store;
   }
 
   static Future<void> _create(Database db) async {
