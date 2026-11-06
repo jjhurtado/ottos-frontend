@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:ottos_core/ottos_core.dart';
 import 'package:sqflite/sqflite.dart';
 
@@ -57,8 +58,9 @@ class OfflineStore {
     // is touched. A failure here must never stop the app from opening.
     try {
       await db.transaction(store._expireCompleted);
-    } on Object {
-      // Reads and syncs prune again.
+    } on DatabaseException catch (error) {
+      // Reads and syncs prune again. One line, no data: only the kind of error.
+      debugPrint('Offline database: could not prune old completed ones (${error.runtimeType})');
     }
     return store;
   }
@@ -121,7 +123,7 @@ class OfflineStore {
     await _set(txn, _serverTime, state.serverTime);
     if (state.cash != null) await _set(txn, _cash, jsonEncode(state.cash));
     if (state.workflow != null) await _set(txn, _workflow, jsonEncode(state.workflow));
-    await _set(txn, _lastSync, DateTime.now().toUtc().toIso8601String());
+    await _set(txn, _lastSync, _now().toUtc().toIso8601String());
   });
 
   /// The remittance as the server returned it after an action.

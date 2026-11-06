@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ottos_core/ottos_core.dart';
 import 'package:ottos_courier/offline/offline_store.dart';
@@ -245,6 +246,12 @@ void main() {
     });
   });
 
+  test('REQ-017 CR-7: lastSync follows the injected clock', () async {
+    await store.applyState(const SyncState(serverTime: 't1', full: true));
+
+    expect((await store.lastSync())!.toUtc(), DateTime.utc(2026, 11, 5, 13));
+  });
+
   group('REQ-017 CR-1: completeRemittance moves it in one transaction', () {
     test('it leaves the open ones and joins the completed ones', () async {
       await store.applyState(SyncState(serverTime: 't1', full: true, remittances: [_remittance('a')]));
@@ -411,6 +418,26 @@ void main() {
         expect(await raw.query('completed'), isEmpty);
       });
 
+      test('REQ-017 CR-6: rows written with microseconds by the previous version are judged by the cutoff', () async {
+        final first = await reopen(now);
+        await first.close();
+        final raw = await databaseFactoryFfiNoIsolate.openDatabase(path);
+        for (final (id, at) in [
+          ('inside', '2026-10-29T13:00:00.001123Z'),
+          ('outside', '2026-10-29T12:59:59.999999Z'),
+          // Same millisecond as the cutoff: text order puts it before it, so it goes up to 1 ms early.
+          ('same-ms', '2026-10-29T13:00:00.000123Z'),
+        ]) {
+          await raw.insert('completed', {'id': id, 'completed_at': at, 'json': '{"id":"$id"}'});
+        }
+        await raw.close();
+
+        final reopened = await reopen(now);
+        addTearDown(reopened.close);
+
+        expect((await reopened.completed()).map((r) => r['id']), ['inside']);
+      });
+
       test('a failing prune does not stop the app from opening', () async {
         final broken = await databaseFactoryFfiNoIsolate.openDatabase(
           path,
@@ -425,10 +452,18 @@ void main() {
         );
         await broken.close();
 
+        final lines = <String?>[];
+        final original = debugPrint;
+        debugPrint = (message, {wrapWidth}) => lines.add(message);
+        addTearDown(() => debugPrint = original);
+
         final reopened = await reopen(now);
         addTearDown(reopened.close);
 
         expect((await reopened.remittances()).single['id'], 'a');
+        // REQ-017 CR-9: the failure leaves one line, with no personal data.
+        expect(lines, hasLength(1));
+        expect(lines.single, startsWith('Offline database: could not prune'));
       });
     });
 
