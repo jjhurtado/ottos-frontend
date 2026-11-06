@@ -30,4 +30,10 @@ abstract final class OttosColors {
   static const successText = Color(0xFF297047);
   static const warningText = Color(0xFF926119);
   static const danger = Color(0xFFC0392B);
+
+  /// A completed remittance in the app's lists (REQ-020): grey card, outline
+  /// and muted text, so it reads as done next to the open ones.
+  static const completedSurface = Color(0xFFF1F2F5);
+  static const completedBorder = Color(0xFFB9BCC8);
+  static const inkMuted = Color(0xFF5F6170);
 }
