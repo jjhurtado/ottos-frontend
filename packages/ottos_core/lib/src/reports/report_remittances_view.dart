@@ -7,6 +7,7 @@ import '../theme/ottos_colors.dart';
 import '../utils/cuba_time.dart';
 import '../utils/formatters.dart';
 import '../widgets/async_view.dart';
+import '../widgets/remittance_title.dart';
 import '../widgets/remittance_type_badge.dart';
 import 'report_pdf.dart';
 import 'report_remittances_cubit.dart';
@@ -364,7 +365,7 @@ class _Table extends StatelessWidget {
   final bool newestFirst;
   final ValueChanged<ReportRemittance>? onOpen;
 
-  static const _widths = <double>[120, 96, 96, 170, 120, 150, 96, 88, 96, 136, 64];
+  static const _widths = <double>[180, 96, 96, 170, 120, 150, 96, 88, 96, 136, 64];
 
   @override
   Widget build(BuildContext context) {
@@ -386,7 +387,7 @@ class _Table extends StatelessWidget {
       color: const Color(0xFFF8F9FB),
       child: Row(
         children: [
-          cell(0, text(ReportTexts.code, style: headerStyle)),
+          cell(0, text(ReportTexts.beneficiary, style: headerStyle)),
           cell(1, text(ReportTexts.type, style: headerStyle)),
           cell(
             2,
@@ -456,17 +457,22 @@ class _Table extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            height: 44,
+            height: 52,
             child: Row(
               children: [
                 cell(
                   0,
                   open == null
-                      ? text(row.code, style: const TextStyle(fontWeight: FontWeight.w500))
+                      ? RemittanceTitle(
+                          name: row.beneficiaryName,
+                          code: row.code,
+                          style: const TextStyle(fontWeight: FontWeight.w500),
+                        )
                       : InkWell(
                           onTap: () => open(row),
-                          child: text(
-                            row.code,
+                          child: RemittanceTitle(
+                            name: row.beneficiaryName,
+                            code: row.code,
                             style: const TextStyle(
                               fontWeight: FontWeight.w500,
                               color: OttosColors.tealDark,
@@ -500,7 +506,7 @@ class _Table extends StatelessWidget {
           ),
           if (row.voided case final voidedBy?)
             Padding(
-              padding: const EdgeInsets.only(left: 126, bottom: 10, right: 12),
+              padding: EdgeInsets.only(left: _widths[0] + 6, bottom: 10, right: 12),
               child: Text(
                 ReportTexts.voidedOn(CubaTime.shortDate(voidedBy.at), voidedBy.reason),
                 style: Theme.of(context).textTheme.bodySmall,
@@ -537,8 +543,9 @@ class _RemittanceCard extends StatelessWidget {
             Row(
               children: [
                 Expanded(
-                  child: Text(
-                    row.code,
+                  child: RemittanceTitle(
+                    name: row.beneficiaryName,
+                    code: row.code,
                     style: textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w500,
                       decoration: voided ? TextDecoration.lineThrough : null,
