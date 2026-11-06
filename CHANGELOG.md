@@ -9,6 +9,7 @@ Cambios notables del frontend de Ottos (panel de operaciones y app de repartidor
 ### Añadido
 
 - App › ventas: botón **«Entregada por el negocio»** («Recogida por el negocio» en una recogida) en el detalle de una remesa abierta y no anulada, con o sin repartidor, igual que en el panel. Solo para quien tiene el permiso «Completar desde el negocio»; los repartidores no lo ven. Pide confirmación, explica qué pasa con la caja del negocio y, si la remesa tenía repartidor, que se le quita; admite una nota opcional y no pide PIN. Necesita conexión. Después, el detalle muestra «Entregada por: El negocio». Las versiones anteriores de la app siguen funcionando, sin el botón.
+- Panel › Auditoría: el filtro «Sobre» tiene la opción **«Remesas antiguas»** y su acción **«Remesas antiguas importadas»**, para encontrar las importaciones de remesas antiguas; en la lista esas entradas ya salen en español.
 
 ### Cambiado
 
@@ -18,6 +19,7 @@ Cambios notables del frontend de Ottos (panel de operaciones y app de repartidor
 - Reportes › «Remesas del mes»: cada remesa aparece por su beneficiario con el código debajo, en la tabla, en el PDF detallado y en el CSV, que tiene una columna nueva «Beneficiario» antes de «Código». El buscador encuentra también por nombre. Quien comparta el CSV o el PDF es responsable de ellos, porque ahora llevan nombres. Quién puede ver los reportes no cambia, y las estadísticas tampoco. Necesita el backend de REQ-019; con uno anterior, las filas se ven solo con el código.
 - App: las remesas completadas se distinguen a primera vista de las abiertas: tarjeta gris con borde, texto más suave y la etiqueta «✓ Entregada» o «✓ Recogida» con una marca, no solo con el color. Se sigue viendo si es entrega o recogida. El detalle de una completada empieza por «Entregada el …» o «Recogida el …». El panel no cambia.
 - Panel y app: el texto de los botones principales turquesa (por ejemplo «Entrar» o «Guardar») pasa de blanco a azul marino, para que se lea mejor (de 3.5:1 a 5.5:1 de contraste). El turquesa no cambia. Los botones de otros colores (rojo de anular, morado de recogida, magenta de por la casa) siguen con el texto blanco.
+- Panel y app › Reportes y Estadísticas: ya no muestran el aviso «Esta sección todavía no está disponible». Si el servidor no responde bien, sale el mensaje de error con el botón «Reintentar», como en el resto de la aplicación. Necesita el backend 1.0.0-rc.4 o posterior.
 - Panel y app: las etiquetas de estado «Pagada», «Asignada» y «Entregada» o «Recogida» se leen mejor (texto más oscuro, del mismo color, con al menos 4.5:1 de contraste). El fondo de la etiqueta no cambia. También el aviso y la etiqueta «Para revisar», la etiqueta «Sin enviar» de la app y las etiquetas de estado de «Remesas del mes» en Reportes. Las etiquetas rojas (con retraso, anulada) siguen igual.
 
 ### Seguridad

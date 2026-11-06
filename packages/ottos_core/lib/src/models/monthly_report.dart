@@ -215,8 +215,5 @@ class MonthlyReport extends Equatable {
   List<Object?> get props => [month, generatedAt, remittances, collected, fees, deliveredCurrency, difference];
 }
 
-/// What was delivered, converted to the business currency. Backend 1.0.0-rc.4
-/// renamed `deliveredUsd` to `deliveredCurrency`; both are read until every
-/// installation runs it.
-double _deliveredCurrency(Map<String, dynamic> json) =>
-    parseDecimal(json['deliveredCurrency']) ?? parseDecimal(json['deliveredUsd']) ?? 0;
+/// What was delivered, converted to the business currency.
+double _deliveredCurrency(Map<String, dynamic> json) => parseDecimal(json['deliveredCurrency']) ?? 0;

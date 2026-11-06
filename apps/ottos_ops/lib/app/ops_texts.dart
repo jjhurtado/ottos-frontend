@@ -231,8 +231,6 @@ abstract final class OpsTexts {
     CashMovementType.deliveryPayout => 'Entrega de remesa',
     CashMovementType.pickupCollection => 'Recogida de remesa',
     CashMovementType.courierReturn => 'Devolución de repartidor',
-    CashMovementType.courierSurplus => 'Sobrante de repartidor',
-    CashMovementType.remittanceRefund => 'Reembolso de remesa',
     CashMovementType.businessDeposit => 'Depósito',
     CashMovementType.businessWithdrawal => 'Retiro',
     CashMovementType.courierExchangeOut => 'Cambio de moneda: entregado',
@@ -423,6 +421,7 @@ abstract final class OpsTexts {
     'CUSTOMERS' => 'Clientes',
     'BENEFICIARIES' => 'Beneficiarios',
     'REMITTANCE' => 'Remesas',
+    'REMITTANCES' => 'Remesas antiguas',
     _ => type,
   };
 
@@ -430,7 +429,7 @@ abstract final class OpsTexts {
   /// target: the backend labels them "import"/"export", so the list says the
   /// kind of records instead.
   static String auditTargetLabel(AuditEntry entry) => switch (entry.targetType) {
-    'CUSTOMERS' || 'BENEFICIARIES' => auditTarget(entry.targetType),
+    'CUSTOMERS' || 'BENEFICIARIES' || 'REMITTANCES' => auditTarget(entry.targetType),
     _ => entry.targetLabel ?? '',
   };
 
@@ -454,6 +453,7 @@ abstract final class OpsTexts {
       'HISTORICAL_REMITTANCE_CREATED',
       'REMITTANCE_COMPLETED_FROM_BUSINESS',
     ],
+    'REMITTANCES': ['HISTORICAL_REMITTANCES_IMPORTED'],
   };
 
   static String auditAction(String code) => switch (code) {
@@ -473,6 +473,7 @@ abstract final class OpsTexts {
     'BENEFICIARIES_IMPORTED' => 'Beneficiarios importados (CSV)',
     'REMITTANCE_VOIDED' => 'Remesa anulada',
     'HISTORICAL_REMITTANCE_CREATED' => 'Remesa antigua registrada',
+    'HISTORICAL_REMITTANCES_IMPORTED' => 'Remesas antiguas importadas',
     'REMITTANCE_COMPLETED_FROM_BUSINESS' => 'Completada desde el negocio',
     'REMITTANCE_ON_THE_HOUSE' => 'Remesa por la casa (sin comisión)',
     _ => code,

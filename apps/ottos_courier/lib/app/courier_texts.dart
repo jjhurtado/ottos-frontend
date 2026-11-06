@@ -170,7 +170,6 @@ abstract final class CourierTexts {
     'DELIVERY_PAYOUT' => 'Entrega de remesa',
     'PICKUP_COLLECTION' => 'Recogida de remesa',
     'COURIER_RETURN' => 'Devolución al negocio',
-    'COURIER_SURPLUS' => 'Sobrante en cierre',
     'COURIER_EXCHANGE_OUT' => 'Cambio de moneda: entregado',
     'COURIER_EXCHANGE_IN' => 'Cambio de moneda: recibido',
     _ => 'Movimiento',
