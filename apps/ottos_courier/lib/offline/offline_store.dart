@@ -127,8 +127,6 @@ class OfflineStore {
   /// The remittance as the server returned it after an action.
   Future<void> putRemittance(Map<String, dynamic> json) => _put(_db, json);
 
-  Future<void> removeRemittance(String id) => _db.delete('remittances', where: 'id = ?', whereArgs: [id]);
-
   static Future<void> _put(DatabaseExecutor db, Map<String, dynamic> json) => db.insert('remittances', {
     'id': json['id'],
     'json': jsonEncode(json),
@@ -154,6 +152,17 @@ class OfflineStore {
   /// One just completed, as the server returned it, until the next download
   /// brings the whole list; the oldest beyond [maxCompleted] leave (BR-1).
   Future<void> putCompleted(Map<String, dynamic> json) => _db.transaction((txn) async {
+    await _putCompleted(txn, json);
+    await _trimCompleted(txn);
+    await _expireCompleted(txn);
+  });
+
+  /// A remittance that was just completed leaves the open ones and, unless it is
+  /// [voided], joins the completed ones, in one transaction: if the app dies in
+  /// between, it is still in one of the two tables (REQ-017 CR-1).
+  Future<void> completeRemittance(Map<String, dynamic> json, {required bool voided}) => _db.transaction((txn) async {
+    await txn.delete('remittances', where: 'id = ?', whereArgs: [json['id']]);
+    if (voided) return;
     await _putCompleted(txn, json);
     await _trimCompleted(txn);
     await _expireCompleted(txn);

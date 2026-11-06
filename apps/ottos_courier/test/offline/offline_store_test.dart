@@ -245,6 +245,37 @@ void main() {
     });
   });
 
+  group('REQ-017 CR-1: completeRemittance moves it in one transaction', () {
+    test('it leaves the open ones and joins the completed ones', () async {
+      await store.applyState(SyncState(serverTime: 't1', full: true, remittances: [_remittance('a')]));
+
+      await store.completeRemittance(_done('a', DateTime.utc(2026, 11, 5, 12)), voided: false);
+
+      expect(await store.remittances(), isEmpty);
+      expect((await store.completed()).map((r) => r['id']), ['a']);
+    });
+
+    test('a voided one only leaves the open ones', () async {
+      await store.applyState(SyncState(serverTime: 't1', full: true, remittances: [_remittance('a')]));
+
+      await store.completeRemittance(_done('a', DateTime.utc(2026, 11, 5, 12)), voided: true);
+
+      expect(await store.remittances(), isEmpty);
+      expect(await store.completed(), isEmpty);
+    });
+
+    test('if the write fails, it stays among the open ones', () async {
+      await store.applyState(SyncState(serverTime: 't1', full: true, remittances: [_remittance('a')]));
+
+      await expectLater(
+        store.completeRemittance({..._done('a', DateTime.utc(2026, 11, 5, 12)), 'bad': Object()}, voided: false),
+        throwsA(anything),
+      );
+
+      expect((await store.remittances()).map((r) => r['id']), ['a']);
+    });
+  });
+
   group('REQ-017 SEC-32 SEC-33: stored completed ones expire after 7 days', () {
     final now = DateTime.utc(2026, 11, 5, 13);
     final cutoff = now.subtract(OfflineStore.maxCompletedAge);
