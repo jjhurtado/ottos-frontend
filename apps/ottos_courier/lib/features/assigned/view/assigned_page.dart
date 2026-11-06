@@ -5,6 +5,7 @@ import 'package:ottos_core/ottos_core.dart';
 
 import '../../../app/courier_texts.dart';
 import '../../../app/router.dart';
+import '../../../offline/offline_store.dart';
 import '../../../offline/remittance_source.dart';
 import '../../../offline/sync_cubit.dart';
 import '../cubit/assigned_cubit.dart';
@@ -81,7 +82,12 @@ class _AssignedView extends StatelessWidget {
                 );
               }
               final remittance = state.items[index - 1];
-              return _Swipeable(
+              // The courier's completed block starts with a heading (REQ-017).
+              final startsCompleted =
+                  cubit.completedAreLatest &&
+                  remittance.isCompleted &&
+                  (index == 1 || !state.items[index - 2].isCompleted);
+              final card = _Swipeable(
                 remittance: remittance,
                 child: _AssignedCard(
                   remittance: remittance,
@@ -92,6 +98,20 @@ class _AssignedView extends StatelessWidget {
                     await cubit.load();
                   },
                 ),
+              );
+              if (!startsCompleted) return card;
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(4, 8, 4, 8),
+                    child: Text(
+                      CourierTexts.latestCompleted(OfflineStore.maxCompleted),
+                      style: Theme.of(context).textTheme.titleSmall,
+                    ),
+                  ),
+                  card,
+                ],
               );
             },
           ),
