@@ -77,17 +77,14 @@ class HomeCubit extends Cubit<HomeState> {
   /// Given to who can see the cash: counts the exchanges to review.
   final CashRepository? _cash;
 
+  /// Counters, exchanges and pending money start together; the money pending
+  /// still fails on its own (REQ-021 AC-1.8). The workflow is loaded once.
   Future<void> load() async {
     emit(const HomeState());
+    final pending = _pending();
     try {
-      final workflow = await _remittances.workflow();
-      final open = workflow.statuses.where((status) => !status.isFinal).toList();
-      final counts = await Future.wait([
-        for (final status in open) _count(RemittanceFilter(status: status.code)),
-        _count(const RemittanceFilter(late: true)),
-        _count(const RemittanceFilter(incident: true)),
-        _count(const RemittanceFilter(review: true)),
-      ]);
+      final results = await Future.wait([_counts(), _exchangesToReview()]);
+      final (open, counts) = results[0] as (List<RemittanceStatus>, List<int>);
       emit(
         HomeState(
           status: HomeStatus.success,
@@ -95,25 +92,42 @@ class HomeCubit extends Cubit<HomeState> {
           late: counts[open.length],
           incidents: counts[open.length + 1],
           toReview: counts[open.length + 2],
-          exchangesToReview: await _exchangesToReview(),
+          exchangesToReview: results[1] as int,
         ),
       );
     } on ApiException catch (error) {
       emit(HomeState(status: HomeStatus.failure, error: error.message));
       return;
     }
-    await loadPending();
+    final (totals, error) = await pending;
+    if (!isClosed) emit(state.withPending(pending: totals, pendingError: error));
   }
 
   /// Loads (or retries) the money pending alone (REQ-021 AC-1.8).
   Future<void> loadPending() async {
     emit(state.withPending());
+    final (totals, error) = await _pending();
+    if (!isClosed) emit(state.withPending(pending: totals, pendingError: error));
+  }
+
+  Future<(PendingTotals?, String?)> _pending() async {
     try {
-      final pending = await _remittances.pendingTotals();
-      if (!isClosed) emit(state.withPending(pending: pending));
+      return (await _remittances.pendingTotals(), null);
     } on ApiException catch (error) {
-      if (!isClosed) emit(state.withPending(pendingError: error.message));
+      return (null, error.message);
     }
+  }
+
+  /// The open statuses with one count each (voided ones left out), then late, incidents and to review.
+  Future<(List<RemittanceStatus>, List<int>)> _counts() async {
+    final open = (await _remittances.workflow()).statuses.where((status) => !status.isFinal).toList();
+    final counts = await Future.wait([
+      for (final status in open) _count(RemittanceFilter(status: status.code, voided: false)),
+      _count(const RemittanceFilter(late: true)),
+      _count(const RemittanceFilter(incident: true)),
+      _count(const RemittanceFilter(review: true)),
+    ]);
+    return (open, counts);
   }
 
   Future<int> _exchangesToReview() async =>

@@ -152,14 +152,19 @@ class NewRemittanceCubit extends Cubit<NewRemittanceState> {
   Future<void> load({String? customerId, bool canAssign = false}) async {
     if (canAssign) unawaited(_loadCouriers());
     _emit(corridorsStatus: LoadStatus.loading, error: null);
-    if (customerId != null && state.customer == null) {
-      try {
-        final customer = await _customers.get(customerId);
-        if (customer.active) unawaited(customerSelected(customer));
-      } on ApiException {
-        // Start with an empty form; the user searches the customer.
-      }
+    await Future.wait([if (customerId != null && state.customer == null) _startWith(customerId), _loadCorridors()]);
+  }
+
+  Future<void> _startWith(String customerId) async {
+    try {
+      final customer = await _customers.get(customerId);
+      if (customer.active) unawaited(customerSelected(customer));
+    } on ApiException {
+      // Start with an empty form; the user searches the customer.
     }
+  }
+
+  Future<void> _loadCorridors() async {
     try {
       _corridors = await _rates.corridors();
       final currencies = _currenciesFor(state.type);
