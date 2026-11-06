@@ -9,7 +9,6 @@ environment:
   flutter: ">=3.35.0"
 
 dependencies:
-  bloc: ^9.2.1
   dio: ^5.11.1
   equatable: ^3.0.0
   flutter:

@@ -181,7 +181,7 @@ void main() {
     test('BR-1: one more just completed pushes the oldest out', () async {
       await store.applyState(SyncState(serverTime: 't1', full: true, completed: _doneList(20)));
 
-      await store.putCompleted(_done('new', DateTime.utc(2026, 11, 5, 13)));
+      await store.completeRemittance(_done('new', DateTime.utc(2026, 11, 5, 13)), voided: false);
 
       final kept = (await store.completed()).map((r) => r['id']).toList();
       expect(kept, hasLength(20));
@@ -350,16 +350,16 @@ void main() {
       expect(await aging.completed(), isEmpty);
     });
 
-    test('putCompleted drops an old one, keeps a recent one', () async {
-      await store.putCompleted(_done('old', now.subtract(const Duration(days: 8))));
-      await store.putCompleted(_done('recent', now.subtract(const Duration(days: 6))));
+    test('completeRemittance drops an old one, keeps a recent one', () async {
+      await store.completeRemittance(_done('old', now.subtract(const Duration(days: 8))), voided: false);
+      await store.completeRemittance(_done('recent', now.subtract(const Duration(days: 6))), voided: false);
 
       expect((await store.completed()).map((r) => r['id']), ['recent']);
     });
 
     test('one without a known completed date counts as old', () async {
-      await store.putCompleted({..._remittance('none', status: 'DELIVERED')});
-      await store.putCompleted({..._done('bad', now), 'completedAt': 'not a date'});
+      await store.completeRemittance({..._remittance('none', status: 'DELIVERED')}, voided: false);
+      await store.completeRemittance({..._done('bad', now), 'completedAt': 'not a date'}, voided: false);
 
       expect(await store.completed(), isEmpty);
     });

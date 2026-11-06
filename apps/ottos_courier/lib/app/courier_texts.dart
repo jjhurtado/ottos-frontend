@@ -19,7 +19,6 @@ abstract final class CourierTexts {
       remittance.isPickup ? 'Recogida completada' : 'Remesa entregada';
   static String completedManyTitle(int count) => '$count remesas completadas';
   static String andMore(String names, int rest) => '$names y $rest más';
-  static const tapToSee = 'Toca para verlas';
 
   // Navigation
   static const account = 'Mi cuenta';
