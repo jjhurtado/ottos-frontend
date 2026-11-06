@@ -87,6 +87,8 @@ void main() {
       expect(codes(const ReportFilter(code: 'p3x')), ['OT-P3X8RA']);
       // REQ-019: the search box also finds the beneficiary.
       expect(codes(const ReportFilter(code: 'juan')), ['OT-P3X8RA']);
+      expect(codes(const ReportFilter(code: 'gomez')), ['OT-P3X8RA'], reason: 'DEF-1: accents do not matter');
+      expect(codes(const ReportFilter(code: 'GÓMEZ')), ['OT-P3X8RA']);
       expect(codes(const ReportFilter(type: 'PICKUP')), ['OT-P3X8RA']);
       expect(codes(const ReportFilter(status: ReportStatusFilter.completed)), ['OT-P3X8RA', 'OT-K7Q2MA']);
       expect(codes(const ReportFilter(status: ReportStatusFilter.paid)), ['OT-H2N6LC'], reason: 'voided apart');
