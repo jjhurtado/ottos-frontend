@@ -163,6 +163,18 @@ void main() {
       }
     });
 
+    testWidgets('DEF-1: a completed card has a dashed outline, an open card does not', (tester) async {
+      when(() => remittances.assignedToMe()).thenAnswer((_) async => [_open('OT-1'), _done('OT-2')]);
+      await pump(tester, _courier, const AssignedPage());
+
+      final done = tester.widget<Card>(cardOf('Hecha OT-2'));
+      expect(done.shape, isA<DashedRoundedBorder>());
+      expect((done.shape! as DashedRoundedBorder).color, OttosColors.completedBorder);
+      expect((done.shape! as DashedRoundedBorder).radius, 14);
+      expect(done.clipBehavior, Clip.antiAlias);
+      expect(tester.widget<Card>(cardOf('Abierta OT-1')).shape, isNot(isA<DashedRoundedBorder>()));
+    });
+
     testWidgets('AC-1.2: a courier\'s completed remittances all have the same completed look', (tester) async {
       // REQ-017 (the courier's own completed list) is not in this branch; the courier list
       // already shows a recently completed one through the same card.
@@ -205,7 +217,7 @@ void main() {
       await pump(tester, _courier, const AssignedPage());
 
       final done = tester.widget<Card>(cardOf('Hecha OT-1'));
-      final border = (done.shape! as RoundedRectangleBorder).side;
+      final border = done.shape! as DashedRoundedBorder;
       expect(border.color, OttosColors.completedBorder);
       expect(border.width, greaterThan(0));
       expect(tester.widget<Card>(cardOf('Abierta OT-2')).shape, isNull, reason: 'open cards have no outline');
