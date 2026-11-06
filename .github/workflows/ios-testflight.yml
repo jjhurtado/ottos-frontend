@@ -30,8 +30,6 @@ jobs:
     timeout-minutes: 45
     env:
       APP_DIR: apps/ottos_courier
-      # Outside the checkout, in the runner's temp folder (SEC-6).
-      KEY_PATH: ${{ runner.temp }}/AuthKey.p8
     steps:
       # Actions are pinned by commit SHA (REQ-002, SEC-6); the comment keeps the tag for updates.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -50,7 +48,11 @@ jobs:
       - name: App Store Connect key
         env:
           KEY_P8: ${{ secrets.APP_STORE_CONNECT_KEY_P8 }}
+        # Outside the checkout, in the runner's temp folder (SEC-6). The job-level env
+        # cannot use the runner context, so the later steps get the path from GITHUB_ENV.
         run: |
+          KEY_PATH="$RUNNER_TEMP/AuthKey.p8"
+          echo "KEY_PATH=$KEY_PATH" >> "$GITHUB_ENV"
           printf '%s' "$KEY_P8" > "$KEY_PATH"
           chmod 600 "$KEY_PATH"
 
