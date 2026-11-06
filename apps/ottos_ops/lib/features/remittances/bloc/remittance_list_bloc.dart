@@ -38,6 +38,10 @@ class RemittanceListBloc extends Bloc<RemittanceListEvent, RemittanceListState> 
   final RemittanceRepository _remittances;
   Timer? _timer;
 
+  /// Number of the latest load; an answer to an older one is ignored, so it
+  /// cannot touch [_shown] after a cancelled request.
+  var _loadId = 0;
+
   /// Ids shown on each page of the current search, to drop repeats on later
   /// pages (pages are by number, so a row can move to the next one).
   final _shown = <int, Set<String>>{};
@@ -74,12 +78,14 @@ class RemittanceListBloc extends Bloc<RemittanceListEvent, RemittanceListState> 
   }
 
   Future<void> _load(Emitter<RemittanceListState> emit, {required RemittanceFilter filter, required int page}) async {
+    final loadId = ++_loadId;
     if (filter != state.filter) _shown.clear();
     // Cleared from outside (remove filters): the field empties too.
     final cleared = filter.beneficiaryQuery == null && state.filter.beneficiaryQuery != null;
     emit(state.copyWith(status: RemittanceListStatus.loading, filter: filter, typed: cleared ? '' : null));
     try {
       final result = await _remittances.search(filter, page: page, size: pageSize);
+      if (loadId != _loadId) return;
       _shown.removeWhere((shownPage, _) => shownPage >= page);
       final earlier = {for (final ids in _shown.values) ...ids};
       final items = [
