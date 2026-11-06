@@ -40,7 +40,12 @@ class _AssignedView extends StatelessWidget {
         if (!cubit.canSearch) return _list(context, cubit, state);
         return Column(
           children: [
-            _SearchField(onChanged: cubit.searchTyped, onClear: cubit.clearSearch, tooShort: state.searchTooShort),
+            _SearchField(
+              onChanged: cubit.searchTyped,
+              onSubmitted: cubit.searchNow,
+              onClear: cubit.clearSearch,
+              tooShort: state.searchTooShort,
+            ),
             Expanded(child: state.searching ? _results(context, cubit, state) : _list(context, cubit, state)),
           ],
         );
@@ -52,7 +57,7 @@ class _AssignedView extends StatelessWidget {
   /// the toggles are hidden while searching.
   Widget _results(BuildContext context, AssignedCubit cubit, AssignedState state) {
     if (state.status == AssignedStatus.failure) {
-      return ErrorView(message: state.error!, onRetry: cubit.load);
+      return ErrorView(message: state.error ?? CoreTexts.unexpectedError, onRetry: cubit.load);
     }
     if (state.results.isEmpty) {
       return state.status == AssignedStatus.loading
@@ -86,97 +91,95 @@ class _AssignedView extends StatelessWidget {
   }
 
   Widget _list(BuildContext context, AssignedCubit cubit, AssignedState state) {
-    {
-      {
-        final selector = _SortSelector(
-          sort: state.sort,
-          onChanged: cubit.sortBy,
-          showCompleted: cubit.canShowCompleted ? state.showCompleted : null,
-          onShowCompleted: cubit.showCompleted,
-        );
-        if (state.items.isEmpty) {
-          return switch (state.status) {
-            AssignedStatus.loading => const LoadingView(),
-            AssignedStatus.failure => ErrorView(message: state.error!, onRetry: cubit.load),
-            AssignedStatus.success => RefreshIndicator(
-              onRefresh: cubit.refresh,
-              child: ListView(
-                padding: cubit.canShowCompleted ? const EdgeInsets.all(12) : null,
-                children: [
-                  // Sales can still turn on the completed ones when nothing is open.
-                  if (cubit.canShowCompleted) selector,
-                  SizedBox(
-                    height: 200,
-                    child: EmptyView(
-                      message: state.showCompleted ? CourierTexts.noRemittances : CourierTexts.noAssigned,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          };
-        }
-        return RefreshIndicator(
+    final selector = _SortSelector(
+      sort: state.sort,
+      onChanged: cubit.sortBy,
+      showCompleted: cubit.canShowCompleted ? state.showCompleted : null,
+      onShowCompleted: cubit.showCompleted,
+    );
+    if (state.items.isEmpty) {
+      return switch (state.status) {
+        AssignedStatus.loading => const LoadingView(),
+        AssignedStatus.failure => ErrorView(message: state.error!, onRetry: cubit.load),
+        AssignedStatus.success => RefreshIndicator(
           onRefresh: cubit.refresh,
-          child: ListView.separated(
-            // Room at the end so «Nueva remesa» never covers the last card or «Ver más».
-            padding: EdgeInsets.fromLTRB(12, 12, 12, context.canDo(Permissions.remittancesCreate) ? 88 : 12),
-            itemCount: state.items.length + (state.moreCompleted ? 2 : 1),
-            separatorBuilder: (_, _) => const SizedBox(height: 8),
-            itemBuilder: (context, index) {
-              if (index == 0) return selector;
-              if (index > state.items.length) {
-                return Center(
-                  child: TextButton(
-                    onPressed: state.status == AssignedStatus.loading ? null : cubit.moreCompleted,
-                    child: const Text(CourierTexts.showMore),
-                  ),
-                );
-              }
-              final remittance = state.items[index - 1];
-              // The courier's completed block starts with a heading (REQ-017).
-              final startsCompleted =
-                  cubit.completedAreLatest &&
-                  remittance.isCompleted &&
-                  (index == 1 || !state.items[index - 2].isCompleted);
-              final card = _Swipeable(
-                remittance: remittance,
-                child: _AssignedCard(
-                  remittance: remittance,
-                  unsent: state.pendingIds.contains(remittance.id),
-                  onTap: () async {
-                    // Reload on return: the remittance may have been completed or postponed.
-                    await context.push(Routes.remittance(remittance.id));
-                    await cubit.load();
-                  },
-                ),
-              );
-              if (!startsCompleted) return card;
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(4, 8, 4, 8),
-                    child: Text(
-                      CourierTexts.latestCompleted(OfflineStore.maxCompleted),
-                      style: Theme.of(context).textTheme.titleSmall,
-                    ),
-                  ),
-                  card,
-                ],
-              );
-            },
+          child: ListView(
+            padding: cubit.canShowCompleted ? const EdgeInsets.all(12) : null,
+            children: [
+              // Sales can still turn on the completed ones when nothing is open.
+              if (cubit.canShowCompleted) selector,
+              SizedBox(
+                height: 200,
+                child: EmptyView(message: state.showCompleted ? CourierTexts.noRemittances : CourierTexts.noAssigned),
+              ),
+            ],
           ),
-        );
-      }
+        ),
+      };
     }
+    return RefreshIndicator(
+      onRefresh: cubit.refresh,
+      child: ListView.separated(
+        // Room at the end so «Nueva remesa» never covers the last card or «Ver más».
+        padding: EdgeInsets.fromLTRB(12, 12, 12, context.canDo(Permissions.remittancesCreate) ? 88 : 12),
+        itemCount: state.items.length + (state.moreCompleted ? 2 : 1),
+        separatorBuilder: (_, _) => const SizedBox(height: 8),
+        itemBuilder: (context, index) {
+          if (index == 0) return selector;
+          if (index > state.items.length) {
+            return Center(
+              child: TextButton(
+                onPressed: state.status == AssignedStatus.loading ? null : cubit.moreCompleted,
+                child: const Text(CourierTexts.showMore),
+              ),
+            );
+          }
+          final remittance = state.items[index - 1];
+          // The courier's completed block starts with a heading (REQ-017).
+          final startsCompleted =
+              cubit.completedAreLatest && remittance.isCompleted && (index == 1 || !state.items[index - 2].isCompleted);
+          final card = _Swipeable(
+            remittance: remittance,
+            child: _AssignedCard(
+              remittance: remittance,
+              unsent: state.pendingIds.contains(remittance.id),
+              onTap: () async {
+                // Reload on return: the remittance may have been completed or postponed.
+                await context.push(Routes.remittance(remittance.id));
+                await cubit.load();
+              },
+            ),
+          );
+          if (!startsCompleted) return card;
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(4, 8, 4, 8),
+                child: Text(
+                  CourierTexts.latestCompleted(OfflineStore.maxCompleted),
+                  style: Theme.of(context).textTheme.titleSmall,
+                ),
+              ),
+              card,
+            ],
+          );
+        },
+      ),
+    );
   }
 }
 
 class _SearchField extends StatefulWidget {
-  const _SearchField({required this.onChanged, required this.onClear, required this.tooShort});
+  const _SearchField({
+    required this.onChanged,
+    required this.onSubmitted,
+    required this.onClear,
+    required this.tooShort,
+  });
 
   final ValueChanged<String> onChanged;
+  final VoidCallback onSubmitted;
   final VoidCallback onClear;
   final bool tooShort;
 
@@ -200,6 +203,10 @@ class _SearchFieldState extends State<_SearchField> {
       child: TextField(
         controller: _controller,
         textInputAction: TextInputAction.search,
+        // Names and phones of customers: no keyboard suggestions or learning.
+        enableSuggestions: false,
+        autocorrect: false,
+        onSubmitted: (_) => widget.onSubmitted(),
         onChanged: (text) {
           setState(() {});
           widget.onChanged(text);

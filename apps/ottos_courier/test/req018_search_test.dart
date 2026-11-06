@@ -273,6 +273,22 @@ void main() {
       expect(find.byType(ChoiceChip), findsWidgets);
     });
 
+    testWidgets('after a failed search, editing the text does not crash and searches again', (tester) async {
+      await pump(tester);
+      when(() => source.search('jose', page: 0)).thenThrow(const ApiException('Falló', statusCode: 500));
+      await type(tester, 'jose');
+      expect(find.text('Falló'), findsOneWidget);
+
+      when(() => source.search('jose perez', page: 0)).thenAnswer((_) async => _page(['OT-9']));
+      await tester.enterText(find.byType(TextField), 'jose perez');
+      await tester.pump();
+      expect(tester.takeException(), isNull);
+      await tester.pump(_debounce);
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      expect(find.text('José OT-9'), findsOneWidget);
+    });
+
     testWidgets('a source that cannot search (courier) shows no search field', (tester) async {
       await pump(tester, canSearch: false);
 

@@ -89,22 +89,27 @@ final class AssignedState extends Equatable {
     bool? moreResults,
     bool? searchOffline,
     String? error,
-  }) => AssignedState(
-    status: status ?? this.status,
-    items: sorted(items ?? this.items, sort ?? this.sort),
-    sort: sort ?? this.sort,
-    showCompleted: showCompleted ?? this.showCompleted,
-    completedPages: completedPages ?? this.completedPages,
-    moreCompleted: moreCompleted ?? this.moreCompleted,
-    pendingIds: pendingIds ?? this.pendingIds,
-    typed: typed ?? this.typed,
-    query: clearQuery ? null : query ?? this.query,
-    results: results ?? this.results,
-    searchPages: searchPages ?? this.searchPages,
-    moreResults: moreResults ?? this.moreResults,
-    searchOffline: searchOffline ?? this.searchOffline,
-    error: error,
-  );
+  }) {
+    final next = status ?? this.status;
+    return AssignedState(
+      status: next,
+      items: sorted(items ?? this.items, sort ?? this.sort),
+      sort: sort ?? this.sort,
+      showCompleted: showCompleted ?? this.showCompleted,
+      completedPages: completedPages ?? this.completedPages,
+      moreCompleted: moreCompleted ?? this.moreCompleted,
+      pendingIds: pendingIds ?? this.pendingIds,
+      typed: typed ?? this.typed,
+      query: clearQuery ? null : query ?? this.query,
+      results: results ?? this.results,
+      searchPages: searchPages ?? this.searchPages,
+      moreResults: moreResults ?? this.moreResults,
+      searchOffline: searchOffline ?? this.searchOffline,
+      // Error and status go together: kept while the status stays failure
+      // (typing does not hide it) and dropped with any other status.
+      error: next == AssignedStatus.failure ? (error ?? this.error) : null,
+    );
+  }
 
   /// [items] in the order of [sort]; ties by expected date, then code. Completed
   /// ones go after the open ones, the latest first.
@@ -230,8 +235,16 @@ class AssignedCubit extends Cubit<AssignedState> {
   /// Empties the search and goes back to the list.
   void clearSearch() {
     _timer?.cancel();
+    // A search still in flight must not bring the results back.
+    _searchToken++;
     emit(state.copyWith(typed: '', clearQuery: true, results: const [], searchOffline: false));
     unawaited(load());
+  }
+
+  /// Enter: searches at once, without waiting for [searchDelay].
+  Future<void> searchNow() {
+    _timer?.cancel();
+    return _applySearch();
   }
 
   Future<void> _applySearch() async {
@@ -243,37 +256,49 @@ class AssignedCubit extends Cubit<AssignedState> {
     await _loadSearch();
   }
 
-  /// The next page of results («Ver más»).
+  /// The next page of results («Ver más»): only that page is asked for.
   Future<void> moreSearch() async {
-    if (_loadingMore) return;
-    _loadingMore = true;
-    emit(state.copyWith(searchPages: state.searchPages + 1));
+    if (_loadingMoreSearch || !state.moreResults) return;
+    _loadingMoreSearch = true;
     try {
-      await _loadSearch();
+      await _loadSearch(from: state.searchPages, append: true);
     } finally {
-      _loadingMore = false;
+      _loadingMoreSearch = false;
     }
   }
 
+  bool _loadingMoreSearch = false;
   int _searchToken = 0;
 
-  Future<void> _loadSearch() async {
+  /// Loads the pages of the search from page [from] up to the last one shown
+  /// (or just [from] when [append]ing the next one).
+  Future<void> _loadSearch({int from = 0, bool append = false}) async {
     final query = state.query!;
     final token = ++_searchToken;
+    final last = append ? from : state.searchPages - 1;
     emit(state.copyWith(status: AssignedStatus.loading, searchOffline: false));
     try {
-      final results = <Remittance>[];
+      final results = <Remittance>[if (append) ...state.results];
       var more = false;
-      for (var page = 0; page < state.searchPages; page++) {
+      var loaded = from;
+      for (var page = from; page <= last; page++) {
         final result = await _source.search(query, page: page);
         // Pages are by number, so a row can move to the next one: drop repeats.
         final seen = {for (final remittance in results) remittance.id};
         results.addAll(result.items.where((remittance) => !seen.contains(remittance.id)));
         more = page + 1 < result.totalPages;
+        loaded = page + 1;
         if (!more) break;
       }
       if (isClosed || token != _searchToken) return;
-      emit(state.copyWith(status: AssignedStatus.success, results: results, moreResults: more));
+      emit(
+        state.copyWith(
+          status: AssignedStatus.success,
+          results: results,
+          moreResults: more,
+          searchPages: loaded < 1 ? 1 : loaded,
+        ),
+      );
     } on ApiException catch (error) {
       if (isClosed || token != _searchToken) return;
       // No status code and no error code: the request never reached the server.
@@ -305,17 +330,17 @@ class AssignedCubit extends Cubit<AssignedState> {
 
   /// The next page of completed ones («Ver más»).
   Future<void> moreCompleted() async {
-    if (_loadingMore) return;
-    _loadingMore = true;
+    if (_loadingMoreCompleted) return;
+    _loadingMoreCompleted = true;
     emit(state.copyWith(completedPages: state.completedPages + 1));
     try {
       await load();
     } finally {
-      _loadingMore = false;
+      _loadingMoreCompleted = false;
     }
   }
 
-  bool _loadingMore = false;
+  bool _loadingMoreCompleted = false;
 
   /// Completes a remittance, checking [pin] when one was typed.
   Future<ActionOutcome> complete(Remittance remittance, {String? pin, String? note}) =>
