@@ -31,7 +31,11 @@ void main() {
   setUpAll(sqfliteFfiInit);
 
   setUp(() async {
-    store = await OfflineStore.open(path: inMemoryDatabasePath, factory: databaseFactoryFfiNoIsolate);
+    store = await OfflineStore.open(
+      path: inMemoryDatabasePath,
+      factory: databaseFactoryFfiNoIsolate,
+      now: () => DateTime.utc(2026, 11, 5, 13),
+    );
     await store.useFor('u1');
   });
 
@@ -227,13 +231,120 @@ void main() {
       );
       await old.close();
 
-      final upgraded = await OfflineStore.open(path: path, factory: databaseFactoryFfiNoIsolate);
+      final upgraded = await OfflineStore.open(
+        path: path,
+        factory: databaseFactoryFfiNoIsolate,
+        now: () => DateTime.utc(2026, 11, 5, 13),
+      );
       addTearDown(upgraded.close);
 
       expect((await upgraded.remittances()).single['id'], 'a');
       expect(await upgraded.completed(), isEmpty);
       await upgraded.applyState(SyncState(serverTime: 't1', full: false, completed: _doneList(2)));
       expect(await upgraded.completed(), hasLength(2));
+    });
+  });
+
+  group('REQ-017 SEC-32 SEC-33: stored completed ones expire after 7 days', () {
+    final now = DateTime.utc(2026, 11, 5, 13);
+    final cutoff = now.subtract(OfflineStore.maxCompletedAge);
+
+    Future<OfflineStore> openAt(DateTime Function() clock) async {
+      final other = await OfflineStore.open(
+        path: inMemoryDatabasePath,
+        factory: databaseFactoryFfiNoIsolate,
+        now: clock,
+      );
+      addTearDown(other.close);
+      return other;
+    }
+
+    test('the age limit is 7 days', () => expect(OfflineStore.maxCompletedAge, const Duration(days: 7)));
+
+    test('reading deletes the older ones, the list and one by id', () async {
+      var clock = now;
+      final aging = await openAt(() => clock);
+      await aging.applyState(SyncState(serverTime: 't1', full: true, completed: [_done('x', now)]));
+      expect(await aging.completedRemittance('x'), isNotNull);
+
+      clock = now.add(const Duration(days: 7, seconds: 1));
+
+      expect(await aging.completedRemittance('x'), isNull);
+      expect(await aging.completed(), isEmpty);
+    });
+
+    test('exactly 7 days stays; one second more goes', () async {
+      var clock = now;
+      final aging = await openAt(() => clock);
+      await aging.applyState(SyncState(serverTime: 't1', full: true, completed: [_done('x', now)]));
+
+      clock = now.add(const Duration(days: 7));
+      expect((await aging.completed()).map((r) => r['id']), ['x']);
+
+      clock = now.add(const Duration(days: 7, seconds: 1));
+      expect(await aging.completed(), isEmpty);
+    });
+
+    test('applyState drops the ones that arrive older than 7 days and keeps the rest', () async {
+      await store.applyState(
+        SyncState(
+          serverTime: 't1',
+          full: true,
+          completed: [
+            _done('old', cutoff.subtract(const Duration(seconds: 1))),
+            _done('edge', cutoff),
+            _done('recent', now.subtract(const Duration(days: 2))),
+          ],
+        ),
+      );
+
+      expect((await store.completed()).map((r) => r['id']), ['recent', 'edge']);
+    });
+
+    test('applyState without a completed list still expires the stored ones', () async {
+      var clock = now;
+      final aging = await openAt(() => clock);
+      await aging.applyState(SyncState(serverTime: 't1', full: true, completed: [_done('x', now)]));
+
+      clock = now.add(const Duration(days: 8));
+      await aging.applyState(const SyncState(serverTime: 't2', full: false));
+
+      expect(await aging.completed(), isEmpty);
+    });
+
+    test('putCompleted drops an old one, keeps a recent one', () async {
+      await store.putCompleted(_done('old', now.subtract(const Duration(days: 8))));
+      await store.putCompleted(_done('recent', now.subtract(const Duration(days: 6))));
+
+      expect((await store.completed()).map((r) => r['id']), ['recent']);
+    });
+
+    test('one without a known completed date counts as old', () async {
+      await store.putCompleted({..._remittance('none', status: 'DELIVERED')});
+      await store.putCompleted({..._done('bad', now), 'completedAt': 'not a date'});
+
+      expect(await store.completed(), isEmpty);
+    });
+
+    test('the cap of 20 still applies inside the 7 days', () async {
+      await store.applyState(SyncState(serverTime: 't1', full: true, completed: _doneList(25)));
+
+      expect(await store.completed(), hasLength(20));
+    });
+
+    test('open remittances and unsent actions are never touched', () async {
+      var clock = now;
+      final aging = await openAt(() => clock);
+      await aging.useFor('u1');
+      await aging.applyState(SyncState(serverTime: 't1', full: true, remittances: [_remittance('a')]));
+      await aging.enqueue(_action('a'));
+
+      clock = now.add(const Duration(days: 30));
+      await aging.completed();
+      await aging.applyState(const SyncState(serverTime: 't2', full: false));
+
+      expect((await aging.remittances()).single['id'], 'a');
+      expect(await aging.pending(), hasLength(1));
     });
   });
 }

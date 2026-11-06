@@ -19,19 +19,24 @@ class RejectedAction {
 /// completed, the cash, the workflow, and the queue of actions waiting to be
 /// sent.
 class OfflineStore {
-  OfflineStore._(this._db);
+  OfflineStore._(this._db, this._now);
 
   final Database _db;
+  final DateTime Function() _now;
 
   /// 2: the `completed` table (REQ-017).
   static const _version = 2;
 
   /// How many completed remittances the phone keeps (REQ-017 BR-1).
   static const maxCompleted = 20;
+
+  /// How old a completed remittance may get on the phone: older ones are
+  /// deleted when the list is read and when the phone syncs (REQ-017 BR-1).
+  static const maxCompletedAge = Duration(days: 7);
   static const _fileName = 'ottos_offline.db';
 
   /// Opens the store of the app ([path] for tests, e.g. `inMemoryDatabasePath`).
-  static Future<OfflineStore> open({String? path, DatabaseFactory? factory}) async {
+  static Future<OfflineStore> open({String? path, DatabaseFactory? factory, DateTime Function()? now}) async {
     final dbFactory = factory ?? databaseFactory;
     final dbPath = path ?? await offlineDatabasePath(dbFactory, _fileName);
     final db = await dbFactory.openDatabase(
@@ -45,7 +50,7 @@ class OfflineStore {
         },
       ),
     );
-    return OfflineStore._(db);
+    return OfflineStore._(db, now ?? DateTime.now);
   }
 
   static Future<void> _create(Database db) async {
@@ -102,6 +107,7 @@ class OfflineStore {
       }
       await _trimCompleted(txn);
     }
+    await _expireCompleted(txn);
     await _set(txn, _serverTime, state.serverTime);
     if (state.cash != null) await _set(txn, _cash, jsonEncode(state.cash));
     if (state.workflow != null) await _set(txn, _workflow, jsonEncode(state.workflow));
@@ -121,22 +127,39 @@ class OfflineStore {
   // Completed remittances (REQ-017)
 
   /// The latest completed ones, newest first; at most [maxCompleted].
-  Future<List<Map<String, dynamic>>> completed() async => [
-    for (final row in await _db.query('completed', orderBy: 'completed_at DESC, id', limit: maxCompleted))
-      jsonDecode(row['json']! as String) as Map<String, dynamic>,
-  ];
+  Future<List<Map<String, dynamic>>> completed() => _db.transaction((txn) async {
+    await _expireCompleted(txn);
+    return [
+      for (final row in await txn.query('completed', orderBy: 'completed_at DESC, id', limit: maxCompleted))
+        jsonDecode(row['json']! as String) as Map<String, dynamic>,
+    ];
+  });
 
-  Future<Map<String, dynamic>?> completedRemittance(String id) async {
-    final rows = await _db.query('completed', where: 'id = ?', whereArgs: [id]);
+  Future<Map<String, dynamic>?> completedRemittance(String id) => _db.transaction((txn) async {
+    await _expireCompleted(txn);
+    final rows = await txn.query('completed', where: 'id = ?', whereArgs: [id]);
     return rows.isEmpty ? null : jsonDecode(rows.single['json']! as String) as Map<String, dynamic>;
-  }
+  });
 
   /// One just completed, as the server returned it, until the next download
   /// brings the whole list; the oldest beyond [maxCompleted] leave (BR-1).
   Future<void> putCompleted(Map<String, dynamic> json) => _db.transaction((txn) async {
     await _putCompleted(txn, json);
     await _trimCompleted(txn);
+    await _expireCompleted(txn);
   });
+
+  /// Deletes the stored completed ones older than [maxCompletedAge]; one with
+  /// no known completed_at counts as old. Unsent completions are not rows here.
+  Future<void> _expireCompleted(DatabaseExecutor db) => db.delete(
+    'completed',
+    where: "completed_at = '' OR completed_at < ?",
+    whereArgs: [_isoMillis(_now().subtract(maxCompletedAge))],
+  );
+
+  /// UTC ISO 8601 to the millisecond, so text order is time order.
+  static String _isoMillis(DateTime at) =>
+      DateTime.fromMillisecondsSinceEpoch(at.millisecondsSinceEpoch, isUtc: true).toIso8601String();
 
   /// Keeps only the [maxCompleted] most recent.
   static Future<void> _trimCompleted(DatabaseExecutor db) => db.rawDelete(
@@ -148,7 +171,7 @@ class OfflineStore {
   static Future<void> _putCompleted(DatabaseExecutor db, Map<String, dynamic> json) => db.insert('completed', {
     'id': json['id'],
     'completed_at': switch (json['completedAt']) {
-      final String at => DateTime.tryParse(at)?.toUtc().toIso8601String() ?? '',
+      final String at when DateTime.tryParse(at) != null => _isoMillis(DateTime.parse(at)),
       _ => '',
     },
     'json': jsonEncode(json),

@@ -45,7 +45,11 @@ void main() {
   });
 
   setUp(() async {
-    store = await OfflineStore.open(path: inMemoryDatabasePath, factory: databaseFactoryFfiNoIsolate);
+    store = await OfflineStore.open(
+      path: inMemoryDatabasePath,
+      factory: databaseFactoryFfiNoIsolate,
+      now: () => DateTime.utc(2026, 11, 5, 13),
+    );
     server = _MockSync();
     when(() => server.state(since: any(named: 'since'))).thenAnswer(
       (_) async => SyncState(
@@ -85,7 +89,7 @@ void main() {
         (action) => SyncResult(
           id: action.id,
           status: SyncResultStatus.applied,
-          remittance: _json('a', status: 'DELIVERED', completedAt: '2026-10-10T10:00:00Z'),
+          remittance: _json('a', status: 'DELIVERED', completedAt: '2026-11-05T10:00:00Z'),
         ),
       );
     });
@@ -142,7 +146,7 @@ void main() {
           SyncResult(
             id: sent[1].id,
             status: SyncResultStatus.applied,
-            remittance: _json('b', status: 'DELIVERED', completedAt: '2026-10-10T10:00:00Z'),
+            remittance: _json('b', status: 'DELIVERED', completedAt: '2026-11-05T10:00:00Z'),
           ),
         ],
       );
@@ -206,7 +210,7 @@ void main() {
           (action) => SyncResult(
             id: action.id,
             status: SyncResultStatus.applied,
-            remittance: _json('a', status: 'DELIVERED', completedAt: '2026-10-10T10:00:00Z'),
+            remittance: _json('a', status: 'DELIVERED', completedAt: '2026-11-05T10:00:00Z'),
           ),
         ),
       );
@@ -227,7 +231,7 @@ void main() {
           (action) => SyncResult(
             id: action.id,
             status: SyncResultStatus.applied,
-            remittance: _json('a', status: 'DELIVERED', completedAt: '2026-10-10T10:00:00Z'),
+            remittance: _json('a', status: 'DELIVERED', completedAt: '2026-11-05T10:00:00Z'),
           ),
         ),
       );
@@ -343,7 +347,7 @@ void main() {
           (action) => SyncResult(
             id: action.id,
             status: SyncResultStatus.applied,
-            remittance: _json('a', status: 'DELIVERED', completedAt: '2026-10-10T10:00:00Z'),
+            remittance: _json('a', status: 'DELIVERED', completedAt: '2026-11-05T10:00:00Z'),
           ),
         ),
       );
@@ -363,7 +367,7 @@ void main() {
             id: action.id,
             status: SyncResultStatus.applied,
             remittance: {
-              ..._json('a', status: 'DELIVERED', completedAt: '2026-10-10T10:00:00Z'),
+              ..._json('a', status: 'DELIVERED', completedAt: '2026-11-05T10:00:00Z'),
               'voided': {'reason': 'Error'},
             },
           ),

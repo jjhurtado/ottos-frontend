@@ -54,7 +54,11 @@ void main() {
   });
 
   setUp(() async {
-    store = await OfflineStore.open(path: inMemoryDatabasePath, factory: databaseFactoryFfiNoIsolate);
+    store = await OfflineStore.open(
+      path: inMemoryDatabasePath,
+      factory: databaseFactoryFfiNoIsolate,
+      now: () => DateTime.utc(2026, 11, 5, 13),
+    );
     server = _MockSync();
     sync = SyncCubit(store: store, sync: server);
     source = OfflineSource(sync: sync);
@@ -85,6 +89,31 @@ void main() {
     expect(page.page, 0);
     expect(page.items.map((r) => r.id).toSet(), hasLength(20), reason: 'no repeats');
   });
+
+  test(
+    'SEC-32: stored ones older than 7 days are gone from the list and from get; an unsent one shows at any age',
+    () async {
+      await start(
+        open: [_open('a')],
+        completed: [_done('fresh', 60), _done('stale', 8 * 24 * 60), _done('edge', 7 * 24 * 60 - 60)],
+      );
+      await store.enqueue(
+        SyncAction(
+          id: 'act-a',
+          type: SyncActionType.deliver,
+          remittanceId: 'a',
+          occurredAt: _now.subtract(const Duration(days: 30)),
+        ),
+      );
+
+      final page = await source.completed();
+
+      expect(page.items.map((r) => r.id), ['a', 'fresh', 'edge']);
+      await expectLater(source.get('stale'), throwsA(isA<ApiException>()));
+      expect((await source.get('a')).id, 'a');
+      expect((await source.list()), isEmpty, reason: 'the open one is completed on the phone');
+    },
+  );
 
   test('AC-2.1: offline, the list is what the last sync left, newest first', () async {
     await start(open: [_open('a')], completed: [_done('x', 30), _done('y', 5), _done('z', 10)]);
