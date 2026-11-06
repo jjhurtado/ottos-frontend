@@ -83,6 +83,15 @@ class _SettingsCard extends StatelessWidget {
               label: OpsTexts.exchangeTolerance,
               value: OpsTexts.exchangeToleranceValue(Formatters.money(settings.exchangeRateTolerancePercent, null)),
             ),
+            Builder(
+              builder: (context) {
+                final zone = settings.businessTime ?? BusinessTime.zone;
+                return InfoRow(
+                  label: OpsTexts.businessTimeZone,
+                  value: OpsTexts.businessTimeZoneValue(zone.label, BusinessTime.clockText(BusinessTime.now(), zone)),
+                );
+              },
+            ),
             if (canWrite) ...[
               const SizedBox(height: 8),
               OutlinedButton.icon(

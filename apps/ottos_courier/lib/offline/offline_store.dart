@@ -123,6 +123,7 @@ class OfflineStore {
     await _set(txn, _serverTime, state.serverTime);
     if (state.cash != null) await _set(txn, _cash, jsonEncode(state.cash));
     if (state.workflow != null) await _set(txn, _workflow, jsonEncode(state.workflow));
+    if (state.businessTime != null) await _set(txn, _businessTime, jsonEncode(state.businessTime!.toJson()));
     await _set(txn, _lastSync, _now().toUtc().toIso8601String());
   });
 
@@ -205,6 +206,33 @@ class OfflineStore {
   static const _workflow = 'workflow';
   static const _lastSync = 'lastSync';
   static const _userId = 'userId';
+  static const _businessTime = 'businessTime';
+  static const _clockOffset = 'server_clock_offset_ms';
+  static const _clockOffsetSampledAt = 'server_clock_offset_sampled_at';
+
+  /// The last business time zone the server sent (REQ-006, AC-2.4).
+  Future<BusinessTimeZone?> businessTime() async {
+    final raw = await _get(_businessTime);
+    return raw == null ? null : BusinessTimeZone.fromJson(jsonDecode(raw));
+  }
+
+  /// Server minus phone clock at the last answer, for a start without network (AC-3.2).
+  Future<Duration?> clockOffset() async {
+    final raw = await _get(_clockOffset);
+    final ms = raw == null ? null : int.tryParse(raw);
+    return ms == null ? null : Duration(milliseconds: ms);
+  }
+
+  /// When [clockOffset] was measured, on the phone's clock (UTC).
+  Future<DateTime?> clockOffsetSampledAt() async {
+    final raw = await _get(_clockOffsetSampledAt);
+    return raw == null ? null : DateTime.tryParse(raw);
+  }
+
+  Future<void> saveClockOffset(Duration offset, DateTime sampledAt) => _db.transaction((txn) async {
+    await _set(txn, _clockOffset, '${offset.inMilliseconds}');
+    await _set(txn, _clockOffsetSampledAt, sampledAt.toUtc().toIso8601String());
+  });
 
   /// The `since` of the next download.
   Future<String?> serverTime() => _get(_serverTime);
@@ -222,7 +250,8 @@ class OfflineStore {
   /// When the last download finished, on this phone's clock.
   Future<DateTime?> lastSync() async {
     final raw = await _get(_lastSync);
-    return raw == null ? null : DateTime.parse(raw).toLocal();
+    // An instant (UTC): shown in the business time zone, not the phone's (CR-3).
+    return raw == null ? null : DateTime.parse(raw);
   }
 
   /// Empties the store when another user logs in on this phone. Their queue

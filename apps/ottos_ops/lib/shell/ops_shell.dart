@@ -5,6 +5,7 @@ import 'package:ottos_core/ottos_core.dart';
 
 import '../app/destinations.dart';
 import '../app/ops_texts.dart';
+import '../features/business_time/business_time_cubit.dart';
 
 /// Frame of the panel: side navigation with the sections the user may see.
 /// A rail on wide screens, a drawer on narrow ones.
@@ -17,7 +18,10 @@ class OpsShell extends StatelessWidget {
   static const _wideBreakpoint = 900.0;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) =>
+      _BusinessTimeRefresher(section: Destinations.forLocation(location)?.path, child: _build(context));
+
+  Widget _build(BuildContext context) {
     final user = context.select((AuthBloc bloc) => bloc.state.user);
     if (user == null) return const SizedBox.shrink();
     final destinations = Destinations.all.where((destination) => destination.isVisibleTo(user)).toList();
@@ -129,4 +133,46 @@ class _UserMenu extends StatelessWidget {
       child: CircleAvatar(backgroundColor: OttosColors.cream, foregroundColor: OttosColors.navy, child: Text(initial)),
     );
   }
+}
+
+/// Asks the server for the business time zone when the panel opens, when the
+/// tab comes back to the front and when the user opens another section, so
+/// an open panel follows a change without a reload (REQ-006, AC-2.3). A
+/// server without the operation keeps the zone in use.
+class _BusinessTimeRefresher extends StatefulWidget {
+  const _BusinessTimeRefresher({required this.section, required this.child});
+
+  final String? section;
+  final Widget child;
+
+  @override
+  State<_BusinessTimeRefresher> createState() => _BusinessTimeRefresherState();
+}
+
+class _BusinessTimeRefresherState extends State<_BusinessTimeRefresher> {
+  late final AppLifecycleListener _lifecycle = AppLifecycleListener(onResume: _refresh);
+
+  @override
+  void initState() {
+    super.initState();
+    _lifecycle;
+    _refresh();
+  }
+
+  @override
+  void didUpdateWidget(_BusinessTimeRefresher oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.section != widget.section) _refresh();
+  }
+
+  @override
+  void dispose() {
+    _lifecycle.dispose();
+    super.dispose();
+  }
+
+  void _refresh() => context.read<BusinessTimeCubit>().refresh();
+
+  @override
+  Widget build(BuildContext context) => widget.child;
 }

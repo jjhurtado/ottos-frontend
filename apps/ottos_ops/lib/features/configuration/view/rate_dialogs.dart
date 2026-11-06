@@ -126,6 +126,7 @@ Future<FeeRule?> showNewFeeRuleDialog(BuildContext context, Corridor corridor, R
 /// Changes the business settings; returns them as saved, or null if cancelled.
 Future<Settings?> showSettingsDialog(BuildContext context, Settings settings) {
   final rates = context.read<RateRepository>();
+  final current = settings.businessTime ?? BusinessTime.zone;
   return showDialog<Settings>(
     context: context,
     barrierDismissible: false,
@@ -177,14 +178,80 @@ Future<Settings?> showSettingsDialog(BuildContext context, Settings settings) {
             return percent == null || percent <= 0 || percent > 1000 ? OpsTexts.exchangeToleranceRange : null;
           },
         ),
+        const SizedBox(height: 12),
+        _TimeZoneField(current: current, state: state),
       ],
-      save: (state) => rates.updateSettings(
-        minimumAmount: _parse(state.text('minimum')),
-        defaultDeliveryDays: int.parse(state.text('days')),
-        exchangeRateTolerancePercent: _parse(state.text('tolerance')),
-      ),
+      confirm: (state) async {
+        final chosen = state.values['zone'] as BusinessTimeZone? ?? current;
+        if (chosen == current) return true;
+        return await showDialog<bool>(
+              context: context,
+              builder: (context) => AlertDialog(
+                title: Text(OpsTexts.businessTimeZoneConfirmTitle(chosen.label)),
+                content: SizedBox(width: 440, child: Text(OpsTexts.businessTimeZoneConfirmBody(chosen.label))),
+                actions: [
+                  TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text(CoreTexts.cancel)),
+                  FilledButton(
+                    onPressed: () => Navigator.of(context).pop(true),
+                    child: const Text(OpsTexts.businessTimeZoneConfirm),
+                  ),
+                ],
+              ),
+            ) ??
+            false;
+      },
+      save: (state) {
+        final chosen = state.values['zone'] as BusinessTimeZone? ?? current;
+        return rates.updateSettings(
+          minimumAmount: _parse(state.text('minimum')),
+          defaultDeliveryDays: int.parse(state.text('days')),
+          exchangeRateTolerancePercent: _parse(state.text('tolerance')),
+          businessTimeZone: chosen == current ? null : chosen.timeZone,
+        );
+      },
     ),
   );
+}
+
+/// The business time zone: whole hours UTC−12 … UTC+14, the current one
+/// marked, and what time it would be with the one chosen (REQ-006).
+class _TimeZoneField extends StatelessWidget {
+  const _TimeZoneField({required this.current, required this.state});
+
+  final BusinessTimeZone current;
+  final _SaveDialogState<Settings> state;
+
+  @override
+  Widget build(BuildContext context) {
+    final chosen = state.values['zone'] as BusinessTimeZone? ?? current;
+    final options = [...BusinessTimeZone.wholeHours, if (!BusinessTimeZone.wholeHours.contains(current)) current]
+      ..sort((a, b) => a.offsetMinutes.compareTo(b.offsetMinutes));
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        DropdownButtonFormField<BusinessTimeZone>(
+          initialValue: chosen,
+          decoration: const InputDecoration(
+            labelText: OpsTexts.businessTimeZone,
+            helperText: OpsTexts.businessTimeZoneHint,
+          ),
+          items: [
+            for (final zone in options)
+              DropdownMenuItem(
+                value: zone,
+                child: Text(zone == current ? '${zone.label} · ${OpsTexts.businessTimeZoneCurrent}' : zone.label),
+              ),
+          ],
+          onChanged: state.saving ? null : (zone) => state.update(() => state.values['zone'] = zone),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          OpsTexts.businessTimeZonePreview(chosen.label, BusinessTime.clockText(BusinessTime.now(), chosen)),
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
+      ],
+    );
+  }
 }
 
 /// `410.0` → `410`, `0.1` → `0.1`: how a number is typed back into a field.
@@ -192,10 +259,13 @@ String _plain(double value) => value == value.roundToDouble() ? value.toStringAs
 
 /// A form dialog that saves through [save] and shows the API error inside it.
 class _SaveDialog<T> extends StatefulWidget {
-  const _SaveDialog({required this.title, required this.fieldsBuilder, required this.save, this.help});
+  const _SaveDialog({required this.title, required this.fieldsBuilder, required this.save, this.help, this.confirm});
 
   final String title;
   final String? help;
+
+  /// Asked after the form validates and before [save]; false stops it.
+  final Future<bool> Function(_SaveDialogState<T> state)? confirm;
   final List<Widget> Function(_SaveDialogState<T> state) fieldsBuilder;
   final Future<T> Function(_SaveDialogState<T> state) save;
 
@@ -214,6 +284,9 @@ class _SaveDialogState<T> extends State<_SaveDialog<T>> {
 
   String text(String key) => _controllers[key]?.text ?? '';
 
+  /// Values of fields that are not text, such as a dropdown.
+  final values = <String, Object?>{};
+
   void update(VoidCallback change) => setState(change);
 
   @override
@@ -226,6 +299,9 @@ class _SaveDialogState<T> extends State<_SaveDialog<T>> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
+    final confirm = widget.confirm;
+    if (confirm != null && !await confirm(this)) return;
+    if (!mounted) return;
     setState(() {
       saving = true;
       _error = null;

@@ -127,7 +127,7 @@ void main() {
       expect(rows.first.take(2), ['Beneficiario', 'Código']);
     });
 
-    test('dates in Cuba time, decimal commas and the void reason as typed', () {
+    test('dates in business time, decimal commas and the void reason as typed', () {
       final first = rows[1];
       expect(first[1], 'OT-K7Q2MA');
       // 16:30 UTC in October is 12:30 in Havana (UTC−4).

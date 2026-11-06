@@ -13,7 +13,7 @@ class AuditFilter extends Equatable {
   final String? action;
   final String? actorId;
 
-  /// Days, both included (Cuba time on the server).
+  /// Days, both included (business time on the server).
   final DateTime? from;
   final DateTime? to;
 

@@ -114,6 +114,13 @@ class SyncCubit extends Cubit<SyncStatus> {
       final known = {for (final json in await _store.remittances()) json['id']};
       final downloaded = await _sync.state(since: since);
       await _store.applyState(downloaded);
+      // REQ-006: the business time zone and the server's clock of this answer.
+      BusinessTime.setZone(downloaded.businessTime);
+      final serverTime = DateTime.tryParse(downloaded.serverTime);
+      if (serverTime != null) BusinessTime.serverTimeReceived(serverTime);
+      final offset = BusinessTime.clockOffset;
+      final sampledAt = BusinessTime.clockOffsetSampledAt;
+      if (offset != null && sampledAt != null) await _store.saveClockOffset(offset, sampledAt);
       final arrived = [
         for (final json in downloaded.remittances)
           if (!known.contains(json['id'])) Remittance.fromJson(json),
@@ -215,7 +222,7 @@ class SyncCubit extends Cubit<SyncStatus> {
     SyncAction(
       id: SyncRepository.newActionId(),
       type: SyncActionType.cashExchange,
-      occurredAt: DateTime.now(),
+      occurredAt: BusinessTime.now(),
       payload: input.toJson(),
     ),
   );

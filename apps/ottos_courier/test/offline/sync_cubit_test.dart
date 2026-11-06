@@ -75,6 +75,41 @@ void main() {
   SyncResponse answer(List<SyncAction> actions, SyncResult Function(SyncAction action) result) =>
       SyncResponse(serverTime: 't2', results: [for (final action in actions) result(action)]);
 
+  group('business time (REQ-006)', () {
+    tearDown(BusinessTime.reset);
+
+    test('AC-2.4 AC-3.1: a sync keeps the zone and the clock difference on the phone', () async {
+      BusinessTime.setForTest(deviceClock: () => DateTime.utc(2026, 11, 5, 18));
+      when(() => server.state(since: any(named: 'since'))).thenAnswer(
+        (_) async => const SyncState(
+          serverTime: '2026-11-05T18:10:00Z',
+          full: false,
+          businessTime: BusinessTimeZone(timeZone: 'UTC-05:00', offsetMinutes: -300),
+        ),
+      );
+
+      await sync.sync();
+
+      expect(BusinessTime.zone.offsetMinutes, -300);
+      expect((await store.businessTime())?.offsetMinutes, -300);
+      expect(await store.clockOffset(), const Duration(minutes: 10));
+    });
+
+    test('AC-3.1: an action done offline takes the server time, not the phone time', () async {
+      var elapsed = Duration.zero;
+      BusinessTime.setForTest(deviceClock: () => DateTime.utc(2026, 11, 5, 18), elapsed: () => elapsed);
+      when(() => server.state(since: any(named: 'since')))
+          .thenAnswer((_) async => const SyncState(serverTime: '2026-11-05T18:10:00Z', full: false));
+      await sync.sync();
+      when(() => server.send(any())).thenThrow(_offline);
+      elapsed = const Duration(minutes: 2);
+
+      await source.deliver(_remittance('a'), pin: '123456');
+
+      expect((await store.pending()).single.occurredAt, DateTime.utc(2026, 11, 5, 18, 12));
+    });
+  });
+
   test('starts with the remittances downloaded', () async {
     expect((await source.list()).map((r) => r.id), unorderedEquals(['a', 'b']));
     expect(sync.state.lastSync, isNotNull);

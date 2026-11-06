@@ -6,7 +6,7 @@ import 'package:pdf/widgets.dart' as pw;
 import '../l10n/core_texts.dart';
 import '../models/monthly_report.dart';
 import '../models/report_detail.dart';
-import '../utils/cuba_time.dart';
+import '../utils/business_time.dart';
 import '../utils/formatters.dart';
 import 'report_texts.dart';
 import 'report_totals.dart';
@@ -191,7 +191,7 @@ Future<Uint8List> buildMonthlyReportPdf(MonthlyReport report, {required DateTime
     title: pdfSafe('${ReportTexts.monthlyReport} ${ReportTexts.monthTitle(month)}'),
     author: ReportTexts.brand,
   );
-  final generated = Formatters.dateTime(report.generatedAt ?? now ?? DateTime.now());
+  final generated = Formatters.dateTime(report.generatedAt ?? now ?? BusinessTime.now());
   final period = ReportTexts.reportPeriod(
     Formatters.date(report.from),
     Formatters.date(report.to),
@@ -398,7 +398,7 @@ Future<Uint8List> buildMonthlyDetailPdf(
 }) {
   final title = ReportTexts.monthTitle(month);
   final document = pw.Document(title: pdfSafe('${ReportTexts.detailTitle} $title'), author: ReportTexts.brand);
-  final generated = CubaTime.dateTime(detail.generatedAt ?? report.generatedAt ?? now ?? DateTime.now());
+  final generated = BusinessTime.dateTime(detail.generatedAt ?? report.generatedAt ?? now ?? BusinessTime.now());
   final rows = detail.remittances;
   final deliveries = [
     for (final row in rows)
@@ -415,7 +415,7 @@ Future<Uint8List> buildMonthlyDetailPdf(
   final deliveryTotals = ReportTotals.of(deliveries);
   final pickupTotals = ReportTotals.of(pickups);
   final currency = detail.businessCurrency;
-  String date(DateTime? instant) => instant == null ? '-' : CubaTime.shortDate(instant);
+  String date(DateTime? instant) => instant == null ? '-' : BusinessTime.shortDate(instant);
   String courier(ReportRemittance row) => row.completedFromBusiness ? ReportTexts.business : (row.courierName ?? '-');
 
   pw.Widget header(pw.Context context) => pw.Container(
@@ -448,7 +448,7 @@ Future<Uint8List> buildMonthlyDetailPdf(
             pw.Text(
               pdfSafe(
                 'Del ${Formatters.date(detail.from ?? report.from)} al ${Formatters.date(detail.to ?? report.to)} · '
-                'hora de Cuba · importes en $currency salvo que se indique',
+                'hora del negocio · importes en $currency salvo que se indique',
               ),
               style: const pw.TextStyle(fontSize: 8.5, color: _grey),
             ),

@@ -1,10 +1,12 @@
 import 'dart:async';
 
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 
 import '../auth/token_storage.dart';
 import '../config/app_config.dart';
 import '../models/app_version.dart';
+import '../utils/business_time.dart';
 import 'api_exception.dart';
 
 /// HTTP client for the Ottos API.
@@ -12,6 +14,8 @@ import 'api_exception.dart';
 /// Adds the access token to every request and, when the API answers 401,
 /// refreshes the token once and retries. If the refresh fails the session is
 /// cleared and [sessionExpired] emits, so the app can go back to login.
+///
+/// Every answer's `Date` header sets the server's clock in [BusinessTime].
 class ApiClient {
   ApiClient({required AppConfig config, required this._tokenStorage, Dio? dio}) : _dio = dio ?? Dio() {
     final app = config.app;
@@ -28,7 +32,9 @@ class ApiClient {
     // interceptor waits for its current error to finish, so an error from a
     // request sent while handling one would never be handled.
     _bareDio = Dio(_dio.options)..httpClientAdapter = _dio.httpClientAdapter;
-    _dio.interceptors.add(QueuedInterceptorsWrapper(onRequest: _onRequest, onError: _onError));
+    final serverClock = InterceptorsWrapper(onResponse: _onResponse, onError: _onAnyError);
+    _bareDio.interceptors.add(serverClock);
+    _dio.interceptors.addAll([serverClock, QueuedInterceptorsWrapper(onRequest: _onRequest, onError: _onError)]);
   }
 
   final Dio _dio;
@@ -73,6 +79,39 @@ class ApiClient {
       }
       throw ApiException.fromDio(error);
     }
+  }
+
+  /// The server's clock, from the `Date` header (AC-3.1): the panel is served
+  /// from the API's own origin and the app has no CORS, so it is readable.
+  static void _readServerTime(Response<dynamic>? response) {
+    final date = response?.headers.value('date');
+    final serverTime = date == null ? null : parseHttpDate(date);
+    if (serverTime != null) BusinessTime.serverTimeReceived(serverTime);
+  }
+
+  void _onResponse(Response<dynamic> response, ResponseInterceptorHandler handler) {
+    _readServerTime(response);
+    handler.next(response);
+  }
+
+  void _onAnyError(DioException error, ErrorInterceptorHandler handler) {
+    _readServerTime(error.response);
+    handler.next(error);
+  }
+
+  static const _months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+  /// An HTTP date, `Wed, 05 Nov 2026 18:32:10 GMT`, as a UTC instant; null if
+  /// it is not one (`dart:io`'s parser is not available on the web).
+  @visibleForTesting
+  static DateTime? parseHttpDate(String text) {
+    final match = RegExp(r'^[A-Za-z]{3}, (\d{2}) ([A-Za-z]{3}) (\d{4}) (\d{2}):(\d{2}):(\d{2}) GMT$')
+        .firstMatch(text.trim());
+    if (match == null) return null;
+    final month = _months.indexOf(match[2]!) + 1;
+    if (month == 0) return null;
+    int part(int index) => int.parse(match[index]!);
+    return DateTime.utc(part(3), month, part(1), part(4), part(5), part(6));
   }
 
   Future<void> _onRequest(RequestOptions options, RequestInterceptorHandler handler) async {

@@ -58,3 +58,13 @@ jobs:
           for p in packages/ottos_core apps/ottos_ops apps/ottos_courier; do
             (cd "$p" && flutter test --exclude-tags integration)
           done
+
+      # Business time (REQ-006, AC-2.6): the tests also pass on a machine in a far
+      # time zone, where the device date is already the next day.
+      - name: Test in another time zone
+        env:
+          TZ: Pacific/Kiritimati
+        run: |
+          for p in packages/ottos_core apps/ottos_ops apps/ottos_courier; do
+            (cd "$p" && flutter test --exclude-tags integration)
+          done
