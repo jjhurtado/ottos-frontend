@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../l10n/core_texts.dart';
 import '../models/remittance.dart';
 import '../utils/formatters.dart';
+import 'remittance_title.dart';
 
 /// Confirms a delivery (or pickup) by the business, saying what it does to the
 /// business's cash and the courier; the optional note, or null if cancelled.
@@ -33,7 +34,12 @@ class _CompleteFromBusinessDialogState extends State<_CompleteFromBusinessDialog
   Widget build(BuildContext context) {
     final remittance = widget.remittance;
     return AlertDialog(
-      title: Text(CoreTexts.byBusinessTitle(remittance.code, isPickup: remittance.isPickup)),
+      title: Text(
+        CoreTexts.byBusinessTitle(
+          remittanceLabel(remittance.beneficiaryName, remittance.code),
+          isPickup: remittance.isPickup,
+        ),
+      ),
       content: SizedBox(
         width: 460,
         child: Column(

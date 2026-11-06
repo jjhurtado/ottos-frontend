@@ -26,8 +26,13 @@ class HistoricalRemittancePage extends StatelessWidget {
       child: BlocListener<HistoricalRemittanceCubit, HistoricalRemittanceState>(
         listenWhen: (previous, current) => previous.created == null && current.created != null,
         listener: (context, state) {
-          ScaffoldMessenger.of(context)
-              .showSnackBar(SnackBar(content: Text(OpsTexts.historicalRegistered(state.created!.code))));
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                OpsTexts.historicalRegistered(remittanceLabel(state.created!.beneficiaryName, state.created!.code)),
+              ),
+            ),
+          );
           context.go(Routes.remittance(state.created!.id));
         },
         child: _HistoricalForm(now: now),

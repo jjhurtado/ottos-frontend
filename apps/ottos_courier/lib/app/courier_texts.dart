@@ -18,6 +18,7 @@ abstract final class CourierTexts {
   static String completedTitle(Remittance remittance) =>
       remittance.isPickup ? 'Recogida completada' : 'Remesa entregada';
   static String completedManyTitle(int count) => '$count remesas completadas';
+  static String andMore(String names, int rest) => '$names y $rest más';
   static const tapToSee = 'Toca para verlas';
 
   // Navigation
@@ -53,7 +54,7 @@ abstract final class CourierTexts {
   static const noCourier = 'Sin asignar';
   static const notesOptional = 'Notas (opcional)';
   static const register = 'Registrar';
-  static String registered(String code) => 'Remesa $code registrada';
+  static String registered(String label) => 'Remesa registrada: $label';
 
   // Cash of the couriers
   static const couriersCash = 'Efectivo de los repartidores';
@@ -70,6 +71,7 @@ abstract final class CourierTexts {
   static const toCollect = 'Recoger';
   static const delivered = 'Entregado';
   static const collected = 'Recogido';
+  static String completedAt(bool pickup, String when) => '${pickup ? 'Recogida' : 'Entregada'} el $when';
   static String dueOn(String date) => 'Para el $date';
   static String daysLate(int days) => days == 1 ? '1 día de atraso' : '$days días de atraso';
   static const sortByDay = 'Del día';

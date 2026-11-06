@@ -1,0 +1,33 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:ottos_core/ottos_core.dart';
+
+Widget _wrap(Widget child) => MaterialApp(home: Scaffold(body: child));
+
+void main() {
+  group('RemittanceTitle (REQ-019)', () {
+    testWidgets('the beneficiary as the title, the code small under it', (tester) async {
+      await tester.pumpWidget(_wrap(const RemittanceTitle(name: 'Rosa Pérez', code: 'OT-ABC123')));
+
+      final name = tester.widget<Text>(find.text('Rosa Pérez'));
+      final code = tester.widget<Text>(find.text('OT-ABC123'));
+      expect(tester.getTopLeft(find.text('OT-ABC123')).dy, greaterThan(tester.getTopLeft(find.text('Rosa Pérez')).dy));
+      expect(code.style!.fontSize!, lessThan(name.style!.fontSize!), reason: 'BR-2: the code smaller');
+    });
+
+    testWidgets('with no name, the code takes the title', (tester) async {
+      for (final name in [null, '', '  ']) {
+        await tester.pumpWidget(_wrap(RemittanceTitle(name: name, code: 'OT-ABC123')));
+        expect(find.byType(Text), findsOneWidget);
+        expect(find.text('OT-ABC123'), findsOneWidget);
+      }
+    });
+  });
+
+  test('remittanceLabel: name first, code last, or the code alone', () {
+    expect(remittanceLabel('Rosa Pérez', 'OT-1'), 'Rosa Pérez · OT-1');
+    expect(remittanceLabel(' Rosa ', 'OT-1'), 'Rosa · OT-1');
+    expect(remittanceLabel(null, 'OT-1'), 'OT-1');
+    expect(remittanceLabel('', 'OT-1'), 'OT-1');
+  });
+}

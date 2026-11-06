@@ -34,6 +34,7 @@ final detailJson = <String, dynamic>{
     ),
     _row(
       'OT-P3X8RA',
+      beneficiary: 'Juan Gómez',
       type: 'PICKUP',
       createdAt: '2026-10-03T14:00:00Z',
       status: 'DELIVERED',
@@ -70,6 +71,8 @@ final detailJson = <String, dynamic>{
     ),
     _row(
       'OT-H2N6LC',
+      // An older line with no name: named by its code alone.
+      beneficiary: null,
       createdAt: '2026-10-20T15:00:00Z',
       status: 'PAID',
       currency: 'USD',
@@ -129,6 +132,7 @@ final monthlyJson = <String, dynamic>{
 
 Map<String, dynamic> _row(
   String code, {
+  String? beneficiary = 'Rosa Pérez',
   String type = 'DELIVERY',
   required String createdAt,
   required String status,
@@ -149,6 +153,7 @@ Map<String, dynamic> _row(
 }) => {
   'id': 'id-$code',
   'code': code,
+  'beneficiaryName': beneficiary,
   'type': type,
   'status': status,
   'statusName': status,

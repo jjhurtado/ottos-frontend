@@ -34,7 +34,7 @@ class ReviewBanner extends StatelessWidget {
               children: [
                 Text(
                   '${CoreTexts.toReview}: ${CoreTexts.reviewReason(review.reason)}',
-                  style: const TextStyle(color: OttosColors.warning, fontWeight: FontWeight.w600),
+                  style: const TextStyle(color: OttosColors.warningText, fontWeight: FontWeight.w600),
                 ),
                 if (review.flaggedAt != null) ...[
                   const SizedBox(height: 4),
@@ -69,7 +69,7 @@ class ReviewBadge extends StatelessWidget {
           SizedBox(width: 6),
           Text(
             CoreTexts.toReview,
-            style: TextStyle(color: OttosColors.warning, fontWeight: FontWeight.w600, fontSize: 12),
+            style: TextStyle(color: OttosColors.warningText, fontWeight: FontWeight.w600, fontSize: 12),
           ),
         ],
       ),

@@ -285,7 +285,7 @@ class SyncCubit extends Cubit<SyncStatus> {
           signedAmount: remittance.isPickup ? amount : -amount,
           currency: currency,
           remittanceId: remittance.id,
-          note: remittance.code,
+          note: remittanceLabel(remittance.beneficiaryName, remittance.code),
           occurredAt: action.occurredAt,
         ),
       );

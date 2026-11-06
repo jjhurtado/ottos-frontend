@@ -86,7 +86,7 @@ abstract final class OpsTexts {
   static const pickupQuoteHint = 'Escribe el monto para ver la comisión.';
   static const notesOptional = 'Notas (opcional)';
   static const register = 'Registrar remesa';
-  static String remittanceRegistered(String code) => 'Remesa $code registrada';
+  static String remittanceRegistered(String label) => 'Remesa registrada: $label';
 
   // Remittance actions
   static const assignCourier = CoreTexts.assignCourier;
@@ -127,14 +127,14 @@ abstract final class OpsTexts {
   static const historicalToDeliver = 'CUP entregados';
   static const historicalCupHelp = 'La tasa y los CUP del ticket, tal cual: no se recalculan.';
   static const historicalInvalidNumber = 'Escribe un número válido.';
-  static String historicalRegistered(String code) => 'Remesa antigua $code registrada';
+  static String historicalRegistered(String label) => 'Remesa antigua registrada: $label';
 
   // Delivered or collected by the business (the dialog and its texts are in core)
   static const byBusiness = 'El negocio';
 
   // Voiding a remittance (admin)
   static const voidAction = 'Anular';
-  static String voidTitle(String code) => 'Anular la remesa $code';
+  static String voidTitle(String label) => 'Anular la remesa: $label';
   static const voidHelp =
       'La remesa queda guardada pero deja de contar en reportes, estadísticas y listas de trabajo, y ya no se podrá '
       'cambiar. Si movió efectivo, se devuelve solo a la caja de donde salió. No se puede deshacer.';

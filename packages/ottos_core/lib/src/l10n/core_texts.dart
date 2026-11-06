@@ -238,8 +238,8 @@ abstract final class CoreTexts {
   // Delivered or collected by the business, without a courier (sales and admin)
   static const deliveredByBusiness = 'Entregada por el negocio';
   static const collectedByBusiness = 'Recogida por el negocio';
-  static String byBusinessTitle(String code, {required bool isPickup}) =>
-      isPickup ? 'Recogida por el negocio: $code' : 'Entregada por el negocio: $code';
+  static String byBusinessTitle(String label, {required bool isPickup}) =>
+      isPickup ? 'Recogida por el negocio: $label' : 'Entregada por el negocio: $label';
   static String byBusinessHelp(String amount, {required bool isPickup, required bool hasCourier}) => [
     isPickup
         ? 'Queda recogida sin repartidor y los $amount entran en la caja del negocio.'
