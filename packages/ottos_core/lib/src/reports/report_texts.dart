@@ -78,6 +78,7 @@ abstract final class ReportTexts {
   static const yes = 'Sí';
   static const no = 'No';
   static const csvColumns = [
+    beneficiary,
     'Código',
     'Tipo',
     'Estado',
@@ -102,9 +103,8 @@ abstract final class ReportTexts {
 
   // The month's remittances
   static const monthRemittances = 'Remesas del mes';
-  static String monthRemittancesHelp(String month) =>
-      'Registradas en $month · sin datos personales: cada remesa se identifica por su código';
-  static const searchCode = 'Buscar por código';
+  static String monthRemittancesHelp(String month) => 'Registradas en $month';
+  static const searchCode = 'Buscar por nombre o código';
   static const type = 'Tipo';
   static const status = 'Estado';
   static const courier = 'Repartidor';
@@ -126,6 +126,7 @@ abstract final class ReportTexts {
   static const statusIncident = 'Con incidencia';
   static const voided = 'Anulada';
   static const code = 'Código';
+  static const beneficiary = 'Beneficiario';
   static const registered = 'Registrada';
   static const completed = 'Completada';
   static const municipality = 'Municipio';

@@ -30,8 +30,9 @@ void main() {
     expect(ReportTexts.onTheHouseDeliveryShort, 'Entrega · casa');
   });
 
-  test('REQ-010: the CSV header is the same 20 columns in the same order', () {
+  test('REQ-010: the CSV header is the same columns in the same order, led by the REQ-019 beneficiary', () {
     const before = [
+      'Beneficiario',
       'Código',
       'Tipo',
       'Estado',
@@ -59,11 +60,11 @@ void main() {
 
   test('REQ-010: CSV cells for type, courier and yes/no keep their text', () {
     final rows = Csv.decode(ReportCsv.encode(detail)).skip(1).toList();
-    expect(rows.map((r) => r[1]).toSet(), {'Entrega', 'Recogida'});
-    expect(rows.map((r) => r[17]).toSet(), {'Sí', 'No'});
+    expect(rows.map((r) => r[2]).toSet(), {'Entrega', 'Recogida'});
+    expect(rows.map((r) => r[18]).toSet(), {'Sí', 'No'});
     final pickup = detail.remittances.indexWhere((r) => r.isPickup);
-    expect(rows[pickup][1], 'Recogida');
-    expect(rows[pickup][6], 'El negocio');
+    expect(rows[pickup][2], 'Recogida');
+    expect(rows[pickup][7], 'El negocio');
   });
 
   test('REQ-010: both PDFs still carry the same author', () async {

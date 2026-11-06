@@ -21,13 +21,14 @@ class ReportVoid extends Equatable {
   List<Object?> get props => [at, byName, reason];
 }
 
-/// One remittance of the month's detail (`GET /reports/monthly/remittances`).
-/// No personal data: it is told apart by its [code]. Amounts in the business
-/// currency except [amountToDeliver], in [targetCurrency].
+/// One remittance of the month's detail (`GET /reports/monthly/remittances`),
+/// named by its beneficiary with its [code] (REQ-019 AC-3.1, ADR-004). Amounts
+/// in the business currency except [amountToDeliver], in [targetCurrency].
 class ReportRemittance extends Equatable {
   const ReportRemittance({
     required this.id,
     required this.code,
+    this.beneficiaryName,
     this.type = RemittanceType.delivery,
     this.status = '',
     this.statusName = '',
@@ -56,6 +57,7 @@ class ReportRemittance extends Equatable {
   factory ReportRemittance.fromJson(Map<String, dynamic> json) => ReportRemittance(
     id: json['id'] as String? ?? '',
     code: json['code'] as String? ?? '',
+    beneficiaryName: json['beneficiaryName'] as String?,
     type: RemittanceType.fromCode(json['type'] as String?),
     status: json['status'] as String? ?? '',
     statusName: json['statusName'] as String? ?? '',
@@ -86,6 +88,10 @@ class ReportRemittance extends Equatable {
 
   final String id;
   final String code;
+
+  /// The beneficiary's full name; for a pickup, the person the cash is
+  /// collected from. Null until the backend sends it.
+  final String? beneficiaryName;
   final RemittanceType type;
   final String status;
   final String statusName;
@@ -133,7 +139,7 @@ class ReportRemittance extends Equatable {
   bool get isCompleted => status == 'DELIVERED';
 
   @override
-  List<Object?> get props => [id, code, status, voided, withIncident, courierName, amount, fee];
+  List<Object?> get props => [id, code, beneficiaryName, status, voided, withIncident, courierName, amount, fee];
 }
 
 /// Every remittance registered in a month, voided ones included and marked

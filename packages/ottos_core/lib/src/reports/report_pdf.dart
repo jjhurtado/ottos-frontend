@@ -377,13 +377,19 @@ Future<Uint8List> buildMonthlyReportPdf(MonthlyReport report, {required DateTime
   return document.save();
 }
 
+/// The beneficiary over the code, or the code alone without a name.
+String _named(ReportRemittance row) => switch (row.beneficiaryName?.trim()) {
+  final name? when name.isNotEmpty => '$name\n${row.code}',
+  _ => row.code,
+};
+
 /// The status of a row as the report shows it.
 String reportStatusName(ReportRemittance row) =>
     row.isVoided ? ReportTexts.voided : CoreTexts.statusName(row.status, type: row.type, fallback: row.statusName);
 
 /// The month's summary and every remittance in it, A4 landscape: the summary,
 /// then the deliveries, the pickups and the voided ones, each from a new page.
-/// No personal data: each remittance by its code.
+/// Each remittance by its beneficiary, with the code under it (REQ-019 AC-3.1).
 Future<Uint8List> buildMonthlyDetailPdf(
   MonthlyReport report,
   MonthlyReportDetail detail, {
@@ -447,7 +453,7 @@ Future<Uint8List> buildMonthlyDetailPdf(
               style: const pw.TextStyle(fontSize: 8.5, color: _grey),
             ),
             pw.Text(
-              pdfSafe('${ReportTexts.generatedOn(generated)} · sin datos personales'),
+              pdfSafe(ReportTexts.generatedOn(generated)),
               style: const pw.TextStyle(fontSize: 8.5, color: _grey),
             ),
           ],
@@ -582,7 +588,7 @@ Future<Uint8List> buildMonthlyDetailPdf(
       pw.SizedBox(height: 6),
       _table(
         [
-          ReportTexts.code,
+          ReportTexts.beneficiary,
           ReportTexts.registered,
           ReportTexts.completed,
           ReportTexts.municipality,
@@ -598,7 +604,7 @@ Future<Uint8List> buildMonthlyDetailPdf(
         [
           for (final row in deliveries)
             [
-              row.code,
+              _named(row),
               date(row.createdAt),
               date(row.completedAt),
               row.municipalityName ?? '-',
@@ -630,7 +636,7 @@ Future<Uint8List> buildMonthlyDetailPdf(
         fontSize: 8.5,
         boldRows: {deliveries.length},
         widths: const {
-          0: pw.FixedColumnWidth(70),
+          0: pw.FixedColumnWidth(96),
           1: pw.FixedColumnWidth(52),
           2: pw.FixedColumnWidth(58),
           3: pw.FlexColumnWidth(1.6),
@@ -661,7 +667,7 @@ Future<Uint8List> buildMonthlyDetailPdf(
       pw.SizedBox(height: 6),
       _table(
         [
-          ReportTexts.code,
+          ReportTexts.beneficiary,
           ReportTexts.registered,
           ReportTexts.completed,
           ReportTexts.municipality,
@@ -674,7 +680,7 @@ Future<Uint8List> buildMonthlyDetailPdf(
         [
           for (final row in pickups)
             [
-              row.code,
+              _named(row),
               date(row.createdAt),
               date(row.completedAt),
               row.municipalityName ?? '-',
@@ -718,7 +724,7 @@ Future<Uint8List> buildMonthlyDetailPdf(
       pw.SizedBox(height: 6),
       _table(
         [
-          ReportTexts.code,
+          ReportTexts.beneficiary,
           ReportTexts.type,
           ReportTexts.registered,
           'Anulada el',
@@ -731,7 +737,7 @@ Future<Uint8List> buildMonthlyDetailPdf(
         [
           for (final row in voided)
             [
-              row.code,
+              _named(row),
               row.isPickup ? ReportTexts.pickupType : ReportTexts.deliveryType,
               date(row.createdAt),
               date(row.voided!.at),
@@ -747,7 +753,7 @@ Future<Uint8List> buildMonthlyDetailPdf(
         fontSize: 8.5,
         textColor: _grey,
         widths: const {
-          0: pw.FixedColumnWidth(70),
+          0: pw.FixedColumnWidth(96),
           1: pw.FixedColumnWidth(52),
           2: pw.FixedColumnWidth(52),
           3: pw.FixedColumnWidth(52),
