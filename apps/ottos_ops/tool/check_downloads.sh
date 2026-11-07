@@ -18,7 +18,7 @@ cat >"$work/Caddyfile" <<'EOF'
 }
 :9000 {
 	respond /public/ottos/apk-release/ottos-missing.apk "<Error><Code>NoSuchKey</Code></Error>" 404
-	respond "{method} {path} host={host} range={header.Range} auth={header.Authorization}" 206
+	respond "{method} {uri} host={host} range={header.Range} auth={header.Authorization}" 206
 }
 EOF
 
@@ -44,6 +44,9 @@ expect 'Content-Type of an APK' 'application/vnd.android.package-archive' \
   "$(curl -s -o /dev/null -w '%{content_type}' "$on/descargas/ottos-1.0.1.apk")"
 expect 'per-ABI split served' 'GET /public/ottos/apk-release/ottos-1.0.1-arm64-v8a.apk host='"$net-up"' range= auth=' \
   "$(curl -s "$on/descargas/ottos-1.0.1-arm64-v8a.apk")"
+expect 'query string dropped' 'GET /public/ottos/apk-release/ottos-1.apk host='"$net-up"' range= auth=' \
+  "$(curl -s "$on/descargas/ottos-1.apk?acl&list-type=2")"
+expect 'unsuffixed name for builds up to 14' 206 "$(status "$on/descargas/ottos-1.0.0-rc.14.apk")"
 expect 'HEAD allowed' 206 "$(status -I "$on/descargas/ottos-1.0.1.apk")"
 expect 'missing file is a plain 404' 404 "$(status "$on/descargas/ottos-missing.apk")"
 expect 'POST refused' 404 "$(status -X POST "$on/descargas/ottos-1.0.1.apk")"

@@ -52,7 +52,8 @@
 		expression `{env.APK_BUCKET_UPSTREAM} != ""`
 	}
 	handle @apk {
-		rewrite * /public/ottos/apk-release/{re.apk.1}
+		# The query is dropped: no bucket sub-resources such as ?acl (DEF-3).
+		rewrite * /public/ottos/apk-release/{re.apk.1}?
 		# Range goes through as is, so an interrupted download resumes.
 		reverse_proxy {$APK_BUCKET_UPSTREAM} {
 			header_up Host {upstream_hostport}
