@@ -7,6 +7,7 @@ import 'package:ottos_core/ottos_core.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../offline/sync_cubit.dart';
+import 'apk_download_cubit.dart';
 import 'app_update_cubit.dart';
 
 /// Over the whole app: a screen that cannot be closed when this build must be
@@ -26,12 +27,17 @@ class _UpdateGateState extends State<UpdateGate> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    context.read<AppUpdateCubit>().check();
+    final updates = context.read<AppUpdateCubit>();
+    updates.check();
+    if (defaultTargetPlatform == TargetPlatform.android) context.read<ApkDownloadCubit>().clean(updates.build);
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) context.read<AppUpdateCubit>().check();
+    if (state != AppLifecycleState.resumed) return;
+    context.read<AppUpdateCubit>().check();
+    // Back from allowing Ottos to install apps.
+    context.read<ApkDownloadCubit>().continueInstall();
   }
 
   @override
@@ -85,6 +91,67 @@ String updateUrl(AppVersion version, {TargetPlatform? platform}) =>
 Future<void> _update(AppVersion version) =>
     launchUrl(Uri.parse(updateUrl(version)), mode: LaunchMode.externalApplication);
 
+/// «Actualizar», or what it turns into while the APK is downloaded in the app
+/// (Android with a link from the backend). [button] lays out the main action;
+/// [onCancel], on the notice that can be closed, stops the download and closes it.
+class _UpdateAction extends StatelessWidget {
+  const _UpdateAction({required this.version, required this.button, this.onCancel, this.textAlign});
+
+  final AppVersion version;
+  final Widget Function(String label, VoidCallback onPressed) button;
+  final VoidCallback? onCancel;
+  final TextAlign? textAlign;
+
+  @override
+  Widget build(BuildContext context) {
+    if (defaultTargetPlatform != TargetPlatform.android || version.downloadUrl == null) {
+      return button(CoreTexts.update, () => _update(version));
+    }
+    final download = context.watch<ApkDownloadCubit>();
+    final state = download.state;
+    Widget withMessage(String message, Widget action) => Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(message, textAlign: textAlign),
+        const SizedBox(height: 8),
+        action,
+      ],
+    );
+    return switch (state.status) {
+      ApkDownloadStatus.idle => button(CoreTexts.update, () => download.start(version)),
+      ApkDownloadStatus.downloading => Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          LinearProgressIndicator(value: state.progress),
+          const SizedBox(height: 8),
+          Text(CoreTexts.downloadingUpdate(state.progress), textAlign: textAlign),
+          if (onCancel != null)
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton(
+                onPressed: () {
+                  download.cancel();
+                  onCancel!();
+                },
+                child: const Text(CoreTexts.cancel),
+              ),
+            ),
+        ],
+      ),
+      ApkDownloadStatus.failed => withMessage(
+        CoreTexts.updateDownloadFailed,
+        button(CoreTexts.retry, () => download.start(version)),
+      ),
+      ApkDownloadStatus.needsPermission => withMessage(
+        CoreTexts.installPermission,
+        button(CoreTexts.openSettings, download.openSettings),
+      ),
+    };
+  }
+}
+
 class _UpdateRequired extends StatelessWidget {
   const _UpdateRequired({required this.version});
 
@@ -116,11 +183,15 @@ class _UpdateRequired extends StatelessWidget {
                 Text(version.notes!, textAlign: TextAlign.center, style: textTheme.bodySmall),
               ],
               const SizedBox(height: 32),
-              FilledButton.icon(
-                style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(52)),
-                onPressed: () => _update(version),
-                icon: const Icon(Icons.system_update),
-                label: const Text(CoreTexts.update),
+              _UpdateAction(
+                version: version,
+                textAlign: TextAlign.center,
+                button: (label, onPressed) => FilledButton.icon(
+                  style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(52)),
+                  onPressed: onPressed,
+                  icon: const Icon(Icons.system_update),
+                  label: Text(label),
+                ),
               ),
             ],
           ),
@@ -149,14 +220,18 @@ class _UpdateAvailable extends StatelessWidget {
           children: [
             Text(CoreTexts.updateAvailable, style: Theme.of(context).textTheme.titleSmall),
             if (version.latestVersion != null) Text(CoreTexts.newVersion(version.latestVersion!)),
-            Align(
-              alignment: Alignment.centerRight,
-              child: Wrap(
-                spacing: 8,
-                children: [
-                  TextButton(onPressed: onLater, child: const Text(CoreTexts.later)),
-                  FilledButton(onPressed: () => _update(version), child: const Text(CoreTexts.update)),
-                ],
+            _UpdateAction(
+              version: version,
+              onCancel: onLater,
+              button: (label, onPressed) => Align(
+                alignment: Alignment.centerRight,
+                child: Wrap(
+                  spacing: 8,
+                  children: [
+                    TextButton(onPressed: onLater, child: const Text(CoreTexts.later)),
+                    FilledButton(onPressed: onPressed, child: Text(label)),
+                  ],
+                ),
               ),
             ),
           ],

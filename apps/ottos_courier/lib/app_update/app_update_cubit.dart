@@ -35,6 +35,9 @@ class AppUpdateCubit extends Cubit<AppUpdateState> {
 
   static const _cacheKey = 'ottos.app.version';
 
+  /// The build installed on this phone.
+  int get build => _app.build;
+
   AppUpdate get update => state.version?.updateFor(_app.build) ?? AppUpdate.none;
 
   Future<void> check() async {
