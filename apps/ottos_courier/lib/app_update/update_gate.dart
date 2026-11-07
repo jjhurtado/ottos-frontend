@@ -162,38 +162,45 @@ class _UpdateRequired extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
     return Material(
       color: Theme.of(context).colorScheme.surface,
+      // Centred while it fits; with large system text it scrolls, so the button
+      // is always reachable on a screen that cannot be closed (DEF-2).
       child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const Icon(Icons.system_update, size: 64),
-              const SizedBox(height: 24),
-              Text(CoreTexts.updateRequiredTitle, style: textTheme.headlineSmall, textAlign: TextAlign.center),
-              const SizedBox(height: 12),
-              Text(CoreTexts.updateRequiredBody, textAlign: TextAlign.center),
-              if (version.latestVersion != null) ...[
-                const SizedBox(height: 8),
-                Text(CoreTexts.newVersion(version.latestVersion!), textAlign: TextAlign.center),
-              ],
-              if (version.notes != null && version.notes!.isNotEmpty) ...[
-                const SizedBox(height: 8),
-                Text(version.notes!, textAlign: TextAlign.center, style: textTheme.bodySmall),
-              ],
-              const SizedBox(height: 32),
-              _UpdateAction(
-                version: version,
-                textAlign: TextAlign.center,
-                button: (label, onPressed) => FilledButton.icon(
-                  style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(52)),
-                  onPressed: onPressed,
-                  icon: const Icon(Icons.system_update),
-                  label: Text(label),
-                ),
+        child: LayoutBuilder(
+          builder: (context, constraints) => SingleChildScrollView(
+            padding: const EdgeInsets.all(32),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: (constraints.maxHeight - 64).clamp(0, double.infinity)),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const Icon(Icons.system_update, size: 64),
+                  const SizedBox(height: 24),
+                  Text(CoreTexts.updateRequiredTitle, style: textTheme.headlineSmall, textAlign: TextAlign.center),
+                  const SizedBox(height: 12),
+                  Text(CoreTexts.updateRequiredBody, textAlign: TextAlign.center),
+                  if (version.latestVersion != null) ...[
+                    const SizedBox(height: 8),
+                    Text(CoreTexts.newVersion(version.latestVersion!), textAlign: TextAlign.center),
+                  ],
+                  if (version.notes != null && version.notes!.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Text(version.notes!, textAlign: TextAlign.center, style: textTheme.bodySmall),
+                  ],
+                  const SizedBox(height: 32),
+                  _UpdateAction(
+                    version: version,
+                    textAlign: TextAlign.center,
+                    button: (label, onPressed) => FilledButton.icon(
+                      style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(52)),
+                      onPressed: onPressed,
+                      icon: const Icon(Icons.system_update),
+                      label: Text(label),
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),

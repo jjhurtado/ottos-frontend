@@ -18,7 +18,7 @@ class _MockVersions extends Mock implements AppVersionRepository {}
 class _MockDownload extends MockCubit<ApkDownloadState> implements ApkDownloadCubit {}
 
 void main() {
-  group('REQ-023 QA · SCR-18 and the new-version notice', () {
+  group('REQ-023 · SCR-18 and the new-version notice: layout and states', () {
     late _MockVersions versions;
     late StreamController<AppVersion> refused;
     late _MockDownload download;
@@ -140,18 +140,19 @@ void main() {
     for (final entry in states.entries) {
       for (final screen in {'notice': optional, 'SCR-18': mandatory}.entries) {
         for (final phone in phones.entries) {
-          // DEF-2 (04-test-report.md): SCR-18 overflows with the new message in these states;
-          // remove the skip with the fix.
-          final def2 =
-              screen.key == 'SCR-18' &&
-              (entry.key == 'failed' || entry.key == 'needs permission') &&
-              phone.key != 'medium phone 412×915, text 130 %';
           testWidgets('AC-1.1..AC-1.4 (${screen.key}, ${entry.key}, ${phone.key}): nothing is cut', (tester) async {
             onPhone(tester, phone.value.$1);
             await pump(tester, screen.value, entry.value, textScale: phone.value.$2);
 
             expect(tester.takeException(), isNull);
-          }, skip: def2);
+            // DEF-2: the main button can be reached (SCR-18 scrolls when needed).
+            final button = find.byType(FilledButton);
+            if (button.evaluate().isNotEmpty) {
+              await tester.ensureVisible(button.first);
+              await tester.pumpAndSettle();
+              expect(button.first.hitTestable(), findsOneWidget);
+            }
+          });
         }
 
         testWidgets('AC-1.1..AC-1.4 (${screen.key}, ${entry.key}): accessibility guidelines', (tester) async {
