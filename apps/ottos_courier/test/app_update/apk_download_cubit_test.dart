@@ -20,6 +20,7 @@ class _Server {
   /// Requests that get cut after this many bytes (one drop per entry).
   final drops = <int>[];
   final rangeHeaders = <String?>[];
+  final paths = <String>[];
   late final ServerSocket _server;
 
   Future<String> start() async {
@@ -43,6 +44,7 @@ class _Server {
         .map((line) => line.substring(6).trim())
         .firstOrNull;
     rangeHeaders.add(range);
+    paths.add(path);
     if (path != '/descargas/ottos-6.apk') {
       socket.write('HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\nConnection: close\r\n\r\n');
       await socket.close();
@@ -100,7 +102,7 @@ void main() {
   File apk() => File('${folder.path}/ottos-6.apk');
 
   test('AC-1.1, AC-1.2: downloads with progress, then opens the installer', () async {
-    final cubit = ApkDownloadCubit(installer: installer);
+    final cubit = ApkDownloadCubit(installer: installer, versionCode: () async => 5);
     addTearDown(cubit.close);
     final states = <ApkDownloadState>[];
     final sub = cubit.stream.listen(states.add);
@@ -118,7 +120,7 @@ void main() {
 
   test('AC-1.4: a dropped connection fails, and the retry asks only for the rest', () async {
     server.drops.add(100000);
-    final cubit = ApkDownloadCubit(installer: installer);
+    final cubit = ApkDownloadCubit(installer: installer, versionCode: () async => 5);
     addTearDown(cubit.close);
 
     await cubit.start(version());
@@ -136,7 +138,7 @@ void main() {
     server
       ..drops.add(100000)
       ..ranges = false;
-    final cubit = ApkDownloadCubit(installer: installer);
+    final cubit = ApkDownloadCubit(installer: installer, versionCode: () async => 5);
     addTearDown(cubit.close);
 
     await cubit.start(version());
@@ -145,7 +147,7 @@ void main() {
   });
 
   test('AC-1.4: an error answer from the server fails without installing', () async {
-    final cubit = ApkDownloadCubit(installer: installer);
+    final cubit = ApkDownloadCubit(installer: installer, versionCode: () async => 5);
     addTearDown(cubit.close);
 
     await cubit.start(version('/descargas/otra.apk'));
@@ -156,7 +158,7 @@ void main() {
 
   test('AC-1.3: without permission to install it asks for it, and goes on once allowed', () async {
     when(() => installer.canInstall()).thenAnswer((_) async => false);
-    final cubit = ApkDownloadCubit(installer: installer);
+    final cubit = ApkDownloadCubit(installer: installer, versionCode: () async => 5);
     addTearDown(cubit.close);
 
     await cubit.start(version());
@@ -185,7 +187,7 @@ void main() {
       await request.response.flush();
       sent.complete();
     });
-    final cubit = ApkDownloadCubit(installer: installer);
+    final cubit = ApkDownloadCubit(installer: installer, versionCode: () async => 5);
     addTearDown(cubit.close);
 
     final running = cubit.start(
@@ -204,7 +206,7 @@ void main() {
 
   test('an APK already downloaded opens the installer without downloading again', () async {
     apk().writeAsBytesSync(body);
-    final cubit = ApkDownloadCubit(installer: installer);
+    final cubit = ApkDownloadCubit(installer: installer, versionCode: () async => 5);
     addTearDown(cubit.close);
 
     await cubit.start(version());
@@ -216,10 +218,31 @@ void main() {
     for (final name in ['ottos-5.apk', 'ottos-6.apk', 'ottos-6.apk.part', 'ottos-7.apk.part']) {
       File('${folder.path}/$name').writeAsStringSync('x');
     }
-    final cubit = ApkDownloadCubit(installer: installer);
+    final cubit = ApkDownloadCubit(installer: installer, versionCode: () async => 5);
     addTearDown(cubit.close);
 
     await cubit.clean(6);
     expect(folder.listSync().map((f) => f.uri.pathSegments.last), ['ottos-7.apk.part']);
+  });
+
+  test('AC-1.1: the APK of the phone\'s ABI, from the installed versionCode', () {
+    const url = 'https://panel.remesadeotto.com/descargas/ottos-1.0.1.apk';
+    expect(apkUrlFor(url, 1015), 'https://panel.remesadeotto.com/descargas/ottos-1.0.1-armeabi-v7a.apk');
+    expect(apkUrlFor(url, 2015), 'https://panel.remesadeotto.com/descargas/ottos-1.0.1-arm64-v8a.apk');
+    expect(apkUrlFor(url, 4015), 'https://panel.remesadeotto.com/descargas/ottos-1.0.1-x86_64.apk');
+    // A universal build, or a code without a known ABI, keeps the link.
+    expect(apkUrlFor(url, 15), url);
+    expect(apkUrlFor(url, 3015), url);
+    expect(apkUrlFor('https://otra/ottos', 2015), 'https://otra/ottos');
+  });
+
+  test('AC-1.1: a per-ABI build downloads its own split', () async {
+    final cubit = ApkDownloadCubit(installer: installer, versionCode: () async => 2005);
+    addTearDown(cubit.close);
+
+    await cubit.start(version('/descargas/ottos-6.apk'));
+    // The fake server has only the universal name: the request went to the split.
+    expect(cubit.state.status, ApkDownloadStatus.failed);
+    expect(server.paths.single, '/descargas/ottos-6-arm64-v8a.apk');
   });
 }

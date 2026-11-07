@@ -42,6 +42,8 @@ expect 'GET is rewritten to the prefix, Range passed, no credentials' \
   'GET /public/ottos/apk-release/ottos-1.0.1.apk host='"$net-up"' range=bytes=100- auth=' "$body"
 expect 'Content-Type of an APK' 'application/vnd.android.package-archive' \
   "$(curl -s -o /dev/null -w '%{content_type}' "$on/descargas/ottos-1.0.1.apk")"
+expect 'per-ABI split served' 'GET /public/ottos/apk-release/ottos-1.0.1-arm64-v8a.apk host='"$net-up"' range= auth=' \
+  "$(curl -s "$on/descargas/ottos-1.0.1-arm64-v8a.apk")"
 expect 'HEAD allowed' 206 "$(status -I "$on/descargas/ottos-1.0.1.apk")"
 expect 'missing file is a plain 404' 404 "$(status "$on/descargas/ottos-missing.apk")"
 expect 'POST refused' 404 "$(status -X POST "$on/descargas/ottos-1.0.1.apk")"

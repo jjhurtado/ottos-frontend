@@ -88,9 +88,10 @@ flutter build apk --release --split-per-abi --dart-define=OTTOS_API_URL=https://
 `build/app/outputs/flutter-apk/app-arm64-v8a-release.apk` fits most phones (about 21 MB);
 `app-armeabi-v7a-release.apk` is for older ones. Without `key.properties` a release build fails (REQ-023).
 
-In-app updates (REQ-023): the APK served from `/descargas/ottos-<version>.apk` must have a higher versionCode than
-the one on the phone, or Android refuses it. Per-ABI APKs carry `1000 × ABI + build` (arm64 `2000 + N`, armeabi-v7a
-`1000 + N`); a universal APK (`flutter build apk --release`, without `--split-per-abi`) carries just `N`.
+In-app updates (REQ-023): per-ABI APKs carry versionCode `1000 × ABI + build` (armeabi-v7a `1000 + N`, arm64
+`2000 + N`), and Android refuses a lower one, so a universal APK (versionCode `N`) cannot update them. The app takes
+its ABI from its versionCode and downloads `/descargas/ottos-<version>-<abi>.apk`: upload
+`ottos-<version>-arm64-v8a.apk` and `ottos-<version>-armeabi-v7a.apk` (the split files renamed).
 
 For Google Play (decided 2026-10-13, not published yet) build an App Bundle instead and upload it to Play Console; the
 key above is the upload key:

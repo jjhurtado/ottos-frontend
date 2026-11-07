@@ -2,9 +2,11 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:equatable/equatable.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:ottos_core/ottos_core.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path/path.dart' as p;
 
 /// The Android side, answered by `MainActivity.kt` on `ottos/update`.
@@ -26,6 +28,22 @@ class ApkInstaller {
   Future<void> install(String path) => _channel.invokeMethod<void>('install', path);
 }
 
+/// Release APKs are split per ABI (`--split-per-abi`), and Flutter gives each
+/// split the versionCode `1000 × ABI + build`.
+const _abis = {1: 'armeabi-v7a', 2: 'arm64-v8a', 4: 'x86_64'};
+
+/// The APK for the phone's ABI: `ottos-1.0.1.apk` becomes `ottos-1.0.1-arm64-v8a.apk`
+/// when the installed [versionCode] is `2000 + build`. A universal build (below
+/// 1000) keeps the backend's link.
+@visibleForTesting
+String apkUrlFor(String url, int versionCode) {
+  final abi = _abis[versionCode ~/ 1000];
+  if (abi == null || !url.endsWith('.apk')) return url;
+  return '${url.substring(0, url.length - '.apk'.length)}-$abi.apk';
+}
+
+Future<int> _installedVersionCode() async => int.tryParse((await PackageInfo.fromPlatform()).buildNumber) ?? 0;
+
 enum ApkDownloadStatus { idle, downloading, failed, needsPermission }
 
 class ApkDownloadState extends Equatable {
@@ -45,12 +63,18 @@ class ApkDownloadState extends Equatable {
 /// arrived and the retry asks only for the rest (`Range`) when the server
 /// allows it.
 class ApkDownloadCubit extends Cubit<ApkDownloadState> {
-  ApkDownloadCubit({this._installer = const ApkInstaller(), HttpClient Function()? http})
-    : _http = http ?? HttpClient.new,
-      super(const ApkDownloadState(ApkDownloadStatus.idle));
+  ApkDownloadCubit({
+    this._installer = const ApkInstaller(),
+    HttpClient Function()? http,
+    this._versionCode = _installedVersionCode,
+  }) : _http = http ?? HttpClient.new,
+       super(const ApkDownloadState(ApkDownloadStatus.idle));
 
   final ApkInstaller _installer;
   final HttpClient Function() _http;
+
+  /// The installed versionCode, which carries the phone's ABI.
+  final Future<int> Function() _versionCode;
 
   /// A stall this long with nothing received counts as a failed download.
   static const _stall = Duration(seconds: 60);
@@ -78,7 +102,7 @@ class ApkDownloadCubit extends Cubit<ApkDownloadState> {
     try {
       await previous;
       final apk = File(p.join(await _installer.folder(), _fileName(version.latestBuild)));
-      if (!apk.existsSync()) await _download(Uri.parse(url), apk, run);
+      if (!apk.existsSync()) await _download(Uri.parse(apkUrlFor(url, await _versionCode())), apk, run);
       if (run != _run || isClosed) return;
       _apk = apk.path;
       await _install();
