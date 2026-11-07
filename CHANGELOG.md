@@ -6,6 +6,8 @@ Cambios notables del frontend de Ottos (panel de operaciones y app de repartidor
 
 ## [Unreleased]
 
+## [1.0.0-rc.14] - 2026-11-07
+
 ### Añadido
 
 - App › Android: «Actualizar» descarga la versión nueva dentro de la app, con el progreso, y abre el instalador de Android; si la conexión se corta, «Reintentar» sigue donde se quedó. La primera vez Android pide permitir que Ottos instale apps. En el aviso que se puede cerrar, «Cancelar» detiene la descarga. En iPhone, o sin enlace de descarga, todo sigue igual.
