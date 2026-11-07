@@ -7,11 +7,13 @@ plugins {
 }
 
 // The release key lives outside the repository: android/key.properties (git-ignored)
-// points to it. Without that file, release builds use the debug key, as before.
+// points to it. Without that file a release build fails (REQ-023): phones install an
+// update only if it is signed with the same key, so a debug-signed release is useless.
 val keyProperties = Properties().apply {
     val file = rootProject.file("key.properties")
     if (file.exists()) file.inputStream().use { load(it) }
 }
+val hasReleaseKey = keyProperties.containsKey("storeFile")
 
 android {
     namespace = "com.remesadeotto.ottos"
@@ -40,7 +42,7 @@ android {
     }
 
     signingConfigs {
-        if (keyProperties.containsKey("storeFile")) {
+        if (hasReleaseKey) {
             create("release") {
                 storeFile = file(keyProperties.getProperty("storeFile"))
                 storePassword = keyProperties.getProperty("storePassword")
@@ -52,7 +54,19 @@ android {
 
     buildTypes {
         release {
-            signingConfig = signingConfigs.findByName("release") ?: signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.findByName("release")
+        }
+    }
+}
+
+// Only release builds need the key: debug builds and tests keep working without it.
+tasks.matching { it.name == "preReleaseBuild" }.configureEach {
+    doFirst {
+        if (!hasReleaseKey) {
+            throw GradleException(
+                "Release build without android/key.properties: it would not be signed with the release key " +
+                    "(README.md, Releases > Android)."
+            )
         }
     }
 }
