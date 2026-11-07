@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ottos_core/ottos_core.dart';
 
+import '../app_update/apk_download_cubit.dart';
 import '../app_update/app_update_cubit.dart';
 import '../app_update/update_gate.dart';
 import '../notifications/notifier.dart';
@@ -37,12 +38,17 @@ class CourierApp extends StatelessWidget {
       accessPolicy: canUseApp,
       child: app == null
           ? _CourierRouterApp(store: store, notifier: notifier, checksUpdates: false)
-          : BlocProvider(
-              create: (context) => AppUpdateCubit(
-                repository: context.read<AppVersionRepository>(),
-                app: app,
-                refused: context.read<ApiClient>().updateRequired,
-              ),
+          : MultiBlocProvider(
+              providers: [
+                BlocProvider(
+                  create: (context) => AppUpdateCubit(
+                    repository: context.read<AppVersionRepository>(),
+                    app: app,
+                    refused: context.read<ApiClient>().updateRequired,
+                  ),
+                ),
+                BlocProvider(create: (_) => ApkDownloadCubit()),
+              ],
               child: _CourierRouterApp(store: store, notifier: notifier, checksUpdates: true),
             ),
     );

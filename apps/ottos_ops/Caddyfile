@@ -41,6 +41,38 @@
 		reverse_proxy {$OTTOS_BACKEND_URL}
 	}
 
+	# REQ-023: the Android update from the public Feather IO bucket, under our
+	# domain (the one that works from Cuba). APK_BUCKET_UPSTREAM is the bucket
+	# host (https://…); empty, /descargas answers 404 (staging, local work).
+	# Only GET and HEAD of /descargas/ottos-<name>.apk, mapped to one prefix of
+	# the bucket: no listing and nothing else of the bucket is reachable.
+	@apk {
+		path_regexp apk ^/descargas/(ottos-[0-9A-Za-z._-]+\.apk)$
+		method GET HEAD
+		expression `{env.APK_BUCKET_UPSTREAM} != ""`
+	}
+	handle @apk {
+		# The query is dropped: no bucket sub-resources such as ?acl (DEF-3).
+		rewrite * /public/ottos/apk-release/{re.apk.1}?
+		# Range goes through as is, so an interrupted download resumes.
+		reverse_proxy {$APK_BUCKET_UPSTREAM} {
+			header_up Host {upstream_hostport}
+			# Nothing of the user's session leaves for the bucket.
+			header_up -Authorization
+			header_up -Cookie
+			header_down Content-Type application/vnd.android.package-archive
+			# A missing file is a plain 404, without the bucket's error body.
+			@missing status 403 404
+			handle_response @missing {
+				respond 404
+			}
+		}
+	}
+	@downloads path /descargas /descargas/*
+	handle @downloads {
+		respond 404
+	}
+
 	handle {
 		root * /srv
 

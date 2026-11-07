@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- REQ-023: the only files the FileProvider hands out are the downloaded APKs, for the installer. -->
+<paths>
+    <cache-path name="updates" path="updates/" />
+</paths>
