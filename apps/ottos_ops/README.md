@@ -40,6 +40,10 @@ exact Flutter version and serves it with Caddy (`Caddyfile`):
 
 - `/api/*` is forwarded to `OTTOS_BACKEND_URL` (the backend's private address on Railway). It keeps the client
   IP headers, because the login limit works per IP. Same origin means no CORS and no per-environment API URL.
+- `/descargas/ottos-<version>.apk` (REQ-023, the Android app's updates) is forwarded, GET and HEAD only, to
+  `/public/ottos/apk-release/<file>` on `APK_BUCKET_UPSTREAM`, the public Feather IO bucket's host
+  (`https://…`). Anything else under `/descargas`, or an empty variable, answers 404. Check it with
+  `sh apps/ottos_ops/tool/check_downloads.sh` (needs Docker).
 - The app shell is served with `no-cache` and the assets with one day of cache. Flutter web file names carry no hash,
   so this is what makes a deploy show up.
 - Roboto is bundled and nothing is requested from Google. Google may be blocked from Cuba.

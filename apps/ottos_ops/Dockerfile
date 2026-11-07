@@ -6,6 +6,7 @@
 #   docker build -f apps/ottos_ops/Dockerfile -t ottos-panel .
 # Run:
 #   docker run -p 8080:8080 -e OTTOS_BACKEND_URL=http://backend:8080 ottos-panel
+# APK_BUCKET_UPSTREAM (optional, REQ-023): the bucket host that /descargas/ottos-*.apk is served from.
 
 # --- Build: the exact Flutter of the project, checked against its published sha256.
 FROM debian:bookworm-slim AS build
