@@ -1,10 +1,12 @@
 package com.remesadeotto.ottos
 
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
 import androidx.core.content.FileProvider
+import androidx.core.content.pm.PackageInfoCompat
 import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
@@ -29,14 +31,20 @@ class MainActivity : FlutterFragmentActivity() {
                         result.success(null)
                     }
                     "install" -> {
-                        // A file outside cache/updates makes getUriForFile throw.
-                        val uri = FileProvider.getUriForFile(this, "$packageName.updates", File(call.arguments as String))
-                        startActivity(
-                            Intent(Intent.ACTION_VIEW)
-                                .setDataAndType(uri, "application/vnd.android.package-archive")
-                                .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                        )
-                        result.success(null)
+                        val file = File(call.arguments as String)
+                        if (!isNewerBuildOfThisApp(file)) {
+                            // SEC-1: the Dart side deletes the file, so a retry downloads it again.
+                            result.error("rejected", "Not a newer build of this app signed with its key", null)
+                        } else {
+                            // A file outside cache/updates makes getUriForFile throw.
+                            val uri = FileProvider.getUriForFile(this, "$packageName.updates", file)
+                            startActivity(
+                                Intent(Intent.ACTION_VIEW)
+                                    .setDataAndType(uri, "application/vnd.android.package-archive")
+                                    .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                            )
+                            result.success(null)
+                        }
                     }
                     else -> result.notImplemented()
                 }
@@ -44,5 +52,34 @@ class MainActivity : FlutterFragmentActivity() {
                 result.error("update", error.javaClass.simpleName, null)
             }
         }
+    }
+
+    /**
+     * SEC-1: the installer is opened only for this app's package, signed with the
+     * installed app's key, with a higher versionCode. Android's same-key rule covers
+     * only an APK with this package name; another one would be offered as a new app.
+     */
+    private fun isNewerBuildOfThisApp(file: File): Boolean {
+        val installed = packageManager.getPackageInfo(packageName, 0)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            val archive = packageManager.getPackageArchiveInfo(file.path, PackageManager.GET_SIGNING_CERTIFICATES)
+                ?: return false
+            val signers = archive.signingInfo?.apkContentsSigners ?: return false
+            return archive.packageName == packageName &&
+                PackageInfoCompat.getLongVersionCode(archive) > PackageInfoCompat.getLongVersionCode(installed) &&
+                signers.isNotEmpty() &&
+                signers.all {
+                    packageManager.hasSigningCertificate(packageName, it.toByteArray(), PackageManager.CERT_INPUT_RAW_X509)
+                }
+        }
+        @Suppress("DEPRECATION")
+        val archive = packageManager.getPackageArchiveInfo(file.path, PackageManager.GET_SIGNATURES) ?: return false
+        @Suppress("DEPRECATION")
+        val ours = packageManager.getPackageInfo(packageName, PackageManager.GET_SIGNATURES).signatures?.toSet()
+        @Suppress("DEPRECATION")
+        val theirs = archive.signatures?.toSet()
+        return archive.packageName == packageName &&
+            PackageInfoCompat.getLongVersionCode(archive) > PackageInfoCompat.getLongVersionCode(installed) &&
+            !theirs.isNullOrEmpty() && theirs == ours
     }
 }

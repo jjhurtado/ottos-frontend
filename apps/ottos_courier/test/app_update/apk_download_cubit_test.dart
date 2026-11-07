@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:ottos_core/ottos_core.dart';
@@ -45,6 +46,13 @@ class _Server {
         .firstOrNull;
     rangeHeaders.add(range);
     paths.add(path);
+    if (path == '/descargas/moved.apk') {
+      socket.write(
+        'HTTP/1.1 302 Found\r\nLocation: /descargas/ottos-6.apk\r\nContent-Length: 0\r\nConnection: close\r\n\r\n',
+      );
+      await socket.close();
+      return;
+    }
     if (path != '/descargas/ottos-6.apk') {
       socket.write('HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\nConnection: close\r\n\r\n');
       await socket.close();
@@ -204,7 +212,7 @@ void main() {
     verifyNever(() => installer.install(any()));
   });
 
-  test('an APK already downloaded opens the installer without downloading again', () async {
+  test('AC-1.2: an APK already downloaded opens the installer without downloading again', () async {
     apk().writeAsBytesSync(body);
     final cubit = ApkDownloadCubit(installer: installer, versionCode: () async => 5);
     addTearDown(cubit.close);
@@ -214,7 +222,7 @@ void main() {
     verify(() => installer.install(apk().path)).called(1);
   });
 
-  test('old APKs are deleted once the new build runs', () async {
+  test('02-design: old APKs are deleted once the new build runs', () async {
     for (final name in ['ottos-5.apk', 'ottos-6.apk', 'ottos-6.apk.part', 'ottos-7.apk.part']) {
       File('${folder.path}/$name').writeAsStringSync('x');
     }
@@ -244,5 +252,65 @@ void main() {
     // The fake server has only the universal name: the request went to the split.
     expect(cubit.state.status, ApkDownloadStatus.failed);
     expect(server.paths.single, '/descargas/ottos-6-arm64-v8a.apk');
+  });
+
+  test('DEF-1, SEC-1: an APK the app refuses to install is deleted, and the retry downloads it again', () async {
+    when(() => installer.install(any())).thenThrow(PlatformException(code: 'rejected'));
+    final cubit = ApkDownloadCubit(installer: installer, versionCode: () async => 5);
+    addTearDown(cubit.close);
+
+    await cubit.start(version());
+    expect(cubit.state.status, ApkDownloadStatus.failed);
+    expect(apk().existsSync(), isFalse);
+
+    when(() => installer.install(any())).thenAnswer((_) async {});
+    await cubit.start(version());
+    expect(server.paths, ['/descargas/ottos-6.apk', '/descargas/ottos-6.apk']);
+    expect(cubit.state.status, ApkDownloadStatus.idle);
+  });
+
+  test('AC-1.2: an installer that cannot open keeps the file for the retry', () async {
+    when(() => installer.install(any())).thenThrow(PlatformException(code: 'update'));
+    final cubit = ApkDownloadCubit(installer: installer, versionCode: () async => 5);
+    addTearDown(cubit.close);
+
+    await cubit.start(version());
+    expect(cubit.state.status, ApkDownloadStatus.failed);
+    expect(apk().existsSync(), isTrue);
+  });
+
+  test('SEC-2: a redirect is a failed download', () async {
+    final cubit = ApkDownloadCubit(installer: installer, versionCode: () async => 5);
+    addTearDown(cubit.close);
+
+    await cubit.start(version('/descargas/moved.apk'));
+    expect(cubit.state.status, ApkDownloadStatus.failed);
+    expect(server.paths, ['/descargas/moved.apk']);
+    verifyNever(() => installer.install(any()));
+  });
+
+  test('SEC-2: with HTTPS required, an http link is refused before any request', () async {
+    final cubit = ApkDownloadCubit(installer: installer, versionCode: () async => 5, httpsOnly: true);
+    addTearDown(cubit.close);
+
+    await cubit.start(version());
+    expect(cubit.state.status, ApkDownloadStatus.failed);
+    expect(server.paths, isEmpty);
+  });
+
+  test('CR-1, AC-1.5: cancel while getting ready sends no request', () async {
+    final ready = Completer<String>();
+    when(() => installer.folder()).thenAnswer((_) => ready.future);
+    final cubit = ApkDownloadCubit(installer: installer, versionCode: () async => 5);
+    addTearDown(cubit.close);
+
+    final running = cubit.start(version());
+    cubit.cancel();
+    ready.complete(folder.path);
+    await running;
+
+    expect(cubit.state.status, ApkDownloadStatus.idle);
+    expect(server.paths, isEmpty);
+    expect(folder.listSync(), isEmpty);
   });
 }

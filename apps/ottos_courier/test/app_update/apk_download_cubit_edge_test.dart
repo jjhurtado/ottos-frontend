@@ -56,7 +56,7 @@ class _ApkServer {
 }
 
 void main() {
-  group('REQ-023 QA · ApkDownloadCubit', () {
+  group('REQ-023 · ApkDownloadCubit edge cases', () {
     late Directory folder;
     late _MockInstaller installer;
     late _ApkServer server;

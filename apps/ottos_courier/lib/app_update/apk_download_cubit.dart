@@ -67,6 +67,7 @@ class ApkDownloadCubit extends Cubit<ApkDownloadState> {
     this._installer = const ApkInstaller(),
     HttpClient Function()? http,
     this._versionCode = _installedVersionCode,
+    this._httpsOnly = kReleaseMode,
   }) : _http = http ?? HttpClient.new,
        super(const ApkDownloadState(ApkDownloadStatus.idle));
 
@@ -75,6 +76,9 @@ class ApkDownloadCubit extends Cubit<ApkDownloadState> {
 
   /// The installed versionCode, which carries the phone's ABI.
   final Future<int> Function() _versionCode;
+
+  /// Release builds download only over HTTPS (SEC-2); tests use a local http server.
+  final bool _httpsOnly;
 
   /// A stall this long with nothing received counts as a failed download.
   static const _stall = Duration(seconds: 60);
@@ -106,6 +110,9 @@ class ApkDownloadCubit extends Cubit<ApkDownloadState> {
       if (run != _run || isClosed) return;
       _apk = apk.path;
       await _install();
+    } on PlatformException catch (error) {
+      await _forgetRejected(error);
+      if (run == _run && !isClosed) emit(const ApkDownloadState(ApkDownloadStatus.failed));
     } on Exception {
       if (run == _run && !isClosed) emit(const ApkDownloadState(ApkDownloadStatus.failed));
     } finally {
@@ -114,11 +121,16 @@ class ApkDownloadCubit extends Cubit<ApkDownloadState> {
   }
 
   Future<void> _download(Uri url, File apk, int run) async {
+    if (_httpsOnly && url.scheme != 'https') throw HttpException('Not HTTPS', uri: url);
     final part = File('${apk.path}.part');
     final have = part.existsSync() ? part.lengthSync() : 0;
+    // Cancelled while getting ready (CR-1): no request at all.
+    if (run != _run) throw const HttpException('Cancelled');
     final client = _client = _http()..connectionTimeout = const Duration(seconds: 30);
     try {
       final request = await client.getUrl(url);
+      // A redirect counts as a failed download (SEC-2): the file comes only from the link.
+      request.followRedirects = false;
       if (have > 0) request.headers.set(HttpHeaders.rangeHeader, 'bytes=$have-');
       final response = await request.close();
       final resumed = have > 0 && response.statusCode == HttpStatus.partialContent;
@@ -133,6 +145,7 @@ class ApkDownloadCubit extends Cubit<ApkDownloadState> {
       final sink = part.openWrite(mode: resumed ? FileMode.append : FileMode.write);
       try {
         await for (final chunk in response.timeout(_stall)) {
+          if (run != _run) throw const HttpException('Cancelled');
           sink.add(chunk);
           received += chunk.length;
           if (total != null && run == _run && !isClosed) {
@@ -160,6 +173,19 @@ class ApkDownloadCubit extends Cubit<ApkDownloadState> {
     if (!isClosed) emit(const ApkDownloadState(ApkDownloadStatus.idle));
   }
 
+  /// The Android side refuses an APK that is not a newer build of this app signed
+  /// with its key (SEC-1); that file is deleted, so the retry downloads it again (DEF-1).
+  Future<void> _forgetRejected(PlatformException error) async {
+    final apk = _apk;
+    if (error.code != 'rejected' || apk == null) return;
+    _apk = null;
+    try {
+      await File(apk).delete();
+    } on FileSystemException {
+      // Already gone.
+    }
+  }
+
   /// Stops the download; what arrived stays for the next try.
   void cancel() {
     _run++;
@@ -180,6 +206,9 @@ class ApkDownloadCubit extends Cubit<ApkDownloadState> {
     if (state.status != ApkDownloadStatus.needsPermission || _apk == null) return;
     try {
       await _install();
+    } on PlatformException catch (error) {
+      await _forgetRejected(error);
+      if (!isClosed) emit(const ApkDownloadState(ApkDownloadStatus.failed));
     } on Exception {
       if (!isClosed) emit(const ApkDownloadState(ApkDownloadStatus.failed));
     }
