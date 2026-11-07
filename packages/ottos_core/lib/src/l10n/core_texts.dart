@@ -207,6 +207,11 @@ abstract final class CoreTexts {
   static String newVersion(String version) => 'Versión $version';
   static const update = 'Actualizar';
   static const later = 'Más tarde';
+  static String downloadingUpdate(double? progress) =>
+      progress == null ? 'Descargando…' : 'Descargando… ${(progress * 100).round()} %';
+  static const updateDownloadFailed = 'No se pudo descargar la actualización';
+  static const installPermission = 'Para actualizar, permite que Ottos instale apps';
+  static const openSettings = 'Abrir ajustes';
   static const searchOtherBeneficiary = 'Buscar otro beneficiario';
   static const searchBeneficiaryHint = 'Nombre o teléfono del beneficiario';
   static const searchBeneficiaryHelp =

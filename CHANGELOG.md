@@ -6,6 +6,17 @@ Cambios notables del frontend de Ottos (panel de operaciones y app de repartidor
 
 ## [Unreleased]
 
+## [1.0.0-rc.14] - 2026-11-07
+
+### Añadido
+
+- App › Android: «Actualizar» descarga la versión nueva dentro de la app, con el progreso, y abre el instalador de Android; si la conexión se corta, «Reintentar» sigue donde se quedó. La primera vez Android pide permitir que Ottos instale apps. En el aviso que se puede cerrar, «Cancelar» detiene la descarga. En iPhone, o sin enlace de descarga, todo sigue igual.
+- Panel: sirve las actualizaciones de la app en `/descargas/ottos-<versión>.apk` desde el bucket indicado en `APK_BUCKET_UPSTREAM`; sin la variable, `/descargas` responde 404.
+
+### Cambiado
+
+- App › Android: una compilación release sin `key.properties` falla en vez de firmarse con la clave de depuración.
+
 ## [1.0.0-rc.13] - 2026-11-06
 
 ### Cambiado

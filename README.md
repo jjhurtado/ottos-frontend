@@ -86,7 +86,17 @@ flutter build apk --release --split-per-abi --dart-define=OTTOS_API_URL=https://
 ```
 
 `build/app/outputs/flutter-apk/app-arm64-v8a-release.apk` fits most phones (about 21 MB);
-`app-armeabi-v7a-release.apk` is for older ones.
+`app-armeabi-v7a-release.apk` is for older ones. Without `key.properties` a release build fails (REQ-023).
+
+In-app updates (REQ-023): per-ABI APKs carry versionCode `1000 × ABI + build` (armeabi-v7a `1000 + N`, arm64
+`2000 + N`), and Android refuses a lower one, so a universal APK (versionCode `N`) cannot update them. The app takes
+its ABI from its versionCode and downloads `/descargas/ottos-<version>-<abi>.apk`: upload
+`ottos-<version>-arm64-v8a.apk` and `ottos-<version>-armeabi-v7a.apk` (the split files renamed).
+
+Transition: builds up to 14 have no in-app update; their «Actualizar» opens the browser at `ottos-<version>.apk`,
+without a suffix. Also upload the arm64-v8a split under that plain name for them (one manual install); an armeabi-v7a
+phone, if any, gets its APK by hand. The app checks before installing that the file is a newer build of
+`com.remesadeotto.ottos` signed with the same key; otherwise it deletes it and shows the error.
 
 For Google Play (decided 2026-10-13, not published yet) build an App Bundle instead and upload it to Play Console; the
 key above is the upload key:
@@ -110,4 +120,4 @@ and four repository secrets listed at the top of the workflow.
 ### Panel (web)
 
 `apps/ottos_ops/Dockerfile`, built from the repository root; it serves the panel and forwards `/api` to
-`OTTOS_BACKEND_URL`.
+`OTTOS_BACKEND_URL`, and `/descargas/ottos-*.apk` to the bucket in `APK_BUCKET_UPSTREAM` (REQ-023).
