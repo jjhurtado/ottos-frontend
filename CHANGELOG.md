@@ -6,6 +6,8 @@ Cambios notables del frontend de Ottos (panel de operaciones y app de repartidor
 
 ## [Unreleased]
 
+## [1.0.0-rc.15] - 2026-11-07
+
 ### Cambiado
 
 - Panel › Caja: el dinero que entra se pinta con el verde de la paleta de Ottos, el mismo que usa la app (antes era un verde de Material algo más claro).
