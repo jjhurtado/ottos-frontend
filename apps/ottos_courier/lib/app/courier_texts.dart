@@ -31,24 +31,10 @@ abstract final class CourierTexts {
 
   // New remittance
   static const newRemittance = 'Nueva remesa';
-  static const customer = 'Remitente';
-  static const searchCustomer = 'Busca por nombre o teléfono';
-  static const changeCustomer = 'Cambiar remitente';
-  static const chooseCustomerFirst = 'Elige primero el remitente';
-  static const noBeneficiaries = 'Este remitente no tiene beneficiarios todavía. Búscalo entre todos o crea uno.';
-  static const newCustomer = 'Nuevo remitente';
-  static const newBeneficiary = 'Nuevo beneficiario';
   static const amountToSend = 'Monto a enviar';
   static const amountToCollect = 'Monto a recoger';
   static const targetCurrency = 'Moneda';
   static const noRates = 'No hay monedas con tasa para este tipo de remesa.';
-  static const quoteHint = 'Escribe el monto para ver la comisión y lo que se entrega.';
-  static const pickupQuoteHint = 'Escribe el monto para ver la comisión.';
-  static const fee = 'Comisión';
-  static const total = 'Total a cobrar';
-  static const rate = 'Tasa';
-  static const amountToDeliver = 'Se entrega';
-  static const cashToCollect = 'Se recoge';
   static const courier = 'Repartidor';
   static const noCourier = 'Sin asignar';
   static const notesOptional = 'Notas (opcional)';
@@ -87,7 +73,7 @@ abstract final class CourierTexts {
   static String completedOn(String date) => 'Completada el $date';
 
   // Remittance
-  static const beneficiary = 'Beneficiario';
+  static const beneficiary = CoreTexts.beneficiary;
   static const phone = 'Teléfono';
   static const alternatePhone = 'Teléfono alternativo';
   static const address = 'Dirección';

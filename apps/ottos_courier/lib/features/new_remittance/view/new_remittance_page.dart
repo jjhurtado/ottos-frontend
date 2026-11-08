@@ -75,6 +75,7 @@ class _FormState extends State<_Form> {
   @override
   Widget build(BuildContext context) {
     final cubit = context.read<NewRemittanceCubit>();
+    final pickContact = context.read<ContactPicker>();
     return BlocBuilder<NewRemittanceCubit, NewRemittanceState>(
       builder: (context, state) {
         final enabled = !state.submitting;
@@ -94,9 +95,14 @@ class _FormState extends State<_Form> {
               onSelectionChanged: enabled ? (types) => cubit.typeChanged(types.single) : null,
             ),
             const SizedBox(height: 20),
-            _CustomerField(customer: state.customer, enabled: enabled),
+            NewRemittanceCustomerField(
+              customer: state.customer,
+              enabled: enabled,
+              compact: true,
+              pickContact: pickContact,
+            ),
             const SizedBox(height: 16),
-            _BeneficiaryField(state: state),
+            NewRemittanceBeneficiaryField(state: state, compact: true, pickContact: pickContact),
             const SizedBox(height: 16),
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -141,7 +147,7 @@ class _FormState extends State<_Form> {
             PickupRateField(state: state),
             PickupFeeField(state: state),
             OnTheHouseField(state: state),
-            _QuoteSummary(state: state),
+            NewRemittanceQuoteSummary(state: state, compact: true),
             if (state.couriers.isNotEmpty) ...[
               const SizedBox(height: 16),
               DropdownButtonFormField<Courier?>(
@@ -188,250 +194,6 @@ class _FormState extends State<_Form> {
             ),
           ],
         );
-      },
-    );
-  }
-}
-
-/// Searches customers as the user types; shows the chosen one with a way to change it.
-class _CustomerField extends StatelessWidget {
-  const _CustomerField({required this.customer, required this.enabled});
-
-  final Customer? customer;
-  final bool enabled;
-
-  @override
-  Widget build(BuildContext context) {
-    final cubit = context.read<NewRemittanceCubit>();
-    final selected = customer;
-    if (selected != null) {
-      return InputDecorator(
-        decoration: const InputDecoration(labelText: CourierTexts.customer),
-        child: Row(
-          children: [
-            Expanded(child: Text('${selected.fullName} · ${selected.contactLine}')),
-            IconButton(
-              tooltip: CourierTexts.changeCustomer,
-              onPressed: enabled ? () => cubit.customerSelected(null) : null,
-              icon: const Icon(Icons.close),
-            ),
-          ],
-        ),
-      );
-    }
-    final search = Autocomplete<Customer>(
-      displayStringForOption: (customer) => customer.fullName,
-      optionsBuilder: (value) async {
-        if (value.text.trim().length < 2) return const [];
-        try {
-          return await cubit.searchCustomers(value.text);
-        } on ApiException {
-          return const [];
-        }
-      },
-      onSelected: cubit.customerSelected,
-      fieldViewBuilder: (context, controller, focusNode, onSubmitted) => TextField(
-        controller: controller,
-        focusNode: focusNode,
-        enabled: enabled,
-        decoration: const InputDecoration(
-          labelText: CourierTexts.customer,
-          hintText: CourierTexts.searchCustomer,
-          prefixIcon: Icon(Icons.search),
-        ),
-      ),
-      // With the phone: two customers may share a name.
-      optionsViewBuilder: (context, onSelected, options) => Align(
-        alignment: Alignment.topLeft,
-        child: Material(
-          elevation: 4,
-          child: ConstrainedBox(
-            constraints: BoxConstraints(maxHeight: 280, maxWidth: MediaQuery.sizeOf(context).width - 32),
-            child: ListView(
-              padding: EdgeInsets.zero,
-              shrinkWrap: true,
-              children: [
-                for (final customer in options)
-                  ListTile(
-                    title: Text(customer.fullName),
-                    subtitle: Text(customer.contactLine),
-                    onTap: () => onSelected(customer),
-                  ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-    if (!context.canDo(Permissions.customersWrite)) return search;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        search,
-        TextButton.icon(
-          onPressed: enabled
-              ? () async {
-                  final created = await showCustomerFormDialog(
-                    context,
-                    title: CourierTexts.newCustomer,
-                    pickContact: context.read<ContactPicker>(),
-                  );
-                  if (created != null) await cubit.customerSelected(created);
-                }
-              : null,
-          icon: const Icon(Icons.person_add_alt_1),
-          label: const Text(CourierTexts.newCustomer),
-        ),
-      ],
-    );
-  }
-}
-
-class _BeneficiaryField extends StatelessWidget {
-  const _BeneficiaryField({required this.state});
-
-  final NewRemittanceState state;
-
-  @override
-  Widget build(BuildContext context) {
-    if (state.customer == null) {
-      return const InputDecorator(
-        decoration: InputDecoration(labelText: CourierTexts.beneficiary, enabled: false),
-        child: Text(CourierTexts.chooseCustomerFirst),
-      );
-    }
-    if (state.beneficiariesStatus == LoadStatus.loading) return const LinearProgressIndicator();
-    final cubit = context.read<NewRemittanceCubit>();
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if (state.beneficiariesStatus == LoadStatus.success && state.beneficiaries.isEmpty)
-          const InputDecorator(
-            decoration: InputDecoration(labelText: CourierTexts.beneficiary),
-            child: Text(CourierTexts.noBeneficiaries),
-          )
-        else
-          _dropdown(context),
-        // Beneficiaries loaded without a customer are linked by the remittance.
-        Wrap(
-          children: [
-            TextButton.icon(
-              onPressed: state.submitting
-                  ? null
-                  : () async {
-                      final found = await showBeneficiarySearchDialog(context, search: cubit.searchBeneficiaries);
-                      if (found != null) cubit.beneficiaryCreated(found);
-                    },
-              icon: const Icon(Icons.person_search),
-              label: const Text(CoreTexts.searchOtherBeneficiary),
-            ),
-            if (context.canDo(Permissions.customersWrite))
-              TextButton.icon(
-                onPressed: state.submitting
-                    ? null
-                    : () async {
-                        final created = await showBeneficiaryFormDialog(
-                          context,
-                          customerId: state.customer!.id,
-                          pickContact: context.read<ContactPicker>(),
-                        );
-                        if (created != null) cubit.beneficiaryCreated(created);
-                      },
-                icon: const Icon(Icons.add),
-                label: const Text(CourierTexts.newBeneficiary),
-              ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _dropdown(BuildContext context) {
-    return DropdownButtonFormField<Beneficiary>(
-      key: ValueKey('${state.customer!.id}-${state.beneficiaries.length}'),
-      initialValue: state.beneficiary,
-      isExpanded: true,
-      decoration: const InputDecoration(labelText: CourierTexts.beneficiary),
-      items: [
-        for (final beneficiary in state.beneficiaries)
-          DropdownMenuItem(
-            value: beneficiary,
-            child: Text('${beneficiary.fullName} · ${beneficiary.address}', overflow: TextOverflow.ellipsis),
-          ),
-      ],
-      onChanged: state.submitting ? null : context.read<NewRemittanceCubit>().beneficiarySelected,
-    );
-  }
-}
-
-class _QuoteSummary extends StatelessWidget {
-  const _QuoteSummary({required this.state});
-
-  final NewRemittanceState state;
-
-  @override
-  Widget build(BuildContext context) {
-    final quote = state.quote;
-    final colors = Theme.of(context).colorScheme;
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: colors.surfaceContainerHighest, borderRadius: BorderRadius.circular(12)),
-      child: switch (state.quoteStatus) {
-        LoadStatus.loading => const Center(child: CircularProgressIndicator()),
-        LoadStatus.failure => Text(state.error ?? CoreTexts.unexpectedError, style: TextStyle(color: colors.error)),
-        LoadStatus.success when quote == null => Text(
-          state.type == RemittanceType.pickup ? CourierTexts.pickupQuoteHint : CourierTexts.quoteHint,
-        ),
-        LoadStatus.success => Column(
-          children: [
-            // A pickup hands nothing over: the courier collects the amount and
-            // the fee is the business's, so there is no total or amount to deliver.
-            if (state.type == RemittanceType.pickup) ...[
-              InfoRow(label: CourierTexts.cashToCollect, value: Formatters.money(quote!.amount, quote.sourceCurrency)),
-              InfoRow(
-                label: CourierTexts.fee,
-                value: [
-                  Formatters.money(quote.fee, quote.sourceCurrency),
-                  if (quote.feeOverridden) CoreTexts.rateTypedByHand,
-                ].join(' · '),
-              ),
-              InfoRow(
-                label: CourierTexts.rate,
-                value: [
-                  Formatters.money(quote.rate, null),
-                  if (quote.rateOverridden) CoreTexts.rateTypedByHand,
-                  CoreTexts.rateInformative,
-                ].join(' · '),
-              ),
-            ] else ...[
-              InfoRow(
-                label: CourierTexts.fee,
-                value: [
-                  Formatters.money(quote!.fee, quote.sourceCurrency),
-                  if (quote.onTheHouse) CoreTexts.onTheHouse,
-                ].join(' · '),
-              ),
-              if (quote.onTheHouse && quote.waivedFee != null)
-                InfoRow(label: CoreTexts.waivedFee, value: Formatters.money(quote.waivedFee, quote.sourceCurrency)),
-              InfoRow(label: CourierTexts.total, value: Formatters.money(quote.total, quote.sourceCurrency)),
-              InfoRow(
-                label: CourierTexts.rate,
-                value: [
-                  Formatters.money(quote.rate, null),
-                  if (quote.rateOverridden) CoreTexts.rateTypedByHand,
-                ].join(' · '),
-              ),
-              InfoRow(
-                label: CourierTexts.amountToDeliver,
-                value: Formatters.money(quote.amountToDeliver, quote.targetCurrency),
-              ),
-              if (state.onTheHouse && !quote.onTheHouse) ...[
-                const SizedBox(height: 8),
-                Text(CoreTexts.onTheHouseNotQuoted, style: TextStyle(color: colors.error)),
-              ],
-            ],
-          ],
-        ),
       },
     );
   }

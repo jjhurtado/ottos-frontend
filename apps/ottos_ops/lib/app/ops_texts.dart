@@ -45,8 +45,8 @@ abstract final class OpsTexts {
   static const code = 'Código';
   static const type = 'Tipo';
   static const status = 'Estado';
-  static const customer = 'Remitente';
-  static const beneficiary = 'Beneficiario';
+  static const customer = CoreTexts.customer;
+  static const beneficiary = CoreTexts.beneficiary;
   static const municipality = CoreTexts.municipality;
   static const amount = 'Monto';
   static const expectedDate = 'Fecha prevista';
@@ -64,11 +64,11 @@ abstract final class OpsTexts {
   static const alternatePhone = CoreTexts.alternatePhone;
   static const address = CoreTexts.address;
   static const reference = CoreTexts.reference;
-  static const fee = 'Comisión';
+  static const fee = CoreTexts.fee;
   static const total = 'Total cobrado';
-  static const rate = 'Tasa';
+  static const rate = CoreTexts.rate;
   static const amountToDeliver = 'A entregar';
-  static const cashToCollect = 'Se recoge';
+  static const cashToCollect = CoreTexts.cashToCollect;
   static const pin = 'PIN';
   static const postponements = 'Aplazamientos';
   static const notes = CoreTexts.notes;
@@ -79,16 +79,14 @@ abstract final class OpsTexts {
 
   // New remittance
   static const newRemittance = 'Nueva remesa';
-  static const searchCustomer = 'Nombre o teléfono';
-  static const changeCustomer = 'Cambiar remitente';
-  static const chooseCustomerFirst = 'Elige primero el remitente';
-  static const noBeneficiaries = 'Este remitente no tiene beneficiarios todavía. Búscalo entre todos o crea uno.';
+  static const searchCustomer = CoreTexts.searchCustomer;
+  static const changeCustomer = CoreTexts.changeCustomer;
+  static const chooseCustomerFirst = CoreTexts.chooseCustomerFirst;
+  static const noBeneficiaries = CoreTexts.noBeneficiaries;
   static const amountToSend = 'Monto a enviar';
   static const amountToCollect = 'Monto a recoger';
   static const targetCurrency = 'Moneda a entregar';
   static const noRates = 'No hay tasas de cambio configuradas; no se pueden registrar remesas.';
-  static const quoteHint = 'Escribe el monto para ver la comisión y lo que se entrega.';
-  static const pickupQuoteHint = 'Escribe el monto para ver la comisión.';
   static const notesOptional = 'Notas (opcional)';
   static const register = 'Registrar remesa';
   static String remittanceRegistered(String label) => 'Remesa registrada: $label';

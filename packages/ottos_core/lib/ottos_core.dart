@@ -84,6 +84,7 @@ export 'src/widgets/exchange_dialog.dart';
 export 'src/widgets/incident_banner.dart';
 export 'src/widgets/info_row.dart';
 export 'src/widgets/logout_dialog.dart';
+export 'src/widgets/new_remittance_fields.dart';
 export 'src/widgets/on_the_house.dart';
 export 'src/widgets/pending_totals_tile.dart';
 export 'src/widgets/ottos_logo.dart';

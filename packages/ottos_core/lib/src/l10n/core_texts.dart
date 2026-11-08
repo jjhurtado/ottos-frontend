@@ -118,6 +118,25 @@ abstract final class CoreTexts {
   static const alternatePhone = 'Teléfono alternativo';
   static const amount = 'Monto';
 
+  // New remittance (panel and app); the *App ones are the app's wording
+  static const customer = 'Remitente';
+  static const beneficiary = 'Beneficiario';
+  static const searchCustomer = 'Nombre o teléfono';
+  static const searchCustomerApp = 'Busca por nombre o teléfono';
+  static const changeCustomer = 'Cambiar remitente';
+  static const newSender = 'Nuevo remitente';
+  static const chooseCustomerFirst = 'Elige primero el remitente';
+  static const noBeneficiaries = 'Este remitente no tiene beneficiarios todavía. Búscalo entre todos o crea uno.';
+  static const quoteHint = 'Escribe el monto para ver la comisión y lo que se entrega.';
+  static const pickupQuoteHint = 'Escribe el monto para ver la comisión.';
+  static const fee = 'Comisión';
+  static const rate = 'Tasa';
+  static const cashToCollect = 'Se recoge';
+  static const quoteTotal = 'Total cobrado';
+  static const quoteTotalApp = 'Total a cobrar';
+  static const quoteToDeliver = 'A entregar';
+  static const quoteToDeliverApp = 'Se entrega';
+
   // Assigning
   static const courier = 'Repartidor';
   static const assignCourier = 'Asignar repartidor';
@@ -134,6 +153,7 @@ abstract final class CoreTexts {
   static const currency = 'Moneda';
   static const noteOptional = 'Nota (opcional)';
   static const amountRequired = 'Escribe un monto mayor que 0';
+  static String movementRegistered(String amount) => 'Movimiento de $amount registrado';
 
   // Pickup rate
   static const pickupRate = 'Tasa de esta recogida';
