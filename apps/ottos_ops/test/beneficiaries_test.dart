@@ -55,18 +55,18 @@ void main() {
       addTearDown(cubit.close);
 
       await cubit.load();
-      expect(cubit.state.beneficiaries, const [_rosa, _suelto]);
+      expect(cubit.state.items, const [_rosa, _suelto]);
 
       const renamed = Beneficiary(id: 'b2', fullName: 'Juana', phone: '5352220002');
       await cubit.saved(renamed);
-      expect(cubit.state.beneficiaries.map((b) => b.fullName), ['Rosa', 'Juana']);
+      expect(cubit.state.items.map((b) => b.fullName), ['Rosa', 'Juana']);
       expect(cubit.state.result?.totalItems, 2);
       verify(() => customers.beneficiaryPage('', page: 0, size: 50)).called(1);
 
       cubit.queryChanged('su');
       await Future<void>.delayed(const Duration(milliseconds: 10));
       expect(cubit.state.query, 'su');
-      expect(cubit.state.beneficiaries, const [_suelto]);
+      expect(cubit.state.items, const [_suelto]);
       expect(cubit.state.result?.totalItems, 1);
     });
 
@@ -82,7 +82,7 @@ void main() {
       await cubit.load();
       await cubit.saved(created);
 
-      expect(cubit.state.beneficiaries.first, created);
+      expect(cubit.state.items.first, created);
       expect(cubit.state.result?.totalItems, 3);
     });
 
@@ -94,7 +94,7 @@ void main() {
 
       await cubit.load();
 
-      expect(cubit.state.status, BeneficiaryListStatus.failure);
+      expect(cubit.state.status, PagedSearchStatus.failure);
       expect(cubit.state.error, CoreTexts.networkError);
     });
   });

@@ -96,21 +96,21 @@ class _CustomerListView extends StatelessWidget {
               clipBehavior: Clip.antiAlias,
               child: BlocBuilder<CustomerListCubit, CustomerListState>(
                 builder: (context, state) {
-                  if (state.status == CustomerListStatus.failure) {
+                  if (state.status == PagedSearchStatus.failure) {
                     return ErrorView(message: state.error!, onRetry: cubit.load);
                   }
-                  if (state.status == CustomerListStatus.loading && state.customers.isEmpty) {
+                  if (state.status == PagedSearchStatus.loading && state.items.isEmpty) {
                     return const LoadingView();
                   }
                   return Column(
                     children: [
-                      if (state.status == CustomerListStatus.loading) const LinearProgressIndicator(minHeight: 2),
+                      if (state.status == PagedSearchStatus.loading) const LinearProgressIndicator(minHeight: 2),
                       Expanded(
-                        child: state.customers.isEmpty
+                        child: state.items.isEmpty
                             ? EmptyView(
                                 message: state.query.trim().isEmpty ? OpsTexts.noCustomersYet : OpsTexts.noCustomers,
                               )
-                            : _CustomerTable(customers: state.customers),
+                            : _CustomerTable(customers: state.items),
                       ),
                       if (state.result case final result?) ...[
                         const Divider(height: 1),

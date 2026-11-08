@@ -119,22 +119,15 @@ class _CourierCashTile extends StatelessWidget {
     final canWrite = context.canDo(Permissions.cashWrite);
     final cubit = context.read<CashCubit>();
     final textTheme = Theme.of(context).textTheme;
-    final currencies = {'USD', 'CUP', for (final balance in courier.balances) balance.currency}.toList();
-
-    Future<void> operate(String title, String confirm, Future<CashMovement> Function(CashInput) submit) async {
-      final movement = await showCashOperationDialog(
-        context,
-        title: title,
-        confirmLabel: confirm,
-        currencies: currencies,
-        submit: submit,
-      );
-      if (movement == null || !context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(CourierTexts.movementRegistered(Formatters.money(movement.amount, movement.currency)))),
-      );
-      await cubit.load();
-    }
+    Future<void> operate(String title, String confirm, Future<CashMovement> Function(CashInput) submit) =>
+        runCashOperation(
+          context,
+          title: title,
+          confirmLabel: confirm,
+          currencies: courierCashCurrencies(courier.balances),
+          submit: submit,
+          onDone: cubit.load,
+        );
 
     return Card(
       margin: const EdgeInsets.only(bottom: 8),

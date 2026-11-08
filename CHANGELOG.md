@@ -6,6 +6,11 @@ Cambios notables del frontend de Ottos (panel de operaciones y app de repartidor
 
 ## [Unreleased]
 
+### Cambiado
+
+- Panel › Caja: el dinero que entra se pinta con el verde de la paleta de Ottos, el mismo que usa la app (antes era un verde de Material algo más claro).
+- Panel y app: los campos de remitente, beneficiario y cotización de «Nueva remesa», la entrega de fondos o devolución de un repartidor y las listas de clientes y beneficiarios comparten código. Lo que se ve no cambia (REQ-022 lote 3).
+
 ## [1.0.0-rc.14] - 2026-11-07
 
 ### Añadido

@@ -91,23 +91,15 @@ class _CashButtons extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cash = context.read<CashRepository>();
-    final currencies = {'USD', 'CUP', for (final balance in courier.balances) balance.currency}.toList();
-
-    Future<void> operate(String title, String confirm, Future<CashMovement> Function(CashInput) submit) async {
-      final messenger = ScaffoldMessenger.of(context);
-      final movement = await showCashOperationDialog(
-        context,
-        title: title,
-        confirmLabel: confirm,
-        currencies: currencies,
-        submit: submit,
-      );
-      if (movement == null) return;
-      messenger.showSnackBar(
-        SnackBar(content: Text(CourierTexts.movementRegistered(Formatters.money(movement.amount, movement.currency)))),
-      );
-      await onMoved();
-    }
+    Future<void> operate(String title, String confirm, Future<CashMovement> Function(CashInput) submit) =>
+        runCashOperation(
+          context,
+          title: title,
+          confirmLabel: confirm,
+          currencies: courierCashCurrencies(courier.balances),
+          submit: submit,
+          onDone: onMoved,
+        );
 
     return Row(
       children: [
