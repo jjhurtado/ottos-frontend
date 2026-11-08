@@ -48,7 +48,6 @@ abstract final class CourierTexts {
   static const registerReturn = 'Registrar devolución';
   static String fundTitle(String name) => 'Entregar fondos a $name';
   static String returnTitle(String name) => 'Devolución de $name';
-  static String movementRegistered(String amount) => 'Movimiento de $amount registrado';
 
   // Assigned list
   static const noAssigned = 'No tienes remesas pendientes.';

@@ -58,22 +58,16 @@ class _CashView extends StatelessWidget {
       required Future<CashMovement> Function(CashInput) submit,
       bool noteRequired = false,
       String? help,
-    }) async {
-      final movement = await showCashOperationDialog(
-        context,
-        title: title,
-        confirmLabel: confirm,
-        currencies: state.currencies,
-        submit: submit,
-        noteRequired: noteRequired,
-        help: help,
-      );
-      if (movement == null || !context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(OpsTexts.movementRegistered(Formatters.money(movement.amount, movement.currency)))),
-      );
-      await cubit.load();
-    }
+    }) => runCashOperation(
+      context,
+      title: title,
+      confirmLabel: confirm,
+      currencies: state.currencies,
+      submit: submit,
+      noteRequired: noteRequired,
+      help: help,
+      onDone: cubit.load,
+    );
 
     return RefreshIndicator(
       onRefresh: cubit.load,

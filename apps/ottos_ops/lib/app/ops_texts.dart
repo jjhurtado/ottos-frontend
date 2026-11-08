@@ -224,7 +224,6 @@ abstract final class OpsTexts {
   static const registerReturn = 'Registrar devolución';
   static String fundCourierTitle(String name) => 'Entregar fondos a $name';
   static String courierReturnTitle(String name) => 'Devolución de $name';
-  static String movementRegistered(String amount) => 'Movimiento de $amount registrado';
 
   /// Movement names from the business's point of view.
   static String movementTitle(CashMovementType type) => switch (type) {
