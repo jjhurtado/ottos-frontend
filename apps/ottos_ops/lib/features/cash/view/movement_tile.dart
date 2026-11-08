@@ -26,17 +26,15 @@ class MovementTile extends StatelessWidget {
     final title = courier == null
         ? OpsTexts.movementTitle(movement.type)
         : '${OpsTexts.movementTitle(movement.type)} · $courier';
+    final color = incoming ? OttosColors.success : colors.error;
     final amount = Text(
       '${incoming ? '+' : '−'}${Formatters.money(movement.signedAmount.abs(), movement.currency)}',
-      style: TextStyle(fontWeight: FontWeight.w600, color: incoming ? Colors.green.shade700 : colors.error),
+      style: TextStyle(fontWeight: FontWeight.w600, color: color),
     );
     final compact = isCompact(context);
     return ListTile(
       contentPadding: EdgeInsets.zero,
-      leading: Icon(
-        incoming ? Icons.south_west : Icons.north_east,
-        color: incoming ? Colors.green.shade700 : colors.error,
-      ),
+      leading: Icon(incoming ? Icons.south_west : Icons.north_east, color: color),
       // On a phone the amount goes under the title, so the text keeps the width.
       title: compact
           ? Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(title), amount])

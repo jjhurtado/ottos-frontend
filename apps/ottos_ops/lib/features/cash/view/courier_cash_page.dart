@@ -68,22 +68,15 @@ class _CourierCashView extends StatelessWidget {
     final canWrite = context.canDo(Permissions.cashWrite);
     final repository = context.read<CashRepository>();
     final colors = Theme.of(context).colorScheme;
-    final currencies = {'USD', 'CUP', for (final balance in cash.balances) balance.currency}.toList();
-
-    Future<void> operate(String title, String confirm, Future<CashMovement> Function(CashInput) submit) async {
-      final movement = await showCashOperationDialog(
-        context,
-        title: title,
-        confirmLabel: confirm,
-        currencies: currencies,
-        submit: submit,
-      );
-      if (movement == null || !context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(OpsTexts.movementRegistered(Formatters.money(movement.amount, movement.currency)))),
-      );
-      onChanged();
-    }
+    Future<void> operate(String title, String confirm, Future<CashMovement> Function(CashInput) submit) =>
+        runCashOperation(
+          context,
+          title: title,
+          confirmLabel: confirm,
+          currencies: courierCashCurrencies(cash.balances),
+          submit: submit,
+          onDone: onChanged,
+        );
 
     return ListView(
       padding: pagePadding(context),

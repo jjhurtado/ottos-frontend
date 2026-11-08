@@ -1,9 +1,44 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../api/api_exception.dart';
 import '../l10n/core_texts.dart';
 import '../models/cash.dart';
+import '../models/exchange.dart';
+import '../utils/formatters.dart';
+
+/// Currencies to fund a courier or take a return in: the cash's own ones, then any other the courier holds.
+List<String> courierCashCurrencies(List<Balance> balances) =>
+    {...exchangeCurrencies, for (final balance in balances) balance.currency}.toList();
+
+/// Runs [showCashOperationDialog]; once a movement is registered, says so and calls [onDone].
+Future<void> runCashOperation(
+  BuildContext context, {
+  required String title,
+  required String confirmLabel,
+  required List<String> currencies,
+  required Future<CashMovement> Function(CashInput input) submit,
+  required FutureOr<void> Function() onDone,
+  bool noteRequired = false,
+  String? help,
+}) async {
+  final movement = await showCashOperationDialog(
+    context,
+    title: title,
+    confirmLabel: confirmLabel,
+    currencies: currencies,
+    submit: submit,
+    noteRequired: noteRequired,
+    help: help,
+  );
+  if (movement == null || !context.mounted) return;
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(content: Text(CoreTexts.movementRegistered(Formatters.money(movement.amount, movement.currency)))),
+  );
+  await onDone();
+}
 
 /// Asks for amount, currency and note, then runs [submit]; returns the movement
 /// registered, or null if cancelled. Errors from the API stay in the dialog.

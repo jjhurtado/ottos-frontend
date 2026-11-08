@@ -70,23 +70,23 @@ class _BeneficiaryListView extends StatelessWidget {
               clipBehavior: Clip.antiAlias,
               child: BlocBuilder<BeneficiaryListCubit, BeneficiaryListState>(
                 builder: (context, state) {
-                  if (state.status == BeneficiaryListStatus.failure) {
+                  if (state.status == PagedSearchStatus.failure) {
                     return ErrorView(message: state.error!, onRetry: cubit.load);
                   }
-                  if (state.status == BeneficiaryListStatus.loading && state.beneficiaries.isEmpty) {
+                  if (state.status == PagedSearchStatus.loading && state.items.isEmpty) {
                     return const LoadingView();
                   }
                   return Column(
                     children: [
-                      if (state.status == BeneficiaryListStatus.loading) const LinearProgressIndicator(minHeight: 2),
+                      if (state.status == PagedSearchStatus.loading) const LinearProgressIndicator(minHeight: 2),
                       Expanded(
-                        child: state.beneficiaries.isEmpty
+                        child: state.items.isEmpty
                             ? EmptyView(
                                 message: state.query.trim().isEmpty
                                     ? OpsTexts.noBeneficiariesYet
                                     : OpsTexts.noBeneficiariesFound,
                               )
-                            : _BeneficiaryTable(beneficiaries: state.beneficiaries, canWrite: canWrite),
+                            : _BeneficiaryTable(beneficiaries: state.items, canWrite: canWrite),
                       ),
                       if (state.result case final result?) ...[
                         const Divider(height: 1),

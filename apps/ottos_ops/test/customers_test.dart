@@ -43,16 +43,16 @@ void main() {
       addTearDown(cubit.close);
 
       await cubit.load();
-      expect(cubit.state.customers, const [_ana, _luis]);
+      expect(cubit.state.items, const [_ana, _luis]);
       expect(cubit.state.result?.totalItems, 2);
 
       cubit.queryChanged('l');
       cubit.queryChanged('lu');
       await Future<void>.delayed(const Duration(milliseconds: 10));
 
-      expect(cubit.state.status, CustomerListStatus.success);
+      expect(cubit.state.status, PagedSearchStatus.success);
       expect(cubit.state.query, 'lu');
-      expect(cubit.state.customers, const [_luis]);
+      expect(cubit.state.items, const [_luis]);
       expect(cubit.state.result?.totalItems, 1);
       verifyNever(
         () => customers.customerPage(
@@ -72,7 +72,7 @@ void main() {
 
       await cubit.load();
       await cubit.load(page: 1);
-      expect(cubit.state.customers, const [_luis]);
+      expect(cubit.state.items, const [_luis]);
 
       await cubit.load();
       verify(() => customers.customerPage('', page: 1, size: 1)).called(2);
@@ -87,9 +87,9 @@ void main() {
       await cubit.load();
       await cubit.load(page: 1);
 
-      expect(cubit.state.status, CustomerListStatus.failure);
+      expect(cubit.state.status, PagedSearchStatus.failure);
       expect(cubit.state.error, CoreTexts.networkError);
-      expect(cubit.state.customers, const [_ana, _luis]);
+      expect(cubit.state.items, const [_ana, _luis]);
     });
   });
 
