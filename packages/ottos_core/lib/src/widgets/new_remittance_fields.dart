@@ -16,8 +16,10 @@ import 'customer_form_dialog.dart';
 import 'info_row.dart';
 
 // The sender, beneficiary and quote of a new remittance, under a
-// [NewRemittanceCubit]. [compact] is the app's version: the button goes under
-// the field, the options are as wide as the screen and the app's wording;
+// [NewRemittanceCubit]. [forCourierApp] selects the courier app's layout AND its
+// wording: the button goes under the field, the options are as wide as the
+// screen, and «Busca por nombre o teléfono», «Nuevo remitente», «Total a cobrar»
+// and «Se entrega». It is not about screen size: the panel on a phone keeps it false;
 // [pickContact] fills new senders and beneficiaries from the phone's contacts.
 
 /// Searches customers as the user types; shows the chosen one with a way to change it.
@@ -26,13 +28,13 @@ class NewRemittanceCustomerField extends StatelessWidget {
     super.key,
     required this.customer,
     required this.enabled,
-    this.compact = false,
+    this.forCourierApp = false,
     this.pickContact,
   });
 
   final Customer? customer;
   final bool enabled;
-  final bool compact;
+  final bool forCourierApp;
   final ContactPicker? pickContact;
 
   @override
@@ -71,7 +73,7 @@ class NewRemittanceCustomerField extends StatelessWidget {
         enabled: enabled,
         decoration: InputDecoration(
           labelText: CoreTexts.customer,
-          hintText: compact ? CoreTexts.searchCustomerApp : CoreTexts.searchCustomer,
+          hintText: forCourierApp ? CoreTexts.searchCustomerApp : CoreTexts.searchCustomer,
           prefixIcon: const Icon(Icons.search),
         ),
       ),
@@ -83,7 +85,7 @@ class NewRemittanceCustomerField extends StatelessWidget {
           child: ConstrainedBox(
             constraints: BoxConstraints(
               maxHeight: 280,
-              maxWidth: compact ? MediaQuery.sizeOf(context).width - 32 : 672,
+              maxWidth: forCourierApp ? MediaQuery.sizeOf(context).width - 32 : 672,
             ),
             child: ListView(
               padding: EdgeInsets.zero,
@@ -107,16 +109,16 @@ class NewRemittanceCustomerField extends StatelessWidget {
           ? () async {
               final created = await showCustomerFormDialog(
                 context,
-                title: compact ? CoreTexts.newSender : null,
+                title: forCourierApp ? CoreTexts.newSender : null,
                 pickContact: pickContact,
               );
               if (created != null) await cubit.customerSelected(created);
             }
           : null,
       icon: const Icon(Icons.person_add_alt_1),
-      label: Text(compact ? CoreTexts.newSender : CoreTexts.newCustomer),
+      label: Text(forCourierApp ? CoreTexts.newSender : CoreTexts.newCustomer),
     );
-    if (compact) {
+    if (forCourierApp) {
       return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [search, create]);
     }
     return Row(
@@ -132,10 +134,10 @@ class NewRemittanceCustomerField extends StatelessWidget {
 
 /// The customer's beneficiaries, with buttons to find another one or create one.
 class NewRemittanceBeneficiaryField extends StatelessWidget {
-  const NewRemittanceBeneficiaryField({super.key, required this.state, this.compact = false, this.pickContact});
+  const NewRemittanceBeneficiaryField({super.key, required this.state, this.forCourierApp = false, this.pickContact});
 
   final NewRemittanceState state;
-  final bool compact;
+  final bool forCourierApp;
   final ContactPicker? pickContact;
 
   @override
@@ -158,9 +160,9 @@ class NewRemittanceBeneficiaryField extends StatelessWidget {
           )
         else
           _dropdown(cubit),
-        if (!compact) const SizedBox(height: 4),
+        if (!forCourierApp) const SizedBox(height: 4),
         Wrap(
-          spacing: compact ? 0 : 8,
+          spacing: forCourierApp ? 0 : 8,
           children: [
             // Beneficiaries loaded without a customer are linked by the remittance.
             TextButton.icon(
@@ -215,10 +217,10 @@ class NewRemittanceBeneficiaryField extends StatelessWidget {
 
 /// The server's quote: fee, total, rate and what is delivered, or what a pickup collects.
 class NewRemittanceQuoteSummary extends StatelessWidget {
-  const NewRemittanceQuoteSummary({super.key, required this.state, this.compact = false});
+  const NewRemittanceQuoteSummary({super.key, required this.state, this.forCourierApp = false});
 
   final NewRemittanceState state;
-  final bool compact;
+  final bool forCourierApp;
 
   @override
   Widget build(BuildContext context) {
@@ -265,7 +267,7 @@ class NewRemittanceQuoteSummary extends StatelessWidget {
               if (quote.onTheHouse && quote.waivedFee != null)
                 InfoRow(label: CoreTexts.waivedFee, value: Formatters.money(quote.waivedFee, quote.sourceCurrency)),
               InfoRow(
-                label: compact ? CoreTexts.quoteTotalApp : CoreTexts.quoteTotal,
+                label: forCourierApp ? CoreTexts.quoteTotalApp : CoreTexts.quoteTotal,
                 value: Formatters.money(quote.total, quote.sourceCurrency),
               ),
               InfoRow(
@@ -276,7 +278,7 @@ class NewRemittanceQuoteSummary extends StatelessWidget {
                 ].join(' · '),
               ),
               InfoRow(
-                label: compact ? CoreTexts.quoteToDeliverApp : CoreTexts.quoteToDeliver,
+                label: forCourierApp ? CoreTexts.quoteToDeliverApp : CoreTexts.quoteToDeliver,
                 value: Formatters.money(quote.amountToDeliver, quote.targetCurrency),
               ),
               if (state.onTheHouse && !quote.onTheHouse) ...[

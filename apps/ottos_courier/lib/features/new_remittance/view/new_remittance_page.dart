@@ -98,11 +98,11 @@ class _FormState extends State<_Form> {
             NewRemittanceCustomerField(
               customer: state.customer,
               enabled: enabled,
-              compact: true,
+              forCourierApp: true,
               pickContact: pickContact,
             ),
             const SizedBox(height: 16),
-            NewRemittanceBeneficiaryField(state: state, compact: true, pickContact: pickContact),
+            NewRemittanceBeneficiaryField(state: state, forCourierApp: true, pickContact: pickContact),
             const SizedBox(height: 16),
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -147,7 +147,7 @@ class _FormState extends State<_Form> {
             PickupRateField(state: state),
             PickupFeeField(state: state),
             OnTheHouseField(state: state),
-            NewRemittanceQuoteSummary(state: state, compact: true),
+            NewRemittanceQuoteSummary(state: state, forCourierApp: true),
             if (state.couriers.isNotEmpty) ...[
               const SizedBox(height: 16),
               DropdownButtonFormField<Courier?>(

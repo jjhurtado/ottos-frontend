@@ -78,7 +78,7 @@ void main() {
     });
 
     testWidgets('the app keeps its wording and puts «Nuevo remitente» under the search', (tester) async {
-      await pump(tester, const NewRemittanceCustomerField(customer: null, enabled: true, compact: true));
+      await pump(tester, const NewRemittanceCustomerField(customer: null, enabled: true, forCourierApp: true));
 
       expect(find.text(CoreTexts.searchCustomerApp), findsOneWidget);
       expect(find.text(CoreTexts.newSender), findsOneWidget);
@@ -98,7 +98,7 @@ void main() {
       expect(find.text(CoreTexts.quoteTotal), findsOneWidget);
       expect(find.text(CoreTexts.quoteToDeliver), findsOneWidget);
 
-      await pump(tester, const NewRemittanceQuoteSummary(state: state, compact: true));
+      await pump(tester, const NewRemittanceQuoteSummary(state: state, forCourierApp: true));
       expect(find.text(CoreTexts.quoteTotalApp), findsOneWidget);
       expect(find.text(CoreTexts.quoteToDeliverApp), findsOneWidget);
     });
