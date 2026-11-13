@@ -5,6 +5,7 @@ import 'package:ottos_core/ottos_core.dart';
 
 import '../../../app/courier_texts.dart';
 import '../../../app/phone_contacts.dart';
+import '../../../app/share_remittance.dart';
 
 /// Registers a remittance from the phone; whoever can assign also picks the
 /// courier. Closes with the remittance registered. New senders and
@@ -28,12 +29,19 @@ class NewRemittancePage extends StatelessWidget {
         child: BlocConsumer<NewRemittanceCubit, NewRemittanceState>(
           listenWhen: (previous, current) => previous.created == null && current.created != null,
           listener: (context, state) {
+            final created = state.created!;
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(
-                  state.error ??
-                      CourierTexts.registered(remittanceLabel(state.created!.beneficiaryName, state.created!.code)),
+                  state.error ?? CourierTexts.registered(remittanceLabel(created.beneficiaryName, created.code)),
                 ),
+                // It goes by itself, as before: the detail offers «Compartir» too.
+                persist: false,
+                duration: const Duration(seconds: 8),
+                // read, not canDo: select only works while building.
+                action: (context.read<AuthBloc>().state.user?.can(Permissions.remittancesShare) ?? false)
+                    ? SnackBarAction(label: CoreTexts.share, onPressed: () => shareRemittance(created))
+                    : null,
               ),
             );
             Navigator.of(context).pop(state.created);

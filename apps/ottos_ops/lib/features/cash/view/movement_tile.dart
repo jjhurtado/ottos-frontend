@@ -6,8 +6,9 @@ import '../../../app/ops_texts.dart';
 import '../../../widgets/page_header.dart';
 import '../../../app/router.dart';
 
-/// One ledger movement: what it was, when, its note and the signed amount
-/// (green when money enters the account being looked at).
+/// One ledger movement: what it was, when, who registered it, its remittance
+/// (tapping opens it), its note and the signed amount (green when money enters
+/// the account being looked at).
 class MovementTile extends StatelessWidget {
   const MovementTile({super.key, required this.movement, this.courierNames = const {}});
 
@@ -42,6 +43,8 @@ class MovementTile extends StatelessWidget {
       subtitle: Text(
         [
           Formatters.dateTime(movement.occurredAt),
+          movement.actorName ?? OpsTexts.system,
+          movement.remittanceCode,
           if (movement.rate != null) CoreTexts.exchangeRateValue(Formatters.money(movement.rate, null)),
           movement.note,
         ].whereType<String>().where((s) => s.isNotEmpty).join(' · '),

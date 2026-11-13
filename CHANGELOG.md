@@ -6,6 +6,20 @@ Cambios notables del frontend de Ottos (panel de operaciones y app de repartidor
 
 ## [Unreleased]
 
+## [1.0.0-rc.16] - 2026-11-13
+
+### Añadido
+
+- Panel › Detalle de remesa: cada entrada del historial dice quién hizo el cambio («por Ana», o «por el sistema»), y el resumen dice quién la entregó o recogió y cuándo (REQ-024).
+- Panel › Caja y caja de un repartidor: todos los movimientos, por páginas de 50, con filtros de fechas y tipo; cada movimiento muestra quién lo registró y el código de su remesa (REQ-024).
+- Panel › Detalle de remesa y confirmación de «Nueva remesa»: «Copiar» pone la remesa como texto en el portapapeles para pegarla en WhatsApp, sin PIN, remitente, comisión ni total; con el permiso `remittances:share` (REQ-025).
+- App › Detalle de remesa y confirmación de «Nueva remesa»: «Compartir» abre el menú de compartir del teléfono con el mismo texto; funciona sin conexión; con el permiso `remittances:share` (REQ-025).
+- App › Detalle de remesa: «Anular» en el menú, con el motivo obligatorio como en el panel; solo con conexión y con el permiso `remittances:void` (REQ-025).
+
+### Cambiado
+
+- Panel › Caja: la lista «Últimos movimientos» (los 100 más recientes) pasa a «Movimientos», completa y por páginas. Necesita el backend de REQ-024 (REQ-024).
+
 ## [1.0.0-rc.15] - 2026-11-07
 
 ### Cambiado

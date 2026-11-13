@@ -6,7 +6,6 @@ import 'package:ottos_core/ottos_core.dart';
 import 'package:ottos_ops/app/ops_texts.dart';
 import 'package:ottos_ops/features/remittances/view/remittance_detail_page.dart';
 import 'package:ottos_ops/features/remittances/view/remittance_list_page.dart';
-import 'package:ottos_ops/widgets/void_remittance_dialog.dart';
 
 class _MockRemittances extends Mock implements RemittanceRepository {}
 
@@ -187,7 +186,7 @@ void main() {
     await tester.tap(find.text('open'));
     await tester.pumpAndSettle();
 
-    expect(find.text(OpsTexts.voidTitle('Rosa Pérez · OT-ABC123')), findsOneWidget);
+    expect(find.text(CoreTexts.voidTitle('Rosa Pérez · OT-ABC123')), findsOneWidget);
   });
 
   group('BR-5: the audit log keeps the remittance code', () {

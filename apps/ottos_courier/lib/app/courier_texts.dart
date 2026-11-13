@@ -68,6 +68,7 @@ abstract final class CourierTexts {
   static const searchTooShort = 'Escribe al menos 2 letras o 4 cifras';
   static const noRemittancesSearch = 'No hay remesas con esa búsqueda.';
   static const searchNeedsConnection = 'La búsqueda necesita conexión. Conéctate e inténtalo de nuevo.';
+  static const voidNeedsConnection = 'Anular necesita conexión. Conéctate e inténtalo de nuevo.';
   static const clearSearch = 'Borrar búsqueda';
   static String completedOn(String date) => 'Completada el $date';
 

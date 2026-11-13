@@ -5,8 +5,8 @@ import 'package:ottos_core/ottos_core.dart';
 
 import '../../../app/destinations.dart';
 import '../../../app/ops_texts.dart';
+import '../../../widgets/copy_remittance.dart';
 import '../../../widgets/resolve_review_dialog.dart';
-import '../../../widgets/void_remittance_dialog.dart';
 import '../cubit/remittance_detail_cubit.dart';
 import '../../cash/view/movement_tile.dart';
 
@@ -30,7 +30,7 @@ class RemittanceDetailPage extends StatelessWidget {
             RemittanceAction.postponed => OpsTexts.postponed,
             RemittanceAction.incidentReported => CoreTexts.incidentReported,
             RemittanceAction.reviewResolved => OpsTexts.reviewResolved,
-            RemittanceAction.voided => OpsTexts.voidedDone,
+            RemittanceAction.voided => CoreTexts.voidedDone,
             RemittanceAction.failed => state.actionError ?? CoreTexts.unexpectedError,
             RemittanceAction.none => null,
           };
@@ -180,7 +180,15 @@ class _ActionBar extends StatelessWidget {
         !workflow.isFinal(remittance.status);
     // Any status, delivered included: the backend reverses the cash it moved.
     final canVoid = open && permissions.contains(Permissions.remittancesVoid);
-    if (!canAssign && !canComplete && !canCompleteFromBusiness && !canPostpone && !canReportIncident && !canVoid) {
+    // Voided too: the text then starts with «ANULADA» (REQ-025 AC-1.4).
+    final canShare = permissions.contains(Permissions.remittancesShare);
+    if (!canAssign &&
+        !canComplete &&
+        !canCompleteFromBusiness &&
+        !canPostpone &&
+        !canReportIncident &&
+        !canVoid &&
+        !canShare) {
       return const SizedBox.shrink();
     }
 
@@ -248,6 +256,12 @@ class _ActionBar extends StatelessWidget {
               icon: const Icon(Icons.report_problem_outlined),
               label: Text(remittance.isPickup ? CoreTexts.reportIncidentPickup : CoreTexts.reportIncident),
             ),
+          if (canShare)
+            OutlinedButton.icon(
+              onPressed: () => copyRemittance(ScaffoldMessenger.of(context), remittance),
+              icon: const Icon(Icons.content_copy),
+              label: const Text(CoreTexts.copy),
+            ),
           if (canVoid)
             TextButton.icon(
               style: TextButton.styleFrom(foregroundColor: OttosColors.danger),
@@ -258,7 +272,7 @@ class _ActionBar extends StatelessWidget {
                     }
                   : null,
               icon: const Icon(Icons.block),
-              label: const Text(OpsTexts.voidAction),
+              label: const Text(CoreTexts.voidAction),
             ),
           if (state.submitting) const SizedBox.square(dimension: 20, child: CircularProgressIndicator(strokeWidth: 2)),
         ],
@@ -320,7 +334,14 @@ class _SummaryCard extends StatelessWidget {
         InfoRow(label: OpsTexts.pin, value: remittance.pin),
         InfoRow(label: OpsTexts.notes, value: remittance.notes),
         InfoRow(label: OpsTexts.createdAt, value: Formatters.dateTime(remittance.createdAt)),
-        InfoRow(label: OpsTexts.completedAt, value: Formatters.dateTime(remittance.completedAt)),
+        // Who completed it, with when (REQ-024 AC-1.2).
+        if (remittance.completedByName case final name?)
+          InfoRow(
+            label: OpsTexts.completedBy(isPickup: remittance.isPickup),
+            value: '$name · ${Formatters.dateTime(remittance.completedAt)}',
+          )
+        else
+          InfoRow(label: OpsTexts.completedAt, value: Formatters.dateTime(remittance.completedAt)),
       ],
     );
   }
@@ -434,7 +455,17 @@ class _HistoryCard extends StatelessWidget {
                 if (event.incidentReason != null) Text(CoreTexts.incidentReason(event.incidentReason!)),
                 if (event.reviewReason != null) Text(CoreTexts.reviewReason(event.reviewReason!)),
                 if (event.note != null && event.note!.isNotEmpty) Text(event.note!),
-                Text(Formatters.dateTime(event.occurredAt), style: TextStyle(color: outline, fontSize: 12)),
+                Text(
+                  [
+                    Formatters.dateTime(event.occurredAt),
+                    // No actor: the system did it; an actor without a name: an older server.
+                    if (event.actorName case final name?)
+                      CoreTexts.by(name)
+                    else if (event.actorId == null)
+                      CoreTexts.bySystem,
+                  ].join(' '),
+                  style: TextStyle(color: outline, fontSize: 12),
+                ),
               ],
             ),
           ),
