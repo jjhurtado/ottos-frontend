@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:ottos_core/ottos_core.dart';
@@ -109,7 +111,10 @@ class RemittanceCubit extends Cubit<RemittanceState> {
   /// Voids it for good, online only: never queued (REQ-025 AC-3.2).
   Future<void> voidRemittance({required String reason}) => _perform(RemittanceActionResult.voided, (_) async {
     try {
-      return Applied(await _remittances.voidRemittance(_id, reason: reason));
+      final voided = await _remittances.voidRemittance(_id, reason: reason);
+      // The phone's copy (list, money pending) is still open: bring the server's (CR-1).
+      unawaited(_source.refresh());
+      return Applied(voided);
     } on ApiException catch (error) {
       return Rejected(error.message);
     }
