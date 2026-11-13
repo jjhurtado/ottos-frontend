@@ -35,16 +35,20 @@ class MovementLedgerCubit extends Cubit<MovementLedgerState> {
 
   static const pageSize = 50;
 
+  /// The latest request: an older answer (another filter or page) is dropped (CR-2).
+  int _request = 0;
+
   /// Loads [page], or the current one again.
   Future<void> load({int? page}) async {
     final index = page ?? state.result?.page ?? 0;
+    final request = ++_request;
     emit(MovementLedgerState(filter: state.filter, result: state.result));
     try {
       final result = await _fetch(state.filter, page: index, size: pageSize);
-      if (isClosed) return;
+      if (isClosed || request != _request) return;
       emit(MovementLedgerState(status: MovementLedgerStatus.success, filter: state.filter, result: result));
     } on ApiException catch (error) {
-      if (!isClosed) {
+      if (!isClosed && request == _request) {
         emit(
           MovementLedgerState(
             status: MovementLedgerStatus.failure,
