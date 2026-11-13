@@ -117,6 +117,7 @@ void main() {
   setUpAll(() async {
     registerFallbackValue(const RemittanceFilter());
     registerFallbackValue(const AuditFilter());
+    registerFallbackValue(const MovementFilter());
     await OttosLocalization.initialize();
     if (_shots == null) return;
     // Real glyphs, so the screenshots read like the browser.
@@ -191,22 +192,42 @@ void main() {
         ),
       ],
     );
-    when(() => cash.businessMovements()).thenAnswer(
-      (_) async => [
-        CashMovement.fromJson(const {
-          'id': 'm1',
-          'type': 'COURIER_FUNDING',
-          'fromType': 'BUSINESS',
-          'toType': 'COURIER',
-          'toOwnerId': 'k1',
-          'amount': 100000,
-          'signedAmount': -100000,
-          'currency': 'CUP',
-          'note': 'Fondos para las entregas del lunes en Boyeros',
-          'occurredAt': '2026-10-09T10:00:00Z',
-        }),
-      ],
+    when(
+      () => cash.businessMovements(
+        any(),
+        page: any(named: 'page'),
+        size: any(named: 'size'),
+      ),
+    ).thenAnswer(
+      (_) async => PageResult(
+        page: 0,
+        size: 50,
+        totalItems: 1,
+        items: [
+          CashMovement.fromJson(const {
+            'id': 'm1',
+            'type': 'COURIER_FUNDING',
+            'fromType': 'BUSINESS',
+            'toType': 'COURIER',
+            'toOwnerId': 'k1',
+            'amount': 100000,
+            'signedAmount': -100000,
+            'currency': 'CUP',
+            'note': 'Fondos para las entregas del lunes en Boyeros',
+            'occurredAt': '2026-10-09T10:00:00Z',
+          }),
+        ],
+      ),
     );
+    when(
+      () => cash.courierMovements(
+        any(),
+        any(),
+        page: any(named: 'page'),
+        size: any(named: 'size'),
+      ),
+    ).thenAnswer((_) async => const PageResult(items: [], page: 0, size: 50, totalItems: 0));
+
     when(
       () => cash.exchanges(
         review: any(named: 'review'),

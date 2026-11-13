@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:ottos_core/ottos_core.dart';
 
-import '../app/ops_texts.dart';
+import '../l10n/core_texts.dart';
+import '../models/remittance.dart';
+import '../theme/ottos_colors.dart';
+import 'remittance_title.dart';
 
 /// Asks why a remittance is voided, warning what voiding does; null if cancelled.
 Future<String?> askVoidReason(BuildContext context, Remittance remittance) => showDialog<String>(
@@ -31,7 +33,7 @@ class _VoidRemittanceDialogState extends State<_VoidRemittanceDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text(OpsTexts.voidTitle(remittanceLabel(widget.remittance.beneficiaryName, widget.remittance.code))),
+      title: Text(CoreTexts.voidTitle(remittanceLabel(widget.remittance.beneficiaryName, widget.remittance.code))),
       content: SizedBox(
         width: 460,
         child: Form(
@@ -40,14 +42,14 @@ class _VoidRemittanceDialogState extends State<_VoidRemittanceDialog> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(OpsTexts.voidHelp),
+              const Text(CoreTexts.voidHelp),
               const SizedBox(height: 12),
               TextFormField(
                 controller: _reason,
                 autofocus: true,
                 maxLines: 3,
                 maxLength: 1000,
-                decoration: const InputDecoration(labelText: OpsTexts.voidReasonLabel),
+                decoration: const InputDecoration(labelText: CoreTexts.voidReasonLabel),
                 validator: (text) => (text ?? '').trim().isEmpty ? CoreTexts.requiredField : null,
               ),
             ],
@@ -61,7 +63,7 @@ class _VoidRemittanceDialogState extends State<_VoidRemittanceDialog> {
           onPressed: () {
             if (_formKey.currentState!.validate()) Navigator.of(context).pop(_reason.text.trim());
           },
-          child: const Text(OpsTexts.voidAction),
+          child: const Text(CoreTexts.voidAction),
         ),
       ],
     );

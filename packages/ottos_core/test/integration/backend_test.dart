@@ -599,8 +599,8 @@ void main() {
         cash.deposit(const CashInput(amount: 1, currency: 'USD')),
         throwsA(isA<ApiException>().having((e) => e.code, 'code', 'VALIDATION_FAILED')),
       );
-      final latest = await cash.businessMovements();
-      expect(latest.first.type, CashMovementType.businessWithdrawal);
+      final latest = await cash.businessMovements(const MovementFilter());
+      expect(latest.items.first.type, CashMovementType.businessWithdrawal);
     });
 
     test('funds a courier and registers the return', () async {

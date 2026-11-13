@@ -54,6 +54,8 @@ class CashMovement extends Equatable {
     this.occurredAt,
     this.exchangeId,
     this.rate,
+    this.actorName,
+    this.remittanceCode,
   });
 
   factory CashMovement.fromJson(Map<String, dynamic> json) => CashMovement(
@@ -71,6 +73,8 @@ class CashMovement extends Equatable {
     occurredAt: parseDateTime(json['occurredAt']),
     exchangeId: json['exchangeId'] as String?,
     rate: parseDecimal(json['rate']),
+    actorName: json['actorName'] as String?,
+    remittanceCode: json['remittanceCode'] as String?,
   );
 
   final String id;
@@ -93,6 +97,12 @@ class CashMovement extends Equatable {
 
   /// The exchange's rate, CUP per 1 USD.
   final double? rate;
+
+  /// The staff member who registered it; null when the system did (REQ-024 BR-1).
+  final String? actorName;
+
+  /// The code of [remittanceId], when there is one.
+  final String? remittanceCode;
 
   @override
   List<Object?> get props => [id];

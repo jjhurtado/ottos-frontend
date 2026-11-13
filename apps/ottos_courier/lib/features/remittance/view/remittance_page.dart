@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:ottos_core/ottos_core.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../app/courier_texts.dart';
@@ -27,6 +28,7 @@ class RemittancePage extends StatelessWidget {
             RemittanceActionResult.completed => CourierTexts.completed,
             RemittanceActionResult.completedByBusiness =>
               state.remittance!.isPickup ? CoreTexts.collectedByBusiness : CoreTexts.deliveredByBusiness,
+            RemittanceActionResult.voided => CoreTexts.voidedDone,
             RemittanceActionResult.postponed => CourierTexts.postponed,
             RemittanceActionResult.incidentReported => CoreTexts.incidentReported,
             RemittanceActionResult.assigned => CourierTexts.assigned,
@@ -54,6 +56,9 @@ class RemittancePage extends StatelessWidget {
               ),
               null => const Text(''),
             },
+            actions: [
+              if (state.remittance case final remittance?) ...remittanceActions(context, remittance, state.submitting),
+            ],
           ),
           body: switch (state.status) {
             RemittanceLoadStatus.loading => const LoadingView(),
@@ -333,3 +338,35 @@ class _CompletedBanner extends StatelessWidget {
     );
   }
 }
+
+/// The app bar's actions (REQ-025): «Compartir» opens the phone's share sheet
+/// and works offline with the data on the phone; «Anular» is in the overflow
+/// menu, online only. Each one only with its permission.
+List<Widget> remittanceActions(BuildContext context, Remittance remittance, bool submitting) => [
+  if (context.canDo(Permissions.remittancesShare))
+    IconButton(tooltip: CoreTexts.share, icon: const Icon(Icons.share), onPressed: () => shareRemittance(remittance)),
+  if (!remittance.isVoided && context.canDo(Permissions.remittancesVoid))
+    PopupMenuButton<void>(
+      enabled: !submitting,
+      itemBuilder: (_) => [
+        PopupMenuItem(
+          onTap: () async {
+            final cubit = context.read<RemittanceCubit>();
+            final reason = await askVoidReason(context, remittance);
+            if (reason != null) await cubit.voidRemittance(reason: reason);
+          },
+          child: const Row(
+            children: [
+              Icon(Icons.block, color: OttosColors.danger),
+              SizedBox(width: 12),
+              Text(CoreTexts.voidAction, style: TextStyle(color: OttosColors.danger)),
+            ],
+          ),
+        ),
+      ],
+    ),
+];
+
+/// Opens the phone's share sheet with [remittance] as text; the sheet offers copying too.
+Future<void> shareRemittance(Remittance remittance) =>
+    SharePlus.instance.share(ShareParams(text: remittanceShareText(remittance)));

@@ -18,6 +18,8 @@ class _MockRemittances extends Mock implements RemittanceRepository {}
 
 class _MockSource extends Mock implements RemittanceSource {}
 
+class _MockAuth extends Mock implements AuthRepository {}
+
 const _offline = ApiException(CoreTexts.networkError);
 
 final _now = DateTime.utc(2026, 11, 5, 12);
@@ -228,16 +230,24 @@ void main() {
       final stub = _MockSource();
       when(() => stub.get(remittance.id)).thenAnswer((_) async => remittance);
       await OttosLocalization.initialize();
+      // The app bar asks for the share and void permissions (REQ-025): a user without them.
+      final auth = _MockAuth();
+      when(() => auth.sessionExpired).thenAnswer((_) => const Stream.empty());
+      final authBloc = AuthBloc(authRepository: auth, accessPolicy: (_) => true);
+      addTearDown(authBloc.close);
       await tester.pumpWidget(
         MultiRepositoryProvider(
           providers: [
             RepositoryProvider<RemittanceSource>.value(value: stub),
             RepositoryProvider<RemittanceRepository>.value(value: _MockRemittances()),
           ],
-          child: MaterialApp(
-            localizationsDelegates: OttosLocalization.delegates,
-            supportedLocales: OttosLocalization.supportedLocales,
-            home: RemittancePage(remittanceId: remittance.id),
+          child: BlocProvider.value(
+            value: authBloc,
+            child: MaterialApp(
+              localizationsDelegates: OttosLocalization.delegates,
+              supportedLocales: OttosLocalization.supportedLocales,
+              home: RemittancePage(remittanceId: remittance.id),
+            ),
           ),
         ),
       );

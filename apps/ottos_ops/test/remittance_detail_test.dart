@@ -158,21 +158,21 @@ void main() {
           .thenAnswer((_) async => voided);
       await pumpDetail(tester, _remittance('DELIVERED', courierId: 'k1'), {...all, Permissions.remittancesVoid});
 
-      await tester.tap(find.text(OpsTexts.voidAction));
+      await tester.tap(find.text(CoreTexts.voidAction));
       await tester.pumpAndSettle();
-      expect(find.text(OpsTexts.voidHelp), findsOneWidget);
-      await tester.tap(find.descendant(of: find.byType(AlertDialog), matching: find.text(OpsTexts.voidAction)));
+      expect(find.text(CoreTexts.voidHelp), findsOneWidget);
+      await tester.tap(find.descendant(of: find.byType(AlertDialog), matching: find.text(CoreTexts.voidAction)));
       await tester.pumpAndSettle();
       expect(find.text(CoreTexts.requiredField), findsOneWidget, reason: 'the reason is required');
 
       await tester.enterText(find.byType(TextFormField), 'Era una entrega de efectivo');
-      await tester.tap(find.descendant(of: find.byType(AlertDialog), matching: find.text(OpsTexts.voidAction)));
+      await tester.tap(find.descendant(of: find.byType(AlertDialog), matching: find.text(CoreTexts.voidAction)));
       await tester.pumpAndSettle();
 
       verify(() => remittances.voidRemittance('r1', reason: 'Era una entrega de efectivo')).called(1);
       expect(find.text(CoreTexts.voidedBy('Administrator')), findsOneWidget);
       expect(find.text(CoreTexts.voided), findsOneWidget, reason: 'the status chip says it is voided');
-      expect(find.text(OpsTexts.voidAction), findsNothing, reason: 'it cannot be voided twice');
+      expect(find.text(CoreTexts.voidAction), findsNothing, reason: 'it cannot be voided twice');
     });
 
     testWidgets('a voided remittance shows why and allows nothing', (tester) async {
@@ -193,12 +193,12 @@ void main() {
       expect(find.text(OpsTexts.reassignCourier), findsNothing);
       expect(find.text(OpsTexts.markDelivered), findsNothing);
       expect(find.text(CoreTexts.postpone), findsNothing);
-      expect(find.text(OpsTexts.voidAction), findsNothing);
+      expect(find.text(CoreTexts.voidAction), findsNothing);
     });
 
     testWidgets('only who has the permission can void', (tester) async {
       await pumpDetail(tester, _remittance('PAID'), all);
-      expect(find.text(OpsTexts.voidAction), findsNothing);
+      expect(find.text(CoreTexts.voidAction), findsNothing);
     });
 
     const byBusiness = {Permissions.remittancesRead, Permissions.remittancesCompleteFromBusiness};

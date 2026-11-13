@@ -17,6 +17,7 @@ class RemittanceEvent extends Equatable {
     this.reviewReason,
     this.note,
     this.actorId,
+    this.actorName,
     this.occurredAt,
   });
 
@@ -32,6 +33,7 @@ class RemittanceEvent extends Equatable {
     reviewReason: json['reviewReason'] == null ? null : ReviewReason.fromCode(json['reviewReason'] as String?),
     note: json['note'] as String?,
     actorId: json['actorId'] as String?,
+    actorName: json['actorName'] as String?,
     occurredAt: parseDateTime(json['occurredAt']),
   );
 
@@ -50,6 +52,9 @@ class RemittanceEvent extends Equatable {
   final ReviewReason? reviewReason;
   final String? note;
   final String? actorId;
+
+  /// The staff member who made the change; null when the system did (REQ-024 BR-1).
+  final String? actorName;
   final DateTime? occurredAt;
 
   @override

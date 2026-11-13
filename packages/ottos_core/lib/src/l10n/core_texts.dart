@@ -341,6 +341,34 @@ abstract final class CoreTexts {
   static String voidedBy(String? name) => name == null || name.isEmpty ? 'Remesa anulada' : 'Anulada por $name';
   static const voidReason = 'Motivo';
   static const voidedHelp = 'No cuenta en reportes ni listas de trabajo, y ya no se puede cambiar.';
+
+  // Voiding a remittance (panel and app)
+  static const voidAction = 'Anular';
+  static String voidTitle(String label) => 'Anular la remesa: $label';
+  static const voidHelp =
+      'La remesa queda guardada pero deja de contar en reportes, estadísticas y listas de trabajo, y ya no se podrá '
+      'cambiar. Si movió efectivo, se devuelve solo a la caja de donde salió. No se puede deshacer.';
+  static const voidReasonLabel = 'Motivo *';
+  static const voidedDone = 'Remesa anulada';
+
+  // Sharing a remittance as text (REQ-025)
+  static const copy = 'Copiar';
+  static const share = 'Compartir';
+  static const remittanceCopied = 'Remesa copiada';
+  static const shareVoided = 'ANULADA';
+  static const shareRemittance = 'Remesa';
+  static const shareDelivery = 'Entrega a domicilio';
+  static const shareBeneficiary = 'Beneficiario';
+  static const sharePhone = 'Teléfono';
+  static const shareAddress = 'Dirección';
+  static const shareReference = 'Referencia';
+  static const shareToDeliver = 'Entregar';
+  static const shareToCollect = 'Recoger';
+  static const shareExpectedDate = 'Fecha prevista';
+
+  // Who did what (REQ-024)
+  static String by(String name) => 'por $name';
+  static const bySystem = 'por el sistema';
   static const delivery = 'Entrega';
   static const pickup = 'Recogida';
 
