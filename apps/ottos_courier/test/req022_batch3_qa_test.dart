@@ -4,6 +4,7 @@
 // the file only uses APIs that also exist on develop, and it passed there
 // before it passed on the branch.
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -69,7 +70,7 @@ void main() {
   });
 
   /// A phone-sized screen with a button that opens [page], as the app's routes do.
-  Future<void> pump(WidgetTester tester, Widget page) async {
+  Future<void> pump(WidgetTester tester, Widget page, {Set<String> permissions = _sales}) async {
     await tester.binding.setSurfaceSize(const Size(400, 1600));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     final auth = _MockAuth();
@@ -77,7 +78,7 @@ void main() {
     final authBloc = AuthBloc(authRepository: auth, accessPolicy: (_) => true)
       ..add(
         AuthLoggedIn(
-          CurrentUser(id: 'u1', email: 'u@ottos.test', name: 'U', type: '', roles: const [], permissions: _sales),
+          CurrentUser(id: 'u1', email: 'u@ottos.test', name: 'U', type: '', roles: const [], permissions: permissions),
         ),
       );
     addTearDown(authBloc.close);
@@ -203,6 +204,71 @@ void main() {
       expect([sent.customerId, sent.beneficiaryId, sent.amount, sent.targetCurrency], ['c1', 'b1', 100, 'CUP']);
       expect(find.text('Remesa registrada: ${remittanceLabel('Rosa Prueba', 'OT-0009')}'), findsOneWidget);
       expect(find.text('Abrir'), findsOneWidget, reason: 'the page closes');
+      // REQ-025 AC-2.2: without the share permission the confirmation offers nothing.
+      expect(find.byType(SnackBarAction), findsNothing);
+    });
+
+    testWidgets('REQ-025 AC-2.2: with the share permission the confirmation offers «Compartir»', (tester) async {
+      const registered = Remittance(
+        id: 'r9',
+        code: 'OT-0009',
+        type: RemittanceType.delivery,
+        status: 'PAID',
+        statusName: 'Pagada',
+        beneficiaryName: 'Rosa Prueba',
+        cashAmount: 41000,
+        cashCurrency: 'CUP',
+      );
+      when(
+        () => rates.quote(
+          sourceCurrency: 'USD',
+          targetCurrency: 'CUP',
+          amount: 100,
+          type: RemittanceType.delivery,
+          rate: any(named: 'rate'),
+          fee: any(named: 'fee'),
+          onTheHouse: false,
+        ),
+      ).thenAnswer(
+        (_) async => const Quote(
+          sourceCurrency: 'USD',
+          targetCurrency: 'CUP',
+          amount: 100,
+          fee: 5,
+          total: 105,
+          rate: 410,
+          amountToDeliver: 41000,
+        ),
+      );
+      when(() => remittances.register(any(), idempotencyKey: any(named: 'idempotencyKey')))
+          .thenAnswer((_) async => registered);
+      final shared = <String?>[];
+      const channel = MethodChannel('dev.fluttercommunity.plus/share');
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(channel, (call) async {
+        shared.add((call.arguments as Map)['text'] as String?);
+        return 'dev.fluttercommunity.plus/share/unavailable';
+      });
+      addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(channel, null));
+
+      await pump(
+        tester,
+        NewRemittancePage(pickContact: () async => null),
+        permissions: {..._sales, Permissions.remittancesShare},
+      );
+      await tester.enterText(find.widgetWithIcon(TextField, Icons.search), 'An');
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Ana Prueba'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.widgetWithText(TextField, 'Monto a enviar'), '100');
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(FilledButton, 'Registrar'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.widgetWithText(SnackBarAction, CoreTexts.share));
+      await tester.pumpAndSettle();
+
+      expect(shared, [remittanceShareText(registered)]);
     });
 
     testWidgets('the new sender comes titled «Nuevo remitente» and can take a phone contact', (tester) async {
