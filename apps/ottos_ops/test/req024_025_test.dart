@@ -1,12 +1,18 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:ottos_core/ottos_core.dart';
 import 'package:ottos_ops/app/ops_texts.dart';
+import 'package:ottos_ops/app/router.dart';
 import 'package:ottos_ops/features/cash/cubit/movement_ledger_cubit.dart';
+import 'package:ottos_ops/features/cash/view/courier_cash_page.dart';
 import 'package:ottos_ops/features/cash/view/movement_ledger.dart';
+import 'package:ottos_ops/features/cash/view/movement_tile.dart';
 import 'package:ottos_ops/features/remittances/view/remittance_detail_page.dart';
 
 class _MockRemittances extends Mock implements RemittanceRepository {}
@@ -159,6 +165,48 @@ void main() {
 
       expect(find.text(CoreTexts.copy), findsNothing);
     });
+
+    testWidgets('REQ-024 AC-1.2: a pickup says who collected it', (tester) async {
+      when(() => remittances.get('r1')).thenAnswer(
+        (_) async => Remittance(
+          id: 'r1',
+          code: 'OT-2',
+          type: RemittanceType.pickup,
+          status: 'DELIVERED',
+          statusName: 'Entregada',
+          completedAt: DateTime.utc(2026, 11, 12, 15),
+          completedByName: 'Pedro',
+        ),
+      );
+      await pumpDetail(tester, {Permissions.remittancesRead});
+
+      expect(find.text(OpsTexts.completedBy(isPickup: true)), findsOneWidget);
+      expect(find.text('Pedro · ${Formatters.dateTime(DateTime.utc(2026, 11, 12, 15))}'), findsOneWidget);
+    });
+
+    testWidgets('REQ-025 AC-1.4: a voided remittance can still be copied, starting with ANULADA', (tester) async {
+      const voided = Remittance(
+        id: 'r1',
+        code: 'OT-3',
+        type: RemittanceType.delivery,
+        status: 'PAID',
+        statusName: 'Pagada',
+        voided: Voided(reason: 'Duplicada'),
+      );
+      when(() => remittances.get('r1')).thenAnswer((_) async => voided);
+      String? copied;
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
+        if (call.method == 'Clipboard.setData') copied = (call.arguments as Map)['text'] as String?;
+        return null;
+      });
+      addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, null));
+      await pumpDetail(tester, {Permissions.remittancesRead, Permissions.remittancesShare});
+
+      await tester.tap(find.text(CoreTexts.copy));
+      await tester.pumpAndSettle();
+
+      expect(copied!.split('\n').first, CoreTexts.shareVoided);
+    });
   });
 
   group('SCR-11/SCR-12 movement ledger', () {
@@ -262,6 +310,144 @@ void main() {
 
       expect(find.text(CoreTexts.networkError), findsOneWidget);
       expect(find.text(CoreTexts.retry), findsOneWidget);
+    });
+
+    test('CR-2: a late answer for an older filter is dropped', () async {
+      final older = Completer<PageResult<CashMovement>>();
+      final newer = Completer<PageResult<CashMovement>>();
+      const deposits = MovementFilter(type: CashMovementType.businessDeposit);
+      when(() => cash.businessMovements(const MovementFilter(), page: 0, size: 50)).thenAnswer((_) => older.future);
+      when(() => cash.businessMovements(deposits, page: 0, size: 50)).thenAnswer((_) => newer.future);
+      final cubit = MovementLedgerCubit(cash.businessMovements);
+      addTearDown(cubit.close);
+
+      final first = cubit.load();
+      final second = cubit.filter(deposits);
+      newer.complete(_page([_movement('deposit')]));
+      await second;
+      older.complete(_page([_movement('old')]));
+      await first;
+
+      expect(cubit.state.filter, deposits);
+      expect(cubit.state.result!.items.single.id, 'deposit');
+    });
+
+    testWidgets('REQ-024 AC-2.2: choosing «Desde» in the filter row asks for that day from the first page', (
+      tester,
+    ) async {
+      when(
+        () => cash.businessMovements(
+          any(),
+          page: any(named: 'page'),
+          size: any(named: 'size'),
+        ),
+      ).thenAnswer((_) async => _page([_movement('m1')]));
+      await pumpLedger(tester);
+
+      await tester.tap(find.text(OpsTexts.fromDate));
+      await tester.pumpAndSettle();
+      final ok = MaterialLocalizations.of(tester.element(find.byType(DatePickerDialog))).okButtonLabel;
+      await tester.tap(find.text(ok));
+      await tester.pumpAndSettle();
+
+      final filter =
+          verify(() => cash.businessMovements(captureAny(), page: 0, size: 50)).captured.last as MovementFilter;
+      final today = BusinessTime.today();
+      expect([filter.from?.year, filter.from?.month, filter.from?.day], [today.year, today.month, today.day]);
+      expect(filter.to, isNull);
+      expect(find.text(OpsTexts.clearFilters), findsOneWidget);
+    });
+
+    testWidgets('REQ-024 AC-2.3: a tile shows courier, author, code, rate and note; tapping it opens SCR-5', (
+      tester,
+    ) async {
+      final movement = CashMovement.fromJson(const {
+        'id': 'm1',
+        'type': 'COURIER_FUNDING',
+        'amount': 100,
+        'signedAmount': -100,
+        'currency': 'CUP',
+        'toType': 'COURIER',
+        'toOwnerId': 'k1',
+        'occurredAt': '2026-11-12T15:00:00Z',
+        'actorName': 'Ana',
+        'remittanceId': 'r1',
+        'remittanceCode': 'OT-1',
+        'rate': 410,
+        'note': 'Para el lunes',
+      });
+      await tester.pumpWidget(
+        MaterialApp.router(
+          localizationsDelegates: OttosLocalization.delegates,
+          supportedLocales: OttosLocalization.supportedLocales,
+          routerConfig: GoRouter(
+            routes: [
+              GoRoute(
+                path: '/',
+                builder: (_, _) => Scaffold(
+                  body: MovementTile(movement: movement, courierNames: const {'k1': 'Luis'}),
+                ),
+              ),
+              GoRoute(path: Routes.remittance('r1'), builder: (_, _) => const Text('Detalle r1')),
+            ],
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('${OpsTexts.movementTitle(CashMovementType.courierFunding)} · Luis'), findsOneWidget);
+      final subtitle = [
+        Formatters.dateTime(movement.occurredAt),
+        'Ana',
+        'OT-1',
+        CoreTexts.exchangeRateValue(Formatters.money(410, null)),
+        'Para el lunes',
+      ].join(' · ');
+      expect(find.text(subtitle), findsOneWidget);
+
+      await tester.tap(find.byType(MovementTile));
+      await tester.pumpAndSettle();
+      expect(find.text('Detalle r1'), findsOneWidget);
+    });
+
+    testWidgets('REQ-024 AC-3.1: SCR-12 pages the courier\'s own ledger under unchanged balances', (tester) async {
+      when(() => cash.courierStatement('k1')).thenAnswer(
+        (_) async => const CourierStatement(
+          cash: CourierCash(
+            courierId: 'k1',
+            name: 'Luis',
+            balances: [Balance(currency: 'USD', amount: 300)],
+            negative: false,
+          ),
+          movements: [],
+        ),
+      );
+      when(
+        () => cash.courierMovements(
+          'k1',
+          any(),
+          page: any(named: 'page'),
+          size: any(named: 'size'),
+        ),
+      ).thenAnswer((_) async => _page([_movement('m1', actorName: 'Ana')], total: 75));
+      await _pump(
+        tester,
+        {Permissions.cashRead},
+        const CourierCashPage(courierId: 'k1'),
+        repos: [RepositoryProvider<CashRepository>.value(value: cash)],
+      );
+
+      expect(find.text(Formatters.money(300, null)), findsOneWidget);
+      expect(find.textContaining('Ana'), findsOneWidget);
+      expect(find.text(OpsTexts.pageOf(1, 1, 75)), findsOneWidget);
+      verify(() => cash.courierMovements('k1', const MovementFilter(), page: 0, size: 50)).called(1);
+      verifyNever(
+        () => cash.businessMovements(
+          any(),
+          page: any(named: 'page'),
+          size: any(named: 'size'),
+        ),
+      );
     });
   });
 }
