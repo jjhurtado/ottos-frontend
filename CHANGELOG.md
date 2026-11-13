@@ -6,6 +6,8 @@ Cambios notables del frontend de Ottos (panel de operaciones y app de repartidor
 
 ## [Unreleased]
 
+## [1.0.0-rc.16] - 2026-11-13
+
 ### Añadido
 
 - Panel › Detalle de remesa: cada entrada del historial dice quién hizo el cambio («por Ana», o «por el sistema»), y el resumen dice quién la entregó o recogió y cuándo (REQ-024).
