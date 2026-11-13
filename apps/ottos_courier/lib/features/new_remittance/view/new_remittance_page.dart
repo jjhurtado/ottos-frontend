@@ -5,7 +5,7 @@ import 'package:ottos_core/ottos_core.dart';
 
 import '../../../app/courier_texts.dart';
 import '../../../app/phone_contacts.dart';
-import '../../remittance/view/remittance_page.dart' show shareRemittance;
+import '../../../app/share_remittance.dart';
 
 /// Registers a remittance from the phone; whoever can assign also picks the
 /// courier. Closes with the remittance registered. New senders and
