@@ -7,7 +7,8 @@ import '../../../app/ops_texts.dart';
 import '../../../app/router.dart';
 import '../cubit/cash_overview_cubit.dart';
 import 'exchanges_to_review.dart';
-import 'movement_tile.dart';
+import '../cubit/movement_ledger_cubit.dart';
+import 'movement_ledger.dart';
 import '../../../widgets/page_header.dart';
 import '../../../widgets/refresh_on_return.dart';
 
@@ -16,19 +17,20 @@ class CashPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) => CashOverviewCubit(cash: context.read<CashRepository>())..load(),
+    final cash = context.read<CashRepository>();
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(create: (_) => CashOverviewCubit(cash: cash)..load()),
+        BlocProvider(create: (_) => MovementLedgerCubit(cash.businessMovements)..load()),
+      ],
       // Back from a courier's cash, where money may have moved: refresh.
       child: Builder(
         builder: (context) => RefreshOnReturn(
-          onReturn: context.read<CashOverviewCubit>().load,
+          onReturn: () => _reload(context),
           child: BlocBuilder<CashOverviewCubit, CashOverviewState>(
             builder: (context, state) => switch (state.status) {
               CashOverviewStatus.loading => const LoadingView(),
-              CashOverviewStatus.failure => ErrorView(
-                message: state.error!,
-                onRetry: context.read<CashOverviewCubit>().load,
-              ),
+              CashOverviewStatus.failure => ErrorView(message: state.error!, onRetry: () => _reload(context)),
               CashOverviewStatus.success => _CashView(state: state),
             },
           ),
@@ -37,6 +39,10 @@ class CashPage extends StatelessWidget {
     );
   }
 }
+
+/// Reloads the balances and the page of movements on screen, with its filters.
+Future<void> _reload(BuildContext context) =>
+    Future.wait([context.read<CashOverviewCubit>().load(), context.read<MovementLedgerCubit>().load()]);
 
 class _CashView extends StatelessWidget {
   const _CashView({required this.state});
@@ -48,7 +54,6 @@ class _CashView extends StatelessWidget {
     final user = context.select((AuthBloc bloc) => bloc.state.user);
     // No user while logging out: the page goes before the redirect.
     if (user == null) return const SizedBox.shrink();
-    final cubit = context.read<CashOverviewCubit>();
     final cash = context.read<CashRepository>();
     final courierNames = {for (final courier in state.couriers) courier.courierId: courier.name};
 
@@ -66,23 +71,23 @@ class _CashView extends StatelessWidget {
       submit: submit,
       noteRequired: noteRequired,
       help: help,
-      onDone: cubit.load,
+      onDone: () => _reload(context),
     );
 
     return RefreshIndicator(
-      onRefresh: cubit.load,
+      onRefresh: () => _reload(context),
       child: ListView(
         padding: pagePadding(context),
         children: [
           Row(
             children: [
               Expanded(child: Text(OpsTexts.cash, style: Theme.of(context).textTheme.headlineMedium)),
-              IconButton(tooltip: CoreTexts.retry, onPressed: cubit.load, icon: const Icon(Icons.refresh)),
+              IconButton(tooltip: CoreTexts.retry, onPressed: () => _reload(context), icon: const Icon(Icons.refresh)),
             ],
           ),
           const SizedBox(height: 16),
           // A new key reloads it with the page (pull to refresh, after an operation).
-          ExchangesToReview(key: ValueKey(state.movements.firstOrNull?.id)),
+          ExchangesToReview(key: ObjectKey(state.balances)),
           _Section(
             title: OpsTexts.businessCash,
             help: OpsTexts.businessCashHelp,
@@ -140,15 +145,8 @@ class _CashView extends StatelessWidget {
                   ),
           ),
           _Section(
-            title: OpsTexts.latestMovements,
-            child: state.movements.isEmpty
-                ? const Text(OpsTexts.noMovements)
-                : Column(
-                    children: [
-                      for (final movement in state.movements)
-                        MovementTile(movement: movement, courierNames: courierNames),
-                    ],
-                  ),
+            title: OpsTexts.movements,
+            child: MovementLedger(courierNames: courierNames),
           ),
         ],
       ),

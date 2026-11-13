@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:ottos_core/ottos_core.dart';
@@ -12,6 +14,7 @@ enum RemittanceActionResult {
   none,
   completed,
   completedByBusiness,
+  voided,
   postponed,
   incidentReported,
   assigned,
@@ -59,7 +62,7 @@ class RemittanceCubit extends Cubit<RemittanceState> {
 
   final RemittanceSource _source;
 
-  /// For assigning and completing from the business, always online (sales).
+  /// For assigning, completing from the business and voiding, always online.
   final RemittanceRepository _remittances;
   final String _id;
 
@@ -100,6 +103,18 @@ class RemittanceCubit extends Cubit<RemittanceState> {
   Future<void> completeFromBusiness({String? note}) => _perform(RemittanceActionResult.completedByBusiness, (_) async {
     try {
       return Applied(await _remittances.completeFromBusiness(_id, note: note));
+    } on ApiException catch (error) {
+      return Rejected(error.message);
+    }
+  });
+
+  /// Voids it for good, online only: never queued (REQ-025 AC-3.2).
+  Future<void> voidRemittance({required String reason}) => _perform(RemittanceActionResult.voided, (_) async {
+    try {
+      final voided = await _remittances.voidRemittance(_id, reason: reason);
+      // The phone's copy (list, money pending) is still open: bring the server's (CR-1).
+      unawaited(_source.refresh());
+      return Applied(voided);
     } on ApiException catch (error) {
       return Rejected(error.message);
     }

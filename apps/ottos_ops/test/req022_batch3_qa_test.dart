@@ -52,6 +52,7 @@ void main() {
 
   setUpAll(() async {
     registerFallbackValue(const CashInput(amount: 0, currency: 'USD'));
+    registerFallbackValue(const MovementFilter());
     registerFallbackValue(
       const NewRemittance(
         type: RemittanceType.delivery,
@@ -188,7 +189,8 @@ void main() {
         ),
       );
 
-      await pump(tester, sales, const NewRemittancePage());
+      // REQ-025 AC-1.2: with the share permission the confirmation offers «Copiar».
+      await pump(tester, {...sales, Permissions.remittancesShare}, const NewRemittancePage());
 
       expect(find.text('Nombre o teléfono'), findsOneWidget);
       expect(find.text('Nuevo cliente'), findsOneWidget);
@@ -237,6 +239,7 @@ void main() {
       expect(sent.targetCurrency, 'CUP');
       expect(sent.type, RemittanceType.delivery);
       expect(find.text('Detalle r9'), findsOneWidget);
+      expect(find.widgetWithText(SnackBarAction, CoreTexts.copy), findsOneWidget);
     });
 
     testWidgets('a sender with no beneficiaries says so; changing the sender asks for one again', (tester) async {
@@ -324,7 +327,21 @@ void main() {
     setUp(() {
       when(() => cash.businessBalances()).thenAnswer((_) async => const [Balance(currency: 'USD', amount: 100)]);
       when(() => cash.couriers()).thenAnswer((_) async => const [luis]);
-      when(() => cash.businessMovements()).thenAnswer((_) async => const []);
+      when(
+        () => cash.businessMovements(
+          any(),
+          page: any(named: 'page'),
+          size: any(named: 'size'),
+        ),
+      ).thenAnswer((_) async => const PageResult(items: [], page: 0, size: 50, totalItems: 0));
+      when(
+        () => cash.courierMovements(
+          any(),
+          any(),
+          page: any(named: 'page'),
+          size: any(named: 'size'),
+        ),
+      ).thenAnswer((_) async => const PageResult(items: [], page: 0, size: 50, totalItems: 0));
       when(
         () => cash.exchanges(
           courierId: any(named: 'courierId'),

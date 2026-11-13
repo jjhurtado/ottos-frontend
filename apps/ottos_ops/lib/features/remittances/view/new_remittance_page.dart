@@ -7,6 +7,7 @@ import 'package:ottos_core/ottos_core.dart';
 import '../../../app/destinations.dart';
 import '../../../app/ops_texts.dart';
 import '../../../app/router.dart';
+import '../../../widgets/copy_remittance.dart';
 
 class NewRemittancePage extends StatelessWidget {
   const NewRemittancePage({super.key, this.initialCustomerId});
@@ -25,11 +26,18 @@ class NewRemittancePage extends StatelessWidget {
       child: BlocConsumer<NewRemittanceCubit, NewRemittanceState>(
         listenWhen: (previous, current) => previous.created == null && current.created != null,
         listener: (context, state) {
-          ScaffoldMessenger.of(context).showSnackBar(
+          final created = state.created!;
+          final messenger = ScaffoldMessenger.of(context);
+          messenger.showSnackBar(
             SnackBar(
-              content: Text(
-                OpsTexts.remittanceRegistered(remittanceLabel(state.created!.beneficiaryName, state.created!.code)),
-              ),
+              content: Text(OpsTexts.remittanceRegistered(remittanceLabel(created.beneficiaryName, created.code))),
+              // It goes by itself, as before: the detail offers «Copiar» too.
+              persist: false,
+              duration: const Duration(seconds: 8),
+              // read, not canDo: select only works while building.
+              action: (context.read<AuthBloc>().state.user?.can(Permissions.remittancesShare) ?? false)
+                  ? SnackBarAction(label: CoreTexts.copy, onPressed: () => copyRemittance(messenger, created))
+                  : null,
             ),
           );
           context.go(Routes.remittance(state.created!.id));

@@ -23,6 +23,9 @@ abstract final class Permissions {
   static const remittancesReportIncident = 'remittances:report-incident';
   static const remittancesReview = 'remittances:review';
   static const remittancesVoid = 'remittances:void';
+
+  /// Copy or share a remittance as text (REQ-025 BR-1).
+  static const remittancesShare = 'remittances:share';
   static const remittancesHistorical = 'remittances:historical';
   static const remittancesCompleteFromBusiness = 'remittances:complete-from-business';
 

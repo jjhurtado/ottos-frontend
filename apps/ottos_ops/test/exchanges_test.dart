@@ -33,11 +33,22 @@ void main() {
   late _MockCash cash;
 
   setUpAll(() async {
+    registerFallbackValue(const MovementFilter());
     registerFallbackValue(const ExchangeInput(fromCurrency: 'USD', fromAmount: 1, toCurrency: 'CUP', rate: 1));
     await OttosLocalization.initialize();
   });
 
-  setUp(() => cash = _MockCash());
+  setUp(() {
+    cash = _MockCash();
+    when(
+      () => cash.courierMovements(
+        any(),
+        any(),
+        page: any(named: 'page'),
+        size: any(named: 'size'),
+      ),
+    ).thenAnswer((_) async => const PageResult(items: [], page: 0, size: 50, totalItems: 0));
+  });
 
   Future<void> pump(WidgetTester tester, Widget page, Set<String> permissions) async {
     final auth = _MockAuth();

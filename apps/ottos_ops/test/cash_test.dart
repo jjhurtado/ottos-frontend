@@ -44,13 +44,30 @@ final _movements = [
 void main() {
   late _MockCash cash;
 
-  setUpAll(() => registerFallbackValue(const CashInput(amount: 0, currency: 'USD')));
+  setUpAll(() {
+    registerFallbackValue(const CashInput(amount: 0, currency: 'USD'));
+    registerFallbackValue(const MovementFilter());
+  });
 
   setUp(() {
     cash = _MockCash();
     when(() => cash.businessBalances()).thenAnswer((_) async => _balances);
     when(() => cash.couriers()).thenAnswer((_) async => _couriers);
-    when(() => cash.businessMovements()).thenAnswer((_) async => _movements);
+    when(
+      () => cash.businessMovements(
+        any(),
+        page: any(named: 'page'),
+        size: any(named: 'size'),
+      ),
+    ).thenAnswer((_) async => PageResult(items: _movements, page: 0, size: 50, totalItems: _movements.length));
+    when(
+      () => cash.courierMovements(
+        any(),
+        any(),
+        page: any(named: 'page'),
+        size: any(named: 'size'),
+      ),
+    ).thenAnswer((_) async => const PageResult(items: [], page: 0, size: 50, totalItems: 0));
     when(
       () => cash.exchanges(
         courierId: any(named: 'courierId'),
@@ -70,7 +87,6 @@ void main() {
 
       expect(cubit.state.status, CashOverviewStatus.success);
       expect(cubit.state.couriers.map((c) => c.name), ['Ana', 'luis']);
-      expect(cubit.state.movements.single.toOwnerId, 'k1');
       expect(cubit.state.currencies, ['USD', 'CUP']);
     });
 

@@ -1,7 +1,40 @@
+import 'package:equatable/equatable.dart';
+
 import '../api/api_client.dart';
 import '../models/cash.dart';
 import '../models/exchange.dart';
 import '../models/page_result.dart';
+import '../utils/formatters.dart';
+
+/// Filters of a cash ledger; null fields do not filter.
+class MovementFilter extends Equatable {
+  const MovementFilter({this.from, this.to, this.type});
+
+  /// Days, both included (business time on the server).
+  final DateTime? from;
+  final DateTime? to;
+  final CashMovementType? type;
+
+  static const _keep = Object();
+
+  /// Copies the filter; pass `null` explicitly to clear a field.
+  MovementFilter copyWith({Object? from = _keep, Object? to = _keep, Object? type = _keep}) => MovementFilter(
+    from: from == _keep ? this.from : from as DateTime?,
+    to: to == _keep ? this.to : to as DateTime?,
+    type: type == _keep ? this.type : type as CashMovementType?,
+  );
+
+  bool get isEmpty => from == null && to == null && type == null;
+
+  Map<String, dynamic> toQuery() => {
+    'from': from == null ? null : Formatters.apiDate(from!),
+    'to': to == null ? null : Formatters.apiDate(to!),
+    'type': type?.code,
+  };
+
+  @override
+  List<Object?> get props => [from, to, type];
+}
 
 class CashRepository {
   CashRepository({required this._api});
@@ -16,9 +49,23 @@ class CashRepository {
   Future<List<Balance>> businessBalances() async =>
       _list(await _api.get<List<dynamic>>('/cash/business'), Balance.fromJson);
 
-  /// The latest 100 movements of the business cash box, newest first (`cash:read`).
-  Future<List<CashMovement>> businessMovements() async =>
-      _list(await _api.get<List<dynamic>>('/cash/business/movements'), CashMovement.fromJson);
+  /// The business cash box's movements, newest first, a page at a time (`cash:read`).
+  Future<PageResult<CashMovement>> businessMovements(MovementFilter filter, {int page = 0, int size = 50}) =>
+      _movements('/cash/business/movements', filter, page, size);
+
+  /// A courier's movements, signed from the courier's side, newest first (`cash:read`).
+  Future<PageResult<CashMovement>> courierMovements(
+    String courierId,
+    MovementFilter filter, {
+    int page = 0,
+    int size = 50,
+  }) => _movements('/cash/couriers/$courierId/movements', filter, page, size);
+
+  Future<PageResult<CashMovement>> _movements(String path, MovementFilter filter, int page, int size) async =>
+      PageResult.fromJson(
+        await _api.get<Map<String, dynamic>>(path, query: {...filter.toQuery(), 'page': page, 'size': size}),
+        CashMovement.fromJson,
+      );
 
   /// Cash each courier carries (`cash:read`).
   Future<List<CourierCash>> couriers() async =>

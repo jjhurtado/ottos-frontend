@@ -6,9 +6,10 @@ import 'package:ottos_core/ottos_core.dart';
 import '../../../app/destinations.dart';
 import '../../../app/ops_texts.dart';
 import '../../../widgets/page_header.dart';
-import 'movement_tile.dart';
+import '../cubit/movement_ledger_cubit.dart';
+import 'movement_ledger.dart';
 
-/// A courier's cash: balances, latest movements, and funding or returns.
+/// A courier's cash: balances, every movement by pages, and funding or returns.
 class CourierCashPage extends StatefulWidget {
   const CourierCashPage({super.key, required this.courierId});
 
@@ -20,11 +21,22 @@ class CourierCashPage extends StatefulWidget {
 
 class _CourierCashPageState extends State<CourierCashPage> {
   late Future<CourierStatement> _statement;
+  late final _ledger = MovementLedgerCubit(
+    (filter, {page = 0, size = MovementLedgerCubit.pageSize}) =>
+        context.read<CashRepository>().courierMovements(widget.courierId, filter, page: page, size: size),
+  );
 
   @override
   void initState() {
     super.initState();
     _statement = _load();
+    _ledger.load();
+  }
+
+  @override
+  void dispose() {
+    _ledger.close();
+    super.dispose();
   }
 
   Future<CourierStatement> _load() => context.read<CashRepository>().courierStatement(widget.courierId);
@@ -34,24 +46,28 @@ class _CourierCashPageState extends State<CourierCashPage> {
     setState(() {
       _statement = _load();
     });
+    _ledger.load();
   }
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<CourierStatement>(
-      future: _statement,
-      builder: (context, snapshot) {
-        if (snapshot.hasError) {
-          final error = snapshot.error;
-          return ErrorView(
-            message: error is ApiException ? error.message : CoreTexts.unexpectedError,
-            onRetry: _reload,
-          );
-        }
-        final statement = snapshot.data;
-        if (statement == null) return const LoadingView();
-        return _CourierCashView(statement: statement, onChanged: _reload);
-      },
+    return BlocProvider.value(
+      value: _ledger,
+      child: FutureBuilder<CourierStatement>(
+        future: _statement,
+        builder: (context, snapshot) {
+          if (snapshot.hasError) {
+            final error = snapshot.error;
+            return ErrorView(
+              message: error is ApiException ? error.message : CoreTexts.unexpectedError,
+              onRetry: _reload,
+            );
+          }
+          final statement = snapshot.data;
+          if (statement == null) return const LoadingView();
+          return _CourierCashView(statement: statement, onChanged: _reload);
+        },
+      ),
     );
   }
 }
@@ -163,10 +179,9 @@ class _CourierCashView extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(OpsTexts.latestMovements, style: Theme.of(context).textTheme.titleMedium),
+                Text(OpsTexts.movements, style: Theme.of(context).textTheme.titleMedium),
                 const SizedBox(height: 8),
-                if (statement.movements.isEmpty) const Text(OpsTexts.noMovements),
-                for (final movement in statement.movements) MovementTile(movement: movement),
+                const MovementLedger(),
               ],
             ),
           ),

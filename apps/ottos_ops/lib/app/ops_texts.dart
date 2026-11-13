@@ -74,6 +74,7 @@ abstract final class OpsTexts {
   static const notes = CoreTexts.notes;
   static const createdAt = 'Registrada';
   static const completedAt = 'Completada';
+  static String completedBy({required bool isPickup}) => isPickup ? 'Recogida por' : 'Entregada por';
   static const noCourier = 'Sin asignar';
   static const noHistory = 'Sin eventos.';
 
@@ -135,14 +136,7 @@ abstract final class OpsTexts {
   // Delivered or collected by the business (the dialog and its texts are in core)
   static const byBusiness = 'El negocio';
 
-  // Voiding a remittance (admin)
-  static const voidAction = 'Anular';
-  static String voidTitle(String label) => 'Anular la remesa: $label';
-  static const voidHelp =
-      'La remesa queda guardada pero deja de contar en reportes, estadísticas y listas de trabajo, y ya no se podrá '
-      'cambiar. Si movió efectivo, se devuelve solo a la caja de donde salió. No se puede deshacer.';
-  static const voidReasonLabel = 'Motivo *';
-  static const voidedDone = 'Remesa anulada';
+  // Voiding a remittance (the dialog and its texts are in core)
   static const onlyVoided = 'Solo anuladas';
   static const onlyOnTheHouse = 'Solo por la casa';
 
@@ -207,7 +201,9 @@ abstract final class OpsTexts {
       'Efectivo disponible en Cuba para las entregas: sube con depósitos y devoluciones de repartidores, baja con '
       'fondos y retiros. Lo cobrado a los remitentes está en Reportes.';
   static const couriersCash = 'Efectivo de los repartidores';
-  static const latestMovements = 'Últimos movimientos';
+  static const movements = 'Movimientos';
+  static const allMovementTypes = 'Todos los tipos';
+  static const noMovementsFiltered = 'No hay movimientos con estos filtros';
   static const cashMovements = 'Movimientos de caja';
   static const balance = 'Saldo';
   static const currency = 'Moneda';

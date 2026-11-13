@@ -3,14 +3,19 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:ottos_core/ottos_core.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../../app/connection.dart';
 import '../../../app/courier_texts.dart';
+import '../../../app/share_remittance.dart';
 import '../../../offline/remittance_source.dart';
 import '../cubit/remittance_cubit.dart';
 
 class RemittancePage extends StatelessWidget {
-  const RemittancePage({super.key, required this.remittanceId});
+  const RemittancePage({super.key, required this.remittanceId, this.hasConnection = phoneHasNetwork});
 
   final String remittanceId;
+
+  /// Asked before voiding, which needs the server (REQ-025 AC-3.2).
+  final ConnectionCheck hasConnection;
 
   @override
   Widget build(BuildContext context) {
@@ -27,6 +32,7 @@ class RemittancePage extends StatelessWidget {
             RemittanceActionResult.completed => CourierTexts.completed,
             RemittanceActionResult.completedByBusiness =>
               state.remittance!.isPickup ? CoreTexts.collectedByBusiness : CoreTexts.deliveredByBusiness,
+            RemittanceActionResult.voided => CoreTexts.voidedDone,
             RemittanceActionResult.postponed => CourierTexts.postponed,
             RemittanceActionResult.incidentReported => CoreTexts.incidentReported,
             RemittanceActionResult.assigned => CourierTexts.assigned,
@@ -54,6 +60,10 @@ class RemittancePage extends StatelessWidget {
               ),
               null => const Text(''),
             },
+            actions: [
+              if (state.remittance case final remittance?)
+                ...remittanceActions(context, remittance, submitting: state.submitting, hasConnection: hasConnection),
+            ],
           ),
           body: switch (state.status) {
             RemittanceLoadStatus.loading => const LoadingView(),
@@ -333,3 +343,43 @@ class _CompletedBanner extends StatelessWidget {
     );
   }
 }
+
+/// The app bar's actions (REQ-025): «Compartir» opens the phone's share sheet
+/// and works offline with the data on the phone; «Anular» is in the overflow
+/// menu, online only. Each one only with its permission.
+List<Widget> remittanceActions(
+  BuildContext context,
+  Remittance remittance, {
+  required bool submitting,
+  required ConnectionCheck hasConnection,
+}) => [
+  if (context.canDo(Permissions.remittancesShare))
+    IconButton(tooltip: CoreTexts.share, icon: const Icon(Icons.share), onPressed: () => shareRemittance(remittance)),
+  if (!remittance.isVoided && context.canDo(Permissions.remittancesVoid))
+    PopupMenuButton<void>(
+      enabled: !submitting,
+      itemBuilder: (_) => [
+        PopupMenuItem(
+          onTap: () async {
+            final cubit = context.read<RemittanceCubit>();
+            final messenger = ScaffoldMessenger.of(context);
+            // Said before the reason is typed: voiding is never queued (AC-3.2).
+            if (!await hasConnection()) {
+              messenger.showSnackBar(const SnackBar(content: Text(CourierTexts.voidNeedsConnection)));
+              return;
+            }
+            if (!context.mounted) return;
+            final reason = await askVoidReason(context, remittance);
+            if (reason != null) await cubit.voidRemittance(reason: reason);
+          },
+          child: const Row(
+            children: [
+              Icon(Icons.block, color: OttosColors.danger),
+              SizedBox(width: 12),
+              Text(CoreTexts.voidAction, style: TextStyle(color: OttosColors.danger)),
+            ],
+          ),
+        ),
+      ],
+    ),
+];
