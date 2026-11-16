@@ -39,4 +39,12 @@ abstract final class OttosColors {
   static const completedSurface = Color(0xFFF1F2F5);
   static const completedBorder = Color(0xFFB9BCC8);
   static const inkMuted = Color(0xFF5F6170);
+
+  /// Secondary text that is not voided, e.g. a day's summary (7.7:1 on white).
+  static const inkSecondary = Color(0xFF44474E);
+
+  /// The day row of the month's remittances table (REQ-026): its tint and
+  /// the line above it.
+  static const dayRowSurface = Color(0xFFEEF2F8);
+  static const dayRowBorder = Color(0xFF9A9DA8);
 }
