@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import '../l10n/core_texts.dart';
 import '../models/statistics.dart';
 import '../utils/formatters.dart';
+import 'report_totals.dart';
 
 /// Texts of the reports and statistics, shared by the panel and the app.
 abstract final class ReportTexts {
@@ -152,6 +153,46 @@ abstract final class ReportTexts {
   static String pageOf(int first, int last, int total) => '$first–$last de $total';
   static const previousPage = 'Página anterior';
   static const nextPage = 'Página siguiente';
+
+  // The month's remittances by day (REQ-026)
+  static const today = 'Hoy';
+  static const yesterday = 'Ayer';
+  static const noDate = 'Sin fecha';
+  static const sentLower = 'enviado';
+  static const feesLower = 'comisiones';
+  static String voidedCount(int count) => count == 1 ? '1 anulada' : '$count anuladas';
+
+  /// «Jueves 29 oct», «Hoy · Jueves 29 oct», «Ayer · Miércoles 28 oct» for a
+  /// business [day], given the business [todayDate] (AC-1.1).
+  static String dayHeading(DateTime? day, DateTime todayDate) {
+    if (day == null) return noDate;
+    final name = '${dayName(DayOfWeek.values[day.weekday - 1])} ${shortDate(day)}';
+    final daysAgo = DateTime.utc(
+      todayDate.year,
+      todayDate.month,
+      todayDate.day,
+    ).difference(DateTime.utc(day.year, day.month, day.day)).inDays;
+    return switch (daysAgo) {
+      0 => '$today · $name',
+      1 => '$yesterday · $name',
+      _ => name,
+    };
+  }
+
+  /// The day's summary on the cards: «3 remesas · 475,00 USD · 1 anulada» (AC-1.1, AC-1.2).
+  static String daySummaryShort(ReportTotals totals, String currency) => [
+    remittancesCount(totals.remittances),
+    Formatters.money(totals.sent, currency),
+    if (totals.voided > 0) voidedCount(totals.voided),
+  ].join(' · ');
+
+  /// The day's summary in the table: «3 remesas · enviado 475,00 USD · comisiones 30,00 USD · 1 anulada» (AC-2.1).
+  static String daySummary(ReportTotals totals, String currency) => [
+    remittancesCount(totals.remittances),
+    '$sentLower ${Formatters.money(totals.sent, currency)}',
+    '$feesLower ${Formatters.money(totals.fees, currency)}',
+    if (totals.voided > 0) voidedCount(totals.voided),
+  ].join(' · ');
 
   // Statistics
   static const statistics = 'Estadísticas';
