@@ -6,6 +6,13 @@ Cambios notables del frontend de Ottos (panel de operaciones y app de repartidor
 
 ## [Unreleased]
 
+## [1.0.0-rc.17] - 2026-11-15
+
+### Cambiado
+
+- App y panel › Reportes › Remesas del mes: las remesas se agrupan por día de registro (hora de Cuba), cada día con su encabezado: la fecha («Hoy», «Ayer» en la app) y cuántas remesas, lo enviado y, en la tabla del panel, las comisiones de ese día; las anuladas se cuentan aparte. Los totales del día cuentan todas las páginas. El resto de la pantalla no cambia (REQ-026).
+- App: build 20 en Android e iOS. Trae también lo de 1.0.0-rc.16, que en Android nunca se publicó (la build 18 no llegó a subirse).
+
 ## [1.0.0-rc.16] - 2026-11-13
 
 ### Añadido
