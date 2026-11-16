@@ -122,6 +122,18 @@ void main() {
       expect(groupReportDays(const []), isEmpty);
     });
 
+    test('CR-1: rows without a registration time make one group headed «Sin fecha»', () {
+      const n1 = ReportRemittance(id: 'n1', code: 'OT-N1');
+      const n2 = ReportRemittance(id: 'n2', code: 'OT-N2');
+
+      final days = groupReportDays([n1, n2]);
+
+      expect(days, hasLength(1));
+      expect(days.single.date, isNull);
+      expect(days.single.rows, [n1, n2]);
+      expect(ReportTexts.dayHeading(days.single.date, DateTime(2026, 10, 29)), 'Sin fecha');
+    });
+
     test('BR-1: the day follows the business time zone', () {
       BusinessTime.setForTest(zone: BusinessTimeZone.ofMinutes(0));
 
@@ -235,6 +247,12 @@ void main() {
       expect(find.text('1 remesa · enviado 100,00 USD · comisiones 10,00 USD · 1 anulada'), findsOneWidget);
       expect(find.text('1 remesa · enviado 200,00 USD · comisiones 20,00 USD'), findsOneWidget);
       expect(top(tester, 'Hoy · Viernes 2 oct'), lessThan(top(tester, first)));
+      // CR-2: the summary follows the date, 16 px after it, on screen at panel widths.
+      final dateRight = tester.getTopRight(find.text(first)).dx;
+      final summaryLeft = tester
+          .getTopLeft(find.text('1 remesa · enviado 100,00 USD · comisiones 10,00 USD · 1 anulada'))
+          .dx;
+      expect(summaryLeft - dateRight, moreOrLessEquals(16, epsilon: 0.5));
 
       await tester.tap(find.text('${ReportTexts.registered} ↓'));
       await tester.pumpAndSettle();

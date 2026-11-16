@@ -416,7 +416,7 @@ class _DayHeading extends StatelessWidget {
                 child: Text(
                   ReportTexts.daySummaryShort(day.totals, currency),
                   textAlign: TextAlign.end,
-                  style: const TextStyle(fontSize: 12, color: OttosColors.voidedGrey),
+                  style: const TextStyle(fontSize: 12, color: OttosColors.inkSecondary),
                 ),
               ),
             ],
@@ -536,12 +536,12 @@ class _Table extends StatelessWidget {
             style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: OttosColors.navy),
           ),
           const SizedBox(width: 16),
-          Expanded(
+          // Right after the date, so it stays on screen when the table scrolls (CR-2).
+          Flexible(
             child: Text(
               ReportTexts.daySummary(day.totals, currency),
-              textAlign: TextAlign.end,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 13, color: OttosColors.voidedGrey),
+              style: const TextStyle(fontSize: 13, color: OttosColors.inkSecondary),
             ),
           ),
         ],
