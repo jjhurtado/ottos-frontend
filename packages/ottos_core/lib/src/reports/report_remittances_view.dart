@@ -9,6 +9,7 @@ import '../utils/formatters.dart';
 import '../widgets/async_view.dart';
 import '../widgets/remittance_title.dart';
 import '../widgets/remittance_type_badge.dart';
+import 'report_days.dart';
 import 'report_pdf.dart';
 import 'report_remittances_cubit.dart';
 import 'report_texts.dart';
@@ -73,32 +74,46 @@ class _Content extends StatelessWidget {
     final filtered = state.filtered;
     final first = filtered.isEmpty ? 0 : state.page * ReportRemittancesState.pageSize + 1;
     final last = state.page * ReportRemittancesState.pageSize + rows.length;
+    final currency = state.detail!.businessCurrency;
+    // REQ-026: the page by registration day, each day summed over every filtered row (BR-2).
+    final days = groupReportDays(rows, all: filtered);
+    final today = BusinessTime.today();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _Filters(state: state, compact: compact),
         const SizedBox(height: 12),
         compact
-            ? _TotalsTiles(totals: state.totals, currency: state.detail!.businessCurrency)
-            : _TotalsStrip(totals: state.totals, currency: state.detail!.businessCurrency),
+            ? _TotalsTiles(totals: state.totals, currency: currency)
+            : _TotalsStrip(totals: state.totals, currency: currency),
         const SizedBox(height: 12),
         if (filtered.isEmpty)
           const SizedBox(height: 120, child: EmptyView(message: ReportTexts.noRemittancesFound))
         else if (compact)
-          Card(
-            margin: EdgeInsets.zero,
-            clipBehavior: Clip.antiAlias,
-            child: Column(
-              children: [
-                for (final (index, row) in rows.indexed) ...[
-                  if (index > 0) const Divider(height: 1),
-                  _RemittanceCard(row: row, currency: state.detail!.businessCurrency, onOpen: onOpen),
-                ],
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              for (final (dayIndex, day) in days.indexed) ...[
+                if (dayIndex > 0) const SizedBox(height: 16),
+                _DayHeading(day: day, today: today, currency: currency),
+                const SizedBox(height: 8),
+                Card(
+                  margin: EdgeInsets.zero,
+                  clipBehavior: Clip.antiAlias,
+                  child: Column(
+                    children: [
+                      for (final (index, row) in day.rows.indexed) ...[
+                        if (index > 0) const Divider(height: 1),
+                        _RemittanceCard(row: row, currency: currency, onOpen: onOpen),
+                      ],
+                    ],
+                  ),
+                ),
               ],
-            ),
+            ],
           )
         else
-          _Table(rows: rows, newestFirst: state.filter.newestFirst, onOpen: onOpen),
+          _Table(days: days, today: today, currency: currency, newestFirst: state.filter.newestFirst, onOpen: onOpen),
         Row(
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
@@ -369,10 +384,61 @@ class _StatusChip extends StatelessWidget {
   }
 }
 
-class _Table extends StatelessWidget {
-  const _Table({required this.rows, required this.newestFirst, required this.onOpen});
+/// The heading of a day above its card (REQ-026 AC-1.1): weekday and date on
+/// the left, the day's summary on the right; read as a heading.
+class _DayHeading extends StatelessWidget {
+  const _DayHeading({required this.day, required this.today, required this.currency});
 
-  final List<ReportRemittance> rows;
+  final ReportDay day;
+  final DateTime today;
+  final String currency;
+
+  @override
+  Widget build(BuildContext context) {
+    // One heading node with both texts: the date, then the summary.
+    return MergeSemantics(
+      child: Semantics(
+        header: true,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            children: [
+              Expanded(
+                child: Text(
+                  ReportTexts.dayHeading(day.date, today),
+                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: OttosColors.navy),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  ReportTexts.daySummaryShort(day.totals, currency),
+                  textAlign: TextAlign.end,
+                  style: const TextStyle(fontSize: 12, color: OttosColors.voidedGrey),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _Table extends StatelessWidget {
+  const _Table({
+    required this.days,
+    required this.today,
+    required this.currency,
+    required this.newestFirst,
+    required this.onOpen,
+  });
+
+  final List<ReportDay> days;
+  final DateTime today;
+  final String currency;
   final bool newestFirst;
   final ValueChanged<ReportRemittance>? onOpen;
 
@@ -438,13 +504,50 @@ class _Table extends StatelessWidget {
             width: total,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [header, const Divider(height: 1), for (final row in rows) _row(context, row, cell, text)],
+              children: [
+                header,
+                const Divider(height: 1),
+                for (final day in days) ...[
+                  _dayRow(context, day),
+                  for (final row in day.rows) _row(context, row, cell, text),
+                ],
+              ],
             ),
           ),
         ),
       ),
     );
   }
+
+  /// A full-width row before the first row of each day (REQ-026 AC-2.1).
+  Widget _dayRow(BuildContext context, ReportDay day) => Container(
+    decoration: const BoxDecoration(
+      color: OttosColors.dayRowSurface,
+      border: Border(top: BorderSide(color: OttosColors.dayRowBorder, width: 2)),
+    ),
+    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+    child: MergeSemantics(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.baseline,
+        textBaseline: TextBaseline.alphabetic,
+        children: [
+          Text(
+            ReportTexts.dayHeading(day.date, today),
+            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: OttosColors.navy),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Text(
+              ReportTexts.daySummary(day.totals, currency),
+              textAlign: TextAlign.end,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontSize: 13, color: OttosColors.voidedGrey),
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
 
   Widget _row(
     BuildContext context,

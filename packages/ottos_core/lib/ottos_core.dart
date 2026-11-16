@@ -43,6 +43,7 @@ export 'src/remittances/new_remittance_cubit.dart';
 export 'src/models/report_detail.dart';
 export 'src/models/statistics.dart';
 export 'src/reports/report_csv.dart';
+export 'src/reports/report_days.dart';
 export 'src/reports/report_pdf.dart';
 export 'src/reports/report_remittances_cubit.dart';
 export 'src/reports/report_remittances_view.dart';
